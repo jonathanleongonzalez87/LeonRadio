@@ -1,0 +1,14 @@
+.venv/
+__pycache__/
+*.pyc
+*.db
+*.egg-info/
+dist/
+.pytest_cache/
+# Audio de emisoras: nunca al repositorio
+*.mp3
+*.wav
+*.flac
+*.m4a
+*.ogg
+Rockland Radio/
