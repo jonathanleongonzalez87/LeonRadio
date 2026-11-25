@@ -14,7 +14,7 @@ Objetivo: tener **prueba de lo que sonó**, no de lo que se programó. Sirve par
 3. **Estado real.** `completed` solo si sonó completo; `skipped`/`interrupted`/`failed` quedan registrados con los ms reproducidos.
 4. **Todo lo que suena se registra:** música, jingles, pisadores, separadores, cuñas, cartuchera y voz en vivo.
 
-## Tablas (en `leonradio-core/src/leonradio_core/db.py`)
+## Tablas (en `core/src/leonradio_core/db.py`)
 - `assets` — biblioteca, con `isrc`, `composer`, `publisher`.
 - `commitments` — pauta contratada: cliente, campaña, contrato, cuña, `plays_required`, ventana y franja.
 - `playlog` — el historial.

@@ -1,7 +1,7 @@
 # Arquitectura
 
 ```
-leonradio-ui (HTML/CSS/JS)  ──REST + WebSocket──►  leonradio-core (Python)
+ui/ (HTML/CSS/JS)  ──REST + WebSocket──►  core/ (Python)
                                                      ├─ library   (SQLite, escáner, marcadores)
                                                      ├─ playlog   (historial inmutable)
                                                      ├─ scheduler (relojes, reglas, compromisos)

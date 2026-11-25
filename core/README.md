@@ -1,6 +1,6 @@
-# leonradio-core
+# LeonRadio · core
 
-Motor de **LeonRadio**, automatizador de radio (Python). Parte de [LeonRadio](https://github.com/jonathanleongonzalez87/leonradio-docs).
+Motor de **LeonRadio**, automatizador de radio (Python). Parte de [LeonRadio](../README.md).
 
 Estación de prueba: **RRC – Rockland Radio Colombia**.
 
@@ -23,4 +23,4 @@ python -m venv .venv
 > La música y el audio de la emisora **no** van en este repositorio (`.gitignore`).
 
 ## Licencia
-CC BY-SA 4.0 (ver `LICENSE`). Creative Commons no recomienda sus licencias para software; si más adelante se necesita una licencia de código (MIT/GPL), el cambio se hace en un commit explícito.
+CC BY-SA 4.0 (ver `../LICENSE`). Creative Commons no recomienda sus licencias para software; si más adelante se necesita una licencia de código (MIT/GPL), el cambio se hace en un commit explícito.
