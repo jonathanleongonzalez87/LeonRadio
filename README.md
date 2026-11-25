@@ -3,6 +3,28 @@
 Automatizador de radio con experiencia de estación vintage, hecho para 2026.
 Estación de prueba: **RRC – Rockland Radio Colombia** (https://rocklandradio.co/).
 
+## Capturas
+
+> Estado actual (F0 + F0.5). El audio, los niveles del VU y la cola son **simulados** hasta F1. Las piezas que se ven son de la emisora de pruebas RRC.
+
+**Workspace «Aire»**: editores Aire, VU, Reloj, Dial/RDS, Cola, Cartuchera e Historial, cada uno en su área.
+
+![Workspace Aire, tema oscuro](docs/img/aire-oscuro.png)
+
+**Tema claro** (misma disposición):
+
+![Workspace Aire, tema claro](docs/img/aire-claro.png)
+
+**Workspace «Programación»**: las áreas se dividen, unen y redimensionan, y cada una cambia de editor desde su selector.
+
+![Workspace Programación](docs/img/programacion.png)
+
+**Workspace «Producción»**: a la derecha, un editor aportado por un **addon** de ejemplo (`addons/ejemplo_hora_emisora`).
+
+![Workspace Producción con un addon](docs/img/produccion-addon.png)
+
+Se regeneran con `tools/screenshots.py` (ver el encabezado del script).
+
 ```
 leonradio/
 ├─ core/   Motor Python: biblioteca, historial de emisión, (audio y programación en camino)
