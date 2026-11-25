@@ -6,7 +6,7 @@ const A0 = (-58 * Math.PI) / 180;   // ángulo de la aguja en reposo (respecto a
 const A1 = (58 * Math.PI) / 180;
 const MARKS = [[0, "-20"], [0.3, "-10"], [0.55, "-5"], [0.8, "0"], [1, "+3"]];
 
-function meter(ctx, T, x, y, w, h, value, label) {
+function meter(ctx, T, x, y, w, h, value, label, sim) {
   ctx.save();
   // cara del medidor, papel cálido iluminado
   const g = ctx.createLinearGradient(0, y, 0, y + h);
@@ -50,6 +50,10 @@ function meter(ctx, T, x, y, w, h, value, label) {
   ctx.fillStyle = T.g500; ctx.font = `700 ${Math.max(10, R * 0.16)}px ${FONT_DISPLAY}`;
   ctx.textAlign = "left"; ctx.textBaseline = "top";
   ctx.fillText("VU", x + 10, y + 8);
+  if (sim) {                                  // aviso discreto: los niveles aún son simulados
+    ctx.textAlign = "right"; ctx.fillStyle = T.g500; ctx.font = `700 ${Math.max(7, R * 0.08)}px ${FONT_DISPLAY}`;
+    ctx.fillText("SIMULADO", x + w - 8, y + 8);
+  }
   ctx.textBaseline = "middle"; ctx.textAlign = "center";
   ctx.fillStyle = T.carbon; ctx.font = `700 ${Math.max(10, R * 0.13)}px ${FONT_MONO}`;
   ctx.textAlign = "left"; ctx.fillText(label, x + 10, y + h - 12);
@@ -73,27 +77,7 @@ function meter(ctx, T, x, y, w, h, value, label) {
   ctx.restore();
 }
 
-// Versión compacta (áreas bajas): dos barras de LED horizontales, como en una franja de consola.
-function bars(ctx, T, w, h, v) {
-  const rows = [["L", v[0]], ["R", v[1]]];
-  const gapY = 6, rowH = Math.max(8, Math.min(26, (h - gapY * 3) / 2));
-  const top = (h - (rowH * 2 + gapY)) / 2;
-  const x0 = 22, segs = 26, gap = 2;
-  const segW = Math.max(3, (w - x0 - 8 - gap * (segs - 1)) / segs);
-  rows.forEach(([label, val], i) => {
-    const y = top + i * (rowH + gapY);
-    ctx.fillStyle = T.cream; ctx.font = `700 ${Math.max(10, rowH * 0.7)}px ${FONT_MONO}`;
-    ctx.textAlign = "left"; ctx.textBaseline = "middle";
-    ctx.fillText(label, 4, y + rowH / 2);
-    const on = Math.round(Math.min(1, val) * segs);
-    for (let s = 0; s < segs; s++) {
-      ctx.fillStyle = s < on ? (s >= segs - 4 ? T.orange : s >= segs - 9 ? T.bronze : T.cream) : T.g700;
-      ctx.fillRect(x0 + s * (segW + gap), y, segW, rowH);
-    }
-  });
-}
-
-export function vuMeter() {
+export function vuMeter(props = {}) {
   const target = [0, 0];
   const value = [0, 0];
   const onLevels = (e) => { target[0] = e.detail.l ?? 0; target[1] = e.detail.r ?? 0; };
@@ -106,14 +90,13 @@ export function vuMeter() {
       const k = target[i] > value[i] ? 0.035 : 0.12;
       value[i] += (target[i] - value[i]) * (1 - Math.exp(-dt / k));
     }
-    if (h < 150) { bars(ctx, T, w, h, value); return; }   // áreas bajas: barras de LED
     // caras con proporción de VU real (1.5:1), centradas verticalmente
     const gap = 8;
     const mw = Math.min((w - gap) / 2, h * 1.5);
     const mh = mw / 1.5;
     const x0 = (w - (mw * 2 + gap)) / 2, y0 = (h - mh) / 2;
-    meter(ctx, T, x0, y0, mw, mh, value[0], "L");
-    meter(ctx, T, x0 + mw + gap, y0, mw, mh, value[1], "R");
+    meter(ctx, T, x0, y0, mw, mh, value[0], "L", props.simulated);
+    meter(ctx, T, x0 + mw + gap, y0, mw, mh, value[1], "R", props.simulated);
   });
   // deja de escuchar cuando el componente desaparece
   const cleanup = setInterval(() => {

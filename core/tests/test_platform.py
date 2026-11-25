@@ -28,8 +28,11 @@ def test_builtin_editors_draw_with_demo_playout():
     builtin.register(host)
     assert {"aire", "cola", "historial"} <= set(host.editors)
     tree = host.draw_editor("aire")
-    kinds = [c["t"] for c in tree["children"]]
-    assert "progress" in kinds
+    def walk(n):
+        yield n["t"]
+        for c in n.get("children", []):
+            yield from walk(c)
+    assert "progress" in set(walk(tree))      # el progreso está (ahora junto a los botones, en una fila)
     host.run_command("playout.next")  # salta: queda registrado como 'skipped'
     plays = host.db.execute("SELECT status FROM playlog").fetchall()
     assert [p["status"] for p in plays] == ["skipped"]
@@ -131,14 +134,3 @@ def test_demo_playout_emits_levels_and_ticks_once_per_second():
     playout.tick(0.1)
     assert 0.0 <= levels[-1]["l"] <= 1.0 and 0.0 <= levels[-1]["r"] <= 1.0
 
-
-def test_compact_strip_editors_draw():
-    host = sdk.Host()
-    builtin.register(host)
-    bar = host.draw_editor("aire-barra")
-    tones = [c.get("tone") for c in bar["children"] if c["t"] == "label"]
-    assert "title" in tones                       # título en una sola línea
-    assert any(c["t"] == "row" and any(x["t"] == "progress" for x in c["children"]) for c in bar["children"])
-    assert host.draw_editor("proxima")["children"][0]["text"] == "PRÓXIMA"
-    hora = host.draw_editor("hora")["children"][0]
-    assert hora["component"] == "digital-clock" and hora["props"]["timezone"] == "America/Bogota"

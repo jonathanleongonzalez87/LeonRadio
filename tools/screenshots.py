@@ -20,6 +20,7 @@ OUT.mkdir(parents=True, exist_ok=True)
 
 
 def shot(page, name: str) -> None:
+    page.mouse.move(0, 0)  # sin cursor sobre las áreas (si no, aparece su encabezado compacto)
     page.wait_for_timeout(1500)
     page.screenshot(path=str(OUT / f"{name}.png"))
     print("guardado", OUT / f"{name}.png")
@@ -34,7 +35,7 @@ with sync_playwright() as p:
 
     # algo de actividad para que Historial y Cartuchera tengan contenido
     for _ in range(2):
-        page.get_by_role("button", name="Sig.").first.click()
+        page.get_by_role("button", name="Siguiente").first.click()
         page.wait_for_timeout(700)
     for key in ("F1", "F3", "F6"):
         page.keyboard.press(key)
