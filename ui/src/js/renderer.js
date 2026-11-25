@@ -48,20 +48,23 @@ const NODES = {
   separator: () => el("hr", "u-sep"),
   table: (n) => {
     const t = el("table", "u-tab");
+    const nh = new Set(n.nh || []);
     const head = el("tr");
-    n.columns.forEach((c) => head.append(el("th", "", c)));
+    n.columns.forEach((c, i) => head.append(el("th", nh.has(i) ? "nh" : "", c)));
     const thead = el("thead");
     thead.append(head);
     t.append(thead);
     const body = el("tbody");
     n.rows.forEach((r) => {
       const tr = el("tr");
-      r.forEach((c) => tr.append(el("td", "", c)));
+      r.forEach((c, i) => tr.append(el("td", nh.has(i) ? "nh" : "", c)));
       body.append(tr);
     });
     t.append(body);
     if (!n.rows.length) return el("div", "empty", "Sin datos todavía");
-    return t;
+    const wrap = el("div", "u-tabwrap");
+    wrap.append(t);
+    return wrap;
   },
 };
 

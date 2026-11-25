@@ -107,3 +107,32 @@ table.u-tab{width:100%;border-collapse:collapse;font-size:12.5px}
 .pad-bronze{background:var(--c-bronze);color:var(--c-carbon)}
 .pad-graphite{background:var(--c-g700);color:var(--c-cream);border-color:rgba(197,143,94,.5)}
 .pad-cream{background:var(--c-cream);color:var(--c-carbon);border-color:var(--c-orange)}
+
+/* ---- tablas y columnas ocultables ---- */
+.area .body{container-type:inline-size}
+.u-tabwrap{overflow-x:auto;max-width:100%}
+@container (max-width:460px){ .nh{display:none} }
+
+/* ---- teléfono / pantallas estrechas: las áreas se apilan y la página se desplaza ---- */
+@media (max-width:820px){
+  body{overflow:auto;display:block;height:auto;min-height:100%}
+  .top{position:sticky;top:0;z-index:20;flex-wrap:wrap;gap:6px 10px;padding:6px 10px}
+  .tabs{order:3;flex-basis:100%;margin-left:0}
+  .brand{font-size:17px}
+  .clock{font-size:15px}
+  .tools{margin-left:auto}
+  #screen{display:block;padding:6px;overflow:visible}
+  .split,.split.h,.split.v{display:block}
+  .split>.node{display:block;flex:none!important;margin-bottom:6px}
+  .gutter{display:none}
+  .area{min-height:300px;height:auto}
+  .area .body{max-height:70vh}
+  .cmp{min-height:210px}
+  .hbtn{display:none}
+}
+@media (pointer:coarse){
+  .u-btn{padding:9px 18px;font-size:13px}
+  .tab{padding:8px 14px}
+  .btn-i{width:38px;height:38px}
+  .area select{padding:6px 4px;font-size:13px}
+}

@@ -19,9 +19,16 @@ Estación de prueba: **RRC – Rockland Radio Colombia** (https://rocklandradio.
 
 ![Workspace Programación](docs/img/programacion.png)
 
-**Workspace «Producción»**: a la derecha, un editor aportado por un **addon** de ejemplo (`addons/ejemplo_hora_emisora`).
+**Workspace «Producción»**: arriba a la derecha, un editor aportado por un **addon** de ejemplo (`addons/ejemplo_hora_emisora`).
 
 ![Workspace Producción con un addon](docs/img/produccion-addon.png)
+
+**En el teléfono**: en pantallas estrechas las áreas se apilan, la página se desplaza, los botones son táctiles y las tablas ocultan columnas secundarias.
+
+<p>
+<img src="docs/img/telefono-aire.png" alt="Workspace Aire en un teléfono" width="300">
+<img src="docs/img/telefono-produccion.png" alt="Workspace Producción en un teléfono" width="300">
+</p>
 
 Se regeneran con `tools/screenshots.py` (ver el encabezado del script).
 

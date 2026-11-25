@@ -11,9 +11,12 @@ export function fmDial(props) {
 
   return canvasComponent((ctx, w, h, t) => {
     const T = tokens();
-    const dialH = Math.min(Math.max(50, h * 0.5), w * 0.34);
-    const u = Math.max(8, Math.min(w / 34, dialH / 6));   // unidad tipográfica
+    const dialH = Math.min(Math.max(50, h * 0.5), w * 0.4);
+    const u = Math.max(8, Math.min(w / 28, h / 11));      // unidad tipográfica
     const narrow = w < 230;
+    const total = dialH + u * 7.2;                          // alto real del conjunto
+    ctx.save();
+    ctx.translate(0, Math.max(0, (h - total) / 2));
 
     // cristal oscuro cálido
     const g = ctx.createRadialGradient(w / 2, dialH * 0.45, 4, w / 2, dialH * 0.45, w * 0.6);
@@ -55,7 +58,7 @@ export function fmDial(props) {
     ctx.fillStyle = gl; ctx.fillRect(2, 2, w - 4, dialH * 0.45);
 
     // panel RDS
-    ctx.fillStyle = T.g700; ctx.fillRect(0, dialH, w, h - dialH);
+    ctx.fillStyle = T.g700; ctx.fillRect(0, dialH, w, u * 7.2);
     ctx.textBaseline = "top";
     const ry = dialH + u * 0.6;
     ctx.textAlign = "left"; ctx.fillStyle = T.cream; ctx.font = `700 ${u * 0.8}px ${FONT_MONO}`;
@@ -76,6 +79,7 @@ export function fmDial(props) {
       const span = tw + 40, off = ((t / 1000) * 30) % span;
       ctx.fillText(rds, 10 - off, ty); ctx.fillText(rds, 10 - off + span, ty);
     }
+    ctx.restore();
     ctx.restore();
   });
 }

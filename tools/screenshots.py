@@ -53,4 +53,18 @@ with sync_playwright() as p:
     page.get_by_role("tab", name="Aire").click()
     page.click("#theme")
     shot(page, "aire-claro")
+
+    # teléfono: las áreas se apilan; captura de la página completa
+    phone = browser.new_context(viewport={"width": 390, "height": 844}, device_scale_factor=2,
+                                is_mobile=True, has_touch=True)
+    mp = phone.new_page()
+    mp.goto(URL)
+    mp.wait_for_selector(".area .body")
+    mp.wait_for_timeout(3000)
+    mp.screenshot(path=str(OUT / "telefono-aire.png"))
+    print("guardado", OUT / "telefono-aire.png")
+    mp.get_by_role("tab", name="Producción").click()
+    mp.wait_for_timeout(1500)
+    mp.screenshot(path=str(OUT / "telefono-produccion.png"))
+    print("guardado", OUT / "telefono-produccion.png")
     browser.close()

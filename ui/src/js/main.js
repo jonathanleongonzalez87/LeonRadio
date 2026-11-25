@@ -1,7 +1,7 @@
 import { connectEvents, getEditors, getInfo } from "./api.js";
 import { AreaManager, area, split } from "./areas.js";
 
-const KEY = "leonradio.workspaces.v3";
+const KEY = "leonradio.workspaces.v4";
 const $ = (s) => document.querySelector(s);
 const store = {
   get() { try { return JSON.parse(localStorage.getItem(KEY)); } catch { return null; } },
@@ -15,7 +15,9 @@ const defaults = () => ({
         split("h", area("aire"), split("h", area("vu"), split("h", area("reloj"), area("dial"), 0.42), 0.42), 0.30),
         split("h", area("cola"), split("h", area("cartuchera"), area("historial"), 0.55), 0.34), 0.5) },
     { name: "Programación", tree: split("h", area("cola"), area("historial"), 0.45) },
-    { name: "Producción", tree: split("h", area("aire"), area("ejemplo.hora"), 0.6) },
+    { name: "Producción", tree: split("h",
+        split("v", area("aire"), area("cola"), 0.4),
+        split("v", area("ejemplo.hora"), area("cartuchera"), 0.4), 0.55) },
   ],
 });
 

@@ -48,7 +48,9 @@ function meter(ctx, T, x, y, w, h, value, label) {
 
   // rótulos
   ctx.fillStyle = T.g500; ctx.font = `700 ${Math.max(10, R * 0.16)}px ${FONT_DISPLAY}`;
-  ctx.fillText("VU", px, y + h * 0.36);
+  ctx.textAlign = "left"; ctx.textBaseline = "top";
+  ctx.fillText("VU", x + 10, y + 8);
+  ctx.textBaseline = "middle"; ctx.textAlign = "center";
   ctx.fillStyle = T.carbon; ctx.font = `700 ${Math.max(10, R * 0.13)}px ${FONT_MONO}`;
   ctx.textAlign = "left"; ctx.fillText(label, x + 10, y + h - 12);
 

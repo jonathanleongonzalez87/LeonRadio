@@ -14,6 +14,9 @@ def _mmss(ms: int | float | None) -> str:
     return f"{s // 60:02d}:{s % 60:02d}"
 
 
+_STATUS = {"completed": "ok", "skipped": "saltada", "interrupted": "cortada", "failed": "falla"}
+
+
 class AireEditor(sdk.Editor):
     id, label, icon = "aire", "Aire", "●"
 
@@ -42,7 +45,7 @@ class ColaEditor(sdk.Editor):
         ui.label(f"{len(queue)} elementos en cola", "muted")
         ui.table(["#", "Tipo", "Título", "Artista", "Dur."],
                  [[i + 1, q["kind"], q["title"], q.get("artist") or "", _mmss(q["duration_ms"])]
-                  for i, q in enumerate(queue[:30])])
+                  for i, q in enumerate(queue[:30])], narrow_hide=[1, 3])
 
 
 class HistorialEditor(sdk.Editor):
@@ -52,8 +55,8 @@ class HistorialEditor(sdk.Editor):
         plays = ctx.recent_plays(40)
         ui.label("Lo que sonó (UTC) · base de los reportes de derechos y compromisos", "muted")
         ui.table(["Inicio", "Tipo", "Título", "Artista", "Fuente", "Estado"],
-                 [[p["started_at"][11:19], p["kind"], p["title"], p["artist"], p["source"], p["status"]]
-                  for p in plays])
+                 [[p["started_at"][11:19], p["kind"], p["title"], p["artist"], p["source"],
+                   _STATUS.get(p["status"], p["status"])] for p in plays], narrow_hide=[1, 3, 4])
 
 
 class VuEditor(sdk.Editor):

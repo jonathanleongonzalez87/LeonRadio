@@ -43,8 +43,9 @@ class UI:
     def separator(self) -> None:
         self._add({"t": "separator"})
 
-    def table(self, columns: list[str], rows: list[list[object]]) -> None:
-        self._add({"t": "table", "columns": columns,
+    def table(self, columns: list[str], rows: list[list[object]], narrow_hide: list[int] | None = None) -> None:
+        """`narrow_hide`: índices de columnas que se ocultan cuando el área es angosta (p. ej. en el teléfono)."""
+        self._add({"t": "table", "columns": columns, "nh": narrow_hide or [],
                    "rows": [[str(c) if c is not None else "" for c in r] for r in rows]})
 
     @contextmanager
