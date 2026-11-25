@@ -19,7 +19,7 @@ cd core
 python -m venv .venv
 .venv\Scripts\python -m pip install -e ".[api,dev]" httpx
 .venv\Scripts\python -m pytest
-.venv\Scripts\leonradio serve --library "C:uta\Rockland Radio"
+.venv\Scripts\leonradio serve --library "C:\ruta\a\Rockland Radio"
 # abre http://127.0.0.1:8765
 ```
 La UI tiene áreas (◫ ⬓ ✕, selector de editor), workspaces (pestañas; doble clic = renombrar/eliminar) y un addon de ejemplo en `addons/`.
