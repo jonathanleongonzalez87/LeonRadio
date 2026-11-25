@@ -1,7 +1,8 @@
 # Roadmap LeonRadio
 
 Decisiones: motor **Python** + UI **HTML** (pywebview) · **Windows primero** · salida **FM + streaming** ·
-modo **automático + Live Assist** · repos públicos CC BY-SA 4.0 · estación de prueba **RRC**.
+modo **automático + Live Assist** · monorepo público · código GPL-3.0, docs y diseño CC BY-SA 4.0 · estación de prueba **RRC**.
+**Arquitectura de editores y addons** estilo Blender (ver [docs/editores-y-addons.md](docs/editores-y-addons.md)): Python declarativo + JS opcional, addons en proceso aparte con permisos, gestor de áreas propio.
 
 ## F0 — Consolidar (en curso)
 - [x] Repos y tablero creados; esquema de biblioteca e historial en core (con pruebas)
@@ -9,7 +10,14 @@ modo **automático + Live Assist** · repos públicos CC BY-SA 4.0 · estación 
 - [ ] Datos de ejemplo → JSON; definir contrato de API v0
 - [ ] Biblioteca de prueba RRC (36 archivos: música 00s/10s/20s, jingles, pisadores, separadores)
 
-## F1 — Audio real (hito 1)
+## F0.5 — Plataforma de editores y addons (nueva, antes de añadir funciones)
+- [ ] Gestor de áreas y workspaces propio (dividir, unir, redimensionar, guardar JSON)
+- [ ] Registro de editores y comandos; bus de eventos por WebSocket
+- [ ] API de addons v0: manifiesto `leonradio_addon.toml`, `register()/unregister()`, permisos
+- [ ] Addons en proceso aparte del motor de audio
+- [ ] 3 editores incluidos (Aire, Cola, Historial) usando la misma API + 1 addon de ejemplo
+
+## F1 — Audio real (hito 1, en paralelo a F0.5, en su propio proceso)
 - [ ] Reproducir una playlist (`.m3u` de RRC) con salida WASAPI
 - [ ] Segue por marcadores intro/outro y crossfade
 - [ ] Ducking: pisadores y separadores sobre la música
@@ -33,5 +41,6 @@ modo **automático + Live Assist** · repos públicos CC BY-SA 4.0 · estación 
 - [ ] Alertas de incumplimiento de compromisos antes de que venzan
 - [ ] Detector de silencio, failover
 
-## F5 — Producto
+## F5 — Producto y ecosistema
+- [ ] Gestor de addons (instalar, activar, actualizar), plantilla y guía para autores
 - [ ] Instalador Windows, actualizaciones, multiusuario, control remoto

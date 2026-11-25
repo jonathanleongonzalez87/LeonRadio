@@ -15,5 +15,5 @@ Se conecta al motor [`core/`](../core) por REST + WebSocket.
 4. Corregir tipografías al manual (la maqueta usa Montserrat/JetBrains Mono).
 
 ## Licencia
-Código y diseño: CC BY-SA 4.0 (ver `../LICENSE`).
-**Excepción:** el isotipo, el logotipo y el manual de marca «Jonathan León» son © Jonathan León, todos los derechos reservados; no están cubiertos por la licencia CC (ver `../NOTICE.md`).
+Código: GPL-3.0-or-later (`LICENSE`). Diseño y documentación: CC BY-SA 4.0 (`../LICENSE`).
+**Excepción:** isotipo, logotipo y manual de marca «Jonathan León», © Jonathan León, derechos reservados (ver `../NOTICE.md`).

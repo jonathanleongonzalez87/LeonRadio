@@ -9,6 +9,7 @@ ui/ (HTML/CSS/JS)  ──REST + WebSocket──►  core/ (Python)
                                                      └─ outputs   (WASAPI/ASIO · Icecast)
 ```
 
+- **Tres procesos:** motor de audio (aislado), servidor/addons (Python) y UI. Ver [editores-y-addons.md](editores-y-addons.md).
 - **Motor y UI desacoplados:** la UI nunca toca el audio; solo envía comandos y recibe estado (cola, tiempo, VU).
 - **Un solo motor, dos salidas:** FM (tarjeta de sonido) y streaming salen de la misma mezcla maestra.
 - **Fuente de verdad del tiempo:** el motor, en UTC; la UI muestra hora local de la emisora.

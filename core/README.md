@@ -23,4 +23,4 @@ python -m venv .venv
 > La música y el audio de la emisora **no** van en este repositorio (`.gitignore`).
 
 ## Licencia
-CC BY-SA 4.0 (ver `../LICENSE`). Creative Commons no recomienda sus licencias para software; si más adelante se necesita una licencia de código (MIT/GPL), el cambio se hace en un commit explícito.
+GPL-3.0-or-later (`LICENSE`).

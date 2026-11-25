@@ -25,8 +25,12 @@ python -m venv .venv
 - [ROADMAP.md](ROADMAP.md)
 - [docs/arquitectura.md](docs/arquitectura.md)
 - [docs/historial-de-emision.md](docs/historial-de-emision.md)
+- [docs/editores-y-addons.md](docs/editores-y-addons.md) — editores, workspaces y addons
 - [core/README.md](core/README.md) · [ui/README.md](ui/README.md)
 
 ## Licencia
-CC BY-SA 4.0 (`LICENSE`). Excepción: la marca «Jonathan León» (isotipo, logotipo, manual) — ver [NOTICE.md](NOTICE.md).
+- Código (`core/`, `ui/`): **GPL-3.0-or-later** (`core/LICENSE`, `ui/LICENSE`).
+- Documentación y diseño: **CC BY-SA 4.0** (`LICENSE`).
+- Marca «Jonathan León»: derechos reservados — ver [NOTICE.md](NOTICE.md).
+
 El audio de las emisoras no se versiona.
