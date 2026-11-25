@@ -1,0 +1,42 @@
+/* Tokens de marca — Jonathan León / LeonRadio.
+   Fuente: Manual de marca. Tipografías: Space Grotesk (display) + Inter (texto).
+   Regla: la UI solo usa estas variables; nada de colores sueltos. */
+:root {
+  --c-carbon: #262626;
+  --c-orange: #fd6724;
+  --c-cream:  #f2e8da;
+  --c-bronze: #c58f5e;
+  --c-bronze-d: #865632;
+  --c-sand:   #efe7dc;
+  --c-g900: #1a1918;
+  --c-g700: #3a3633;
+  --c-g500: #6b625a;
+  --c-g300: #b5a898;
+  --c-ink:  #2a2420;
+
+  /* Único color ajeno a la marca: fieltro verde de plato (estado "listo / al aire OK"). */
+  --c-felt: #6fae6b;
+
+  --display: "Space Grotesk", "Helvetica Neue", Arial, sans-serif;
+  --body: "Inter", "Helvetica Neue", Arial, sans-serif;
+  --mono: ui-monospace, "Cascadia Mono", Consolas, monospace;
+
+  --bg: var(--c-carbon);
+  --surface: #2f2c2a;
+  --ink: var(--c-cream);
+  --ink-2: var(--c-g300);
+  --accent: var(--c-orange);
+  --line: rgba(242, 232, 218, .14);
+  color-scheme: dark;
+}
+:root[data-theme="light"] {
+  --bg: var(--c-sand);
+  --surface: #e6dccf;
+  --ink: var(--c-ink);
+  --ink-2: var(--c-g500);
+  --line: rgba(42, 36, 32, .16);
+  color-scheme: light;
+}
+@media (prefers-reduced-motion: reduce) {
+  * { animation: none !important; transition: none !important; }
+}
