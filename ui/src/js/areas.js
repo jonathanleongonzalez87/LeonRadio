@@ -6,7 +6,7 @@ import { render } from "./renderer.js";
 
 let seq = 0;
 export const newId = () => `a${Date.now().toString(36)}${(seq++).toString(36)}`;
-export const area = (editor) => ({ type: "area", id: newId(), editor });
+export const area = (editor, slim = false) => ({ type: "area", id: newId(), editor, ...(slim ? { slim: true } : {}) });
 export const split = (dir, a, b, ratio = 0.5) => ({ type: "split", dir, ratio, a, b });
 
 // ---- operaciones puras sobre el árbol ------------------------------------
@@ -34,6 +34,15 @@ export function closeArea(tree, id) {
 
 export function setEditor(tree, id, editor) {
   return mapTree(tree, (n) => (n.id === id ? { ...n, editor } : n));
+}
+
+/** Encabezado compacto: el área ocupa todo el espacio y el encabezado aparece al pasar el cursor. */
+export function setSlim(tree, id, slim) {
+  return mapTree(tree, (n) => {
+    if (n.id !== id) return n;
+    const { slim: _old, ...rest } = n;
+    return slim ? { ...rest, slim: true } : rest;
+  });
 }
 
 export function setRatio(tree, splitNode, ratio) {
@@ -119,7 +128,7 @@ export class AreaManager {
 
   buildArea(node) {
     const sec = document.createElement("section");
-    sec.className = "area";
+    sec.className = node.slim ? "area slim" : "area";
     const head = document.createElement("header");
 
     const sel = document.createElement("select");
@@ -145,6 +154,8 @@ export class AreaManager {
     sp.className = "sp";
     head.append(
       sel, sp,
+      mk("⇕", node.slim ? "Mostrar siempre el encabezado" : "Encabezado compacto (aparece al pasar el cursor)",
+         () => this.commit(setSlim(this.tree, node.id, !node.slim))),
       mk("◫", "Dividir lado a lado", () => this.commit(splitArea(this.tree, node.id, "h"))),
       mk("⬓", "Dividir arriba/abajo", () => this.commit(splitArea(this.tree, node.id, "v"))),
       mk("✕", "Cerrar área", () => this.commit(closeArea(this.tree, node.id)), countAreas(this.tree) <= 1),

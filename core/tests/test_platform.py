@@ -130,3 +130,15 @@ def test_demo_playout_emits_levels_and_ticks_once_per_second():
     host.events.subscribe(lambda n, d: levels.append(d) if n == "audio.levels" else None)
     playout.tick(0.1)
     assert 0.0 <= levels[-1]["l"] <= 1.0 and 0.0 <= levels[-1]["r"] <= 1.0
+
+
+def test_compact_strip_editors_draw():
+    host = sdk.Host()
+    builtin.register(host)
+    bar = host.draw_editor("aire-barra")
+    tones = [c.get("tone") for c in bar["children"] if c["t"] == "label"]
+    assert "title" in tones                       # título en una sola línea
+    assert any(c["t"] == "row" and any(x["t"] == "progress" for x in c["children"]) for c in bar["children"])
+    assert host.draw_editor("proxima")["children"][0]["text"] == "PRÓXIMA"
+    hora = host.draw_editor("hora")["children"][0]
+    assert hora["component"] == "digital-clock" and hora["props"]["timezone"] == "America/Bogota"

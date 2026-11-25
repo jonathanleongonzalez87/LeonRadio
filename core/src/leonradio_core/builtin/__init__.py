@@ -59,6 +59,50 @@ class HistorialEditor(sdk.Editor):
                    _STATUS.get(p["status"], p["status"])] for p in plays], narrow_hide=[1, 3, 4])
 
 
+class AireBarraEditor(sdk.Editor):
+    """Franja «En el aire» de una sola altura reducida: etiqueta, título, progreso y transporte."""
+    id, label, icon = "aire-barra", "En el aire (barra)", "●"
+
+    def draw(self, ui: UI, ctx: sdk.Context) -> None:
+        now = ctx.state.get("playout.now")
+        if not now:
+            ui.label("Nada al aire", "muted")
+            return
+        dur = max(now["duration_ms"], 1)
+        el = now["elapsed_ms"]
+        with ui.row():
+            ui.label("AL AIRE", "onair")
+            ui.label(f"{now['kind'].upper()} · simulado", "warn")
+        ui.label(now["title"], "title")
+        ui.label(now.get("artist") or " ", "muted")
+        with ui.row():
+            ui.progress(el / dur, f"{_mmss(el)} / {_mmss(dur)} · restante {_mmss(max(dur - el, 0))}"
+                        + ("  · EN PAUSA" if now.get("paused") else ""))
+            ui.button("⏭ Sig.", "playout.next")
+            ui.button("⏯", "playout.pause")
+
+
+class ProximaEditor(sdk.Editor):
+    id, label, icon = "proxima", "Próxima", "⏭"
+
+    def draw(self, ui: UI, ctx: sdk.Context) -> None:
+        queue = ctx.state.get("playout.queue", [])
+        ui.label("PRÓXIMA", "accent")
+        if not queue:
+            ui.label("—", "title")
+            return
+        nxt = queue[0]
+        ui.label(nxt["title"], "title")
+        ui.label(f"{nxt['kind']} · {_mmss(nxt['duration_ms'])}" + (f" · {nxt['artist']}" if nxt.get("artist") else ""), "muted")
+
+
+class HoraEditor(sdk.Editor):
+    id, label, icon = "hora", "Hora digital", "◷"
+
+    def draw(self, ui: UI, ctx: sdk.Context) -> None:
+        ui.custom("digital-clock", timezone=ctx.config["timezone"], name=ctx.config["short"])
+
+
 class VuEditor(sdk.Editor):
     id, label, icon = "vu", "VU", "◔"
 
@@ -101,7 +145,8 @@ class CartucheraEditor(sdk.Editor):
 
 def register(host: sdk.Host) -> DemoPlayout:
     sdk.bind(host)  # dueño «builtin», todos los permisos
-    for cls in (AireEditor, ColaEditor, HistorialEditor, VuEditor, RelojEditor, DialEditor, CartucheraEditor):
+    for cls in (AireEditor, AireBarraEditor, ProximaEditor, HoraEditor, ColaEditor, HistorialEditor,
+                VuEditor, RelojEditor, DialEditor, CartucheraEditor):
         sdk.register_editor(cls)
     playout = DemoPlayout(host)
     host.register_command("playout.next", lambda ctx: playout.next("skipped"))

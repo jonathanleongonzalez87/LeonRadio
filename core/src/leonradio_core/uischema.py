@@ -9,7 +9,7 @@ from __future__ import annotations
 from contextlib import contextmanager
 from typing import Any, Iterator
 
-TONES = {"normal", "muted", "accent", "big", "mono", "ok", "warn"}
+TONES = {"normal", "muted", "accent", "big", "mono", "ok", "warn", "title", "onair"}
 
 
 class UI:

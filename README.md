@@ -7,7 +7,7 @@ Estación de prueba: **RRC – Rockland Radio Colombia** (https://rocklandradio.
 
 > Estado actual (F0 + F0.5). El audio, los niveles del VU y la cola son **simulados** hasta F1. Las piezas que se ven son de la emisora de pruebas RRC.
 
-**Workspace «Aire»**: editores Aire, VU, Reloj, Dial/RDS, Cola, Cartuchera e Historial, cada uno en su área.
+**Workspace «Aire»**: una franja superior delgada (VU, en el aire con transporte, próxima y hora) y debajo tres columnas: Cartuchera + Historial, la Cola como protagonista, y Dial/RDS + Reloj. Los encabezados de la franja se muestran al pasar el cursor (⇕ los alterna).
 
 ![Workspace Aire, tema oscuro](docs/img/aire-oscuro.png)
 

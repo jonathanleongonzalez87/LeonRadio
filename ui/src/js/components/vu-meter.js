@@ -73,6 +73,26 @@ function meter(ctx, T, x, y, w, h, value, label) {
   ctx.restore();
 }
 
+// Versión compacta (áreas bajas): dos barras de LED horizontales, como en una franja de consola.
+function bars(ctx, T, w, h, v) {
+  const rows = [["L", v[0]], ["R", v[1]]];
+  const gapY = 6, rowH = Math.max(8, Math.min(26, (h - gapY * 3) / 2));
+  const top = (h - (rowH * 2 + gapY)) / 2;
+  const x0 = 22, segs = 26, gap = 2;
+  const segW = Math.max(3, (w - x0 - 8 - gap * (segs - 1)) / segs);
+  rows.forEach(([label, val], i) => {
+    const y = top + i * (rowH + gapY);
+    ctx.fillStyle = T.cream; ctx.font = `700 ${Math.max(10, rowH * 0.7)}px ${FONT_MONO}`;
+    ctx.textAlign = "left"; ctx.textBaseline = "middle";
+    ctx.fillText(label, 4, y + rowH / 2);
+    const on = Math.round(Math.min(1, val) * segs);
+    for (let s = 0; s < segs; s++) {
+      ctx.fillStyle = s < on ? (s >= segs - 4 ? T.orange : s >= segs - 9 ? T.bronze : T.cream) : T.g700;
+      ctx.fillRect(x0 + s * (segW + gap), y, segW, rowH);
+    }
+  });
+}
+
 export function vuMeter() {
   const target = [0, 0];
   const value = [0, 0];
@@ -86,6 +106,7 @@ export function vuMeter() {
       const k = target[i] > value[i] ? 0.035 : 0.12;
       value[i] += (target[i] - value[i]) * (1 - Math.exp(-dt / k));
     }
+    if (h < 150) { bars(ctx, T, w, h, value); return; }   // áreas bajas: barras de LED
     // caras con proporción de VU real (1.5:1), centradas verticalmente
     const gap = 8;
     const mw = Math.min((w - gap) / 2, h * 1.5);

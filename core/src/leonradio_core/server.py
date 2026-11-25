@@ -21,6 +21,15 @@ log = logging.getLogger("leonradio.server")
 REPO = Path(__file__).resolve().parents[3]  # <repo>/core/src/leonradio_core/server.py
 
 
+class NoCacheStatic(StaticFiles):
+    """Archivos de la UI siempre revalidados: al desarrollar, el navegador no se queda con versiones viejas."""
+
+    async def get_response(self, path, scope):
+        resp = await super().get_response(path, scope)
+        resp.headers["Cache-Control"] = "no-cache"
+        return resp
+
+
 class CommandBody(BaseModel):
     args: dict = {}
 
@@ -110,7 +119,7 @@ def create_app(
 
     ui = ui_dir or Path(os.environ.get("LEONRADIO_UI", REPO / "ui" / "src"))
     if ui.is_dir():
-        app.mount("/", StaticFiles(directory=ui, html=True), name="ui")
+        app.mount("/", NoCacheStatic(directory=ui, html=True), name="ui")
     return app
 
 

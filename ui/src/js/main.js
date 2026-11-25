@@ -1,7 +1,7 @@
 import { connectEvents, getEditors, getInfo } from "./api.js";
 import { AreaManager, area, split } from "./areas.js";
 
-const KEY = "leonradio.workspaces.v4";
+const KEY = "leonradio.workspaces.v5";
 const $ = (s) => document.querySelector(s);
 const store = {
   get() { try { return JSON.parse(localStorage.getItem(KEY)); } catch { return null; } },
@@ -12,8 +12,14 @@ const defaults = () => ({
   active: 0,
   list: [
     { name: "Aire", tree: split("v",
-        split("h", area("aire"), split("h", area("vu"), split("h", area("reloj"), area("dial"), 0.42), 0.42), 0.30),
-        split("h", area("cola"), split("h", area("cartuchera"), area("historial"), 0.55), 0.34), 0.5) },
+        // franja superior delgada: VU | en el aire | próxima | hora
+        split("h", area("vu", true),
+          split("h", area("aire-barra", true), split("h", area("proxima", true), area("hora", true), 0.55), 0.54), 0.17),
+        // cuerpo en tres columnas: cartuchera+historial | cola (protagonista) | dial+reloj
+        split("h",
+          split("v", area("cartuchera"), area("historial"), 0.6),
+          split("h", area("cola"), split("v", area("dial"), area("reloj"), 0.4), 0.63), 0.27),
+        0.17) },
     { name: "Programación", tree: split("h", area("cola"), area("historial"), 0.45) },
     { name: "Producción", tree: split("h",
         split("v", area("aire"), area("cola"), 0.4),
@@ -72,6 +78,7 @@ async function boot() {
   tickClock(); setInterval(tickClock, 1000);
   const [info, editors] = await Promise.all([getInfo(), getEditors()]);
   $("#station").textContent = info.station;
+  $("#status-text").textContent = `${info.config.name} · motor simulado · API v${info.api_version}`;
   mgr = new AreaManager($("#screen"), {
     editors,
     onChange: (tree) => { ws.list[ws.active].tree = tree; store.set(ws); },
