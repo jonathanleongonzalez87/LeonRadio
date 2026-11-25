@@ -56,6 +56,6 @@ La UI tiene áreas (◫ ⬓ ✕, selector de editor), workspaces (pestañas; dob
 ## Licencia
 - Código (`core/`, `ui/`): **GPL-3.0-or-later** (`core/LICENSE`, `ui/LICENSE`).
 - Documentación y diseño: **CC BY-SA 4.0** (`LICENSE`).
-- Marca «Jonathan León»: derechos reservados — ver [NOTICE.md](NOTICE.md).
+- Las maquetas históricas de `ui/prototypes/` incluyen la marca «Jonathan León» (derechos reservados) — ver [NOTICE.md](NOTICE.md). La interfaz actual no la usa.
 
 El audio de las emisoras no se versiona.

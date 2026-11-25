@@ -1,8 +1,11 @@
-# Aviso de marca
+# Avisos
 
-El isotipo hexagonal, el logotipo, el nombre «Jonathan León» y el manual de marca son
-© Jonathan León. Todos los derechos reservados. No se otorga licencia sobre ellos.
-Las maquetas en `prototypes/` incluyen el isotipo solo como parte de la interfaz de referencia;
-si reutilizas la UI, sustituye la marca por la tuya.
+**Marca «Jonathan León».** El isotipo hexagonal, el logotipo, el nombre «Jonathan León» y su manual de marca
+son © Jonathan León, todos los derechos reservados. No se otorga licencia sobre ellos.
+La interfaz de LeonRadio **no** usa esa marca. Solo aparece en las maquetas históricas de `ui/prototypes/`,
+que se conservan como referencia de diseño; no las reutilices fuera de este repositorio.
 
-El nombre y el audio de «RRC – Rockland Radio Colombia» pertenecen a sus titulares.
+**RRC – Rockland Radio Colombia.** El nombre y el audio de la emisora pertenecen a sus titulares.
+El audio no se versiona.
+
+La paleta de color y las tipografías (Space Grotesk, Inter; licencia SIL OFL) de la interfaz son de uso libre dentro de este proyecto.

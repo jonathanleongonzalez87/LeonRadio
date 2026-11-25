@@ -20,4 +20,4 @@ vintage (VU, reloj, dial/RDS, cartuchera) portados como componentes JS.
 
 ## Licencia
 Código: GPL-3.0-or-later (`LICENSE`). Diseño y documentación: CC BY-SA 4.0 (`../LICENSE`).
-**Excepción:** isotipo, logotipo y manual de marca «Jonathan León», © Jonathan León, derechos reservados (ver `../NOTICE.md`).
+**Aviso:** las maquetas de `prototypes/` incluyen la marca «Jonathan León» (derechos reservados, ver `../NOTICE.md`); la interfaz en `src/` no la usa.

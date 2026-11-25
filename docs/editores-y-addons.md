@@ -75,7 +75,7 @@ def unregister(): lr.unregister_editor(ClimaEditor)
 ## Licencias
 - **Código (`core/`, `ui/`, addons incluidos):** GPL-3.0-or-later, como Blender. Los addons que usan la API quedan abiertos.
 - **Documentación y diseño:** CC BY-SA 4.0.
-- **Marca «Jonathan León»:** derechos reservados (ver `NOTICE.md`).
+- **Marca «Jonathan León»:** derechos reservados; no se usa en la interfaz (ver `NOTICE.md`).
 
 ## Fases
 F0.5 construye: gestor de áreas y workspaces, registro de editores y comandos, bus de eventos,

@@ -1,5 +1,4 @@
-/* Tokens de marca — Jonathan León / LeonRadio.
-   Fuente: Manual de marca. Tipografías: Space Grotesk (display) + Inter (texto).
+/* Tokens de diseño de LeonRadio (paleta y tipografías). Tipografías: Space Grotesk (display) + Inter (texto).
    Regla: la UI solo usa estas variables; nada de colores sueltos. */
 :root {
   --c-carbon: #262626;
