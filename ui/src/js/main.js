@@ -1,7 +1,7 @@
 import { connectEvents, getEditors, getInfo } from "./api.js";
-import { AreaManager, area, split } from "./areas.js";
+import { AreaManager, area, hasEditor, split, toggleBeside } from "./areas.js";
 
-const KEY = "leonradio.workspaces.v6";
+const KEY = "leonradio.workspaces.v7";
 const $ = (s) => document.querySelector(s);
 const store = {
   get() { try { return JSON.parse(localStorage.getItem(KEY)); } catch { return null; } },
@@ -12,24 +12,45 @@ const defaults = () => ({
   active: 0,
   list: [
     { name: "Aire", tree: split("v",
-        // franja superior delgada con el contenido de siempre: Reloj | VU | Aire | Dial/RDS
+        // franja superior delgada: Reloj | VU | Aire | Próxima | Dial/RDS
         split("h", area("reloj", true),
-          split("h", area("vu", true), split("h", area("aire", true), area("dial", true), 0.667), 0.284), 0.12),
-        // cuerpo en tres columnas: Cartuchera+Historial | Cola (protagonista) | libre para crecer
+          split("h", area("vu", true),
+            split("h", area("aire", true), split("h", area("proxima", true), area("dial", true), 0.5), 0.515), 0.25), 0.12),
+        // cuerpo: Botonera (Botonera/Eventos/Explorador) + Historial | Emisión (con las Auxiliares a su lado)
         split("h",
-          split("v", area("cartuchera"), area("historial"), 0.6),
-          area("cola"), 0.34),
+          split("v", area("botonera"), area("historial"), 0.6),
+          area("emision"), 0.34),
         0.22) },
-    { name: "Programación", tree: split("h", area("cola"), area("historial"), 0.45) },
+    { name: "Programación", tree: split("h", area("emision"), area("historial"), 0.45) },
     { name: "Producción", tree: split("h",
-        split("v", area("aire"), area("cola"), 0.4),
-        split("v", area("ejemplo.hora"), area("cartuchera"), 0.4), 0.55) },
+        split("v", area("aire"), area("emision"), 0.4),
+        split("v", area("ejemplo.hora"), area("botonera"), 0.4), 0.55) },
   ],
 });
 
 let ws = store.get();
 if (!ws?.list?.length) ws = defaults();
 let mgr;
+
+// Barra de herramientas: lámparas-pulsador de las 4 listas auxiliares (se muestran junto a Emisión)
+function syncAux() {
+  if (!mgr?.tree) return;
+  document.querySelectorAll("#aux-toggles button").forEach((b) =>
+    b.setAttribute("aria-pressed", String(hasEditor(mgr.tree, `aux${b.dataset.n}`))));
+}
+function buildAuxToggles(editors) {
+  const box = $("#aux-toggles");
+  for (let n = 1; n <= 4; n++) {
+    if (!editors.some((e) => e.id === `aux${n}`)) continue;
+    const b = document.createElement("button");
+    b.type = "button"; b.className = "aux-btn"; b.dataset.n = String(n); b.textContent = String(n);
+    b.title = `Lista auxiliar ${n} (mostrar/ocultar junto a Emisión)`;
+    b.setAttribute("aria-label", `Lista auxiliar ${n}`);
+    b.setAttribute("aria-pressed", "false");
+    b.addEventListener("click", () => mgr.commit(toggleBeside(mgr.tree, `aux${n}`, "emision")));
+    box.append(b);
+  }
+}
 
 function renderTabs() {
   const tabs = $("#tabs");
@@ -81,7 +102,9 @@ async function boot() {
   mgr = new AreaManager($("#screen"), {
     editors,
     onChange: (tree) => { ws.list[ws.active].tree = tree; store.set(ws); },
+    onPaint: syncAux,
   });
+  buildAuxToggles(editors);
   $("#reset").addEventListener("click", () => {
     if (confirm("¿Restablecer todos los workspaces?")) { ws = defaults(); store.set(ws); renderTabs(); mgr.setTree(ws.list[0].tree); }
   });

@@ -8,14 +8,14 @@ y la comunidad extiende el programa con **addons**.
 | Concepto | Qué es |
 |---|---|
 | **Área** | Hueco rectangular de la pantalla. Se divide, une y redimensiona. |
-| **Editor** | Tipo de contenido de un área (Aire, Cola, Biblioteca…). Se cambia desde un selector, como en Blender. |
+| **Editor** | Tipo de contenido de un área (Aire, Emisión, Biblioteca…). Se cambia desde un selector, como en Blender. |
 | **Workspace** | Árbol de áreas + editores guardado con nombre (Aire, Programación, Producción, Comercial, Reportes). |
 | **Comando** | Acción con nombre (`playout.next`, `library.scan`). Todo lo que hace un botón o atajo es un comando. |
 | **Evento** | Algo que ocurrió (`track_started`, `break_due`, `commitment_at_risk`). |
 | **Addon** | Paquete que registra editores, comandos, reglas, salidas o reportes. |
 
 ## Editores previstos
-Aire · Cola · Biblioteca · Cartuchera · Relojes · Programación · Historial · Pauta y compromisos ·
+Aire · Próxima · Emisión · Auxiliares 1–4 · Biblioteca · Botonera (con Eventos y Explorador) · Relojes · Programación · Historial · Pauta y compromisos ·
 Mezclador · Voice-track · Reportes · Monitor de streaming · Propiedades · Consola Python · Info.
 
 ## Reglas de diseño
@@ -79,5 +79,5 @@ def unregister(): lr.unregister_editor(ClimaEditor)
 
 ## Fases
 F0.5 construye: gestor de áreas y workspaces, registro de editores y comandos, bus de eventos,
-API de addons v0, 3 editores incluidos (Aire, Cola, Historial) y un addon de ejemplo.
+API de addons v0, 3 editores incluidos (Aire, Emisión, Historial) y un addon de ejemplo.
 F5 añade gestor de addons (instalar/activar/actualizar), plantilla y guía para terceros.

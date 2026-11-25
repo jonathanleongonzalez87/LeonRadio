@@ -1,0 +1,9 @@
+{
+  "_comment": "Eventos de EJEMPLO (minuto de cada hora). La programación real llega en F3.",
+  "events": [
+    {"name": "ID de hora (jingle)", "kind": "jingle", "minute": 0},
+    {"name": "Tanda comercial A", "kind": "spot", "minute": 15},
+    {"name": "Separador de la emisora", "kind": "separador", "minute": 30},
+    {"name": "Tanda comercial B", "kind": "spot", "minute": 45}
+  ]
+}

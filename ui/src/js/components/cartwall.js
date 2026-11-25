@@ -33,7 +33,8 @@ export function cartwall(props, ctx) {
     const k = document.createElement("span"); k.className = "pad-key"; k.textContent = d.key;
     const t = document.createElement("span"); t.className = "pad-title"; t.textContent = d.title;
     const s = document.createElement("span"); s.className = "pad-sub"; s.textContent = d.sub || "";
-    b.append(k, t, s);
+    const lamp = document.createElement("span"); lamp.className = "pad-lamp";
+    b.append(k, t, s, lamp);
     const fire = async () => {
       b.classList.add("fire");
       setTimeout(() => b.classList.remove("fire"), 350);

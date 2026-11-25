@@ -5,11 +5,15 @@ Estación de prueba: **RRC – Rockland Radio Colombia** (https://rocklandradio.
 
 ## Capturas
 
-> Estado actual (F0 + F0.5). El audio, los niveles del VU y la cola son **simulados** hasta F1. Las piezas que se ven son de la emisora de pruebas RRC.
+> Estado actual (F0 + F0.5). El audio, los niveles del VU, la emisión y las listas auxiliares son **simulados** hasta F1. Las piezas que se ven son de la emisora de pruebas RRC.
 
-**Workspace «Aire»**: una franja superior delgada con Reloj, VU de agujas, Aire (con su transporte) y Dial/RDS, y debajo Cartuchera + Historial a la izquierda y la Cola como protagonista. Los encabezados de la franja se muestran al pasar el cursor (⇕ los alterna).
+**Workspace «Aire»**: una franja superior delgada con Reloj, VU de agujas, Aire (con su transporte), Próxima y Dial/RDS; debajo, la **Botonera** (con las pestañas Botonera, Eventos y Explorador) y el Historial a la izquierda, y la **Emisión** como protagonista. Las **4 listas Auxiliares** se activan desde la barra de herramientas (AUX 1–4) y aparecen junto a la Emisión. Los encabezados de la franja se muestran al pasar el cursor (⇕ los alterna).
 
 ![Workspace Aire, tema oscuro](docs/img/aire-oscuro.png)
+
+**Botonera ▸ Explorador**: navega la biblioteca por tipo y década, elige el destino (Emisión o una de las 4 Auxiliares) y agrega piezas con ＋.
+
+![Botonera, pestaña Explorador](docs/img/botonera-explorador.png)
 
 **Tema claro** (misma disposición):
 

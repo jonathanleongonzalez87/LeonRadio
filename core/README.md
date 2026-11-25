@@ -10,7 +10,7 @@ Estación de prueba: **RRC – Rockland Radio Colombia**.
 - [x] Importador `.m3u` con rutas de otra máquina
 - [x] Historial inmutable (`playlog`), exportación CSV y cumplimiento de compromisos
 - [x] Plataforma F0.5: `sdk` (editores, comandos, permisos), `addons` (manifiesto + carga), `uischema` (UI declarativa), `events`, servidor FastAPI + WebSocket
-- [x] Editores incluidos: Aire, Cola, Historial (reproductor **simulado**, sin audio)
+- [x] Editores incluidos: Aire, Próxima, Emisión, Historial, VU, Reloj, Dial/RDS, Botonera (Eventos y Explorador) y 4 listas Auxiliares (reproductor **simulado**, sin audio)
 - [ ] Motor de reproducción (segue, crossfade, ducking, VU) — hito 1
 
 ## Uso

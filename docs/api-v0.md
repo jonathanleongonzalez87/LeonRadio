@@ -24,9 +24,11 @@ La UI refresca los editores ante `state_changed`/`playlog.added` (máx. 1 vez ca
 
 ## Nodos de UI declarativa
 `column`, `row` (contenedores con `children`), `label{text,tone}`, `kv{key,value}`, `button{label,command,args}`,
-`progress{value,text}`, `table{columns,rows}`, `separator` y `custom{component,props}`.
+`progress{value,text}`, `table{columns,rows,nh}`, `tabs{id,tabs:[{label,children}]}` (la pestaña activa se recuerda), `separator` y `custom{component,props}`.
 
-Tonos de `label`: `normal`, `muted`, `accent`, `big`, `mono`, `ok`, `warn`.
+`button` admite `size` (`md`/`sm`) y `selected` (encendido); `row`/`column` admiten `cls`.
+
+Tonos de `label`: `normal`, `muted`, `accent`, `big`, `title` (una línea con puntos suspensivos), `mono`, `ok`, `warn`.
 
 ### Componentes (`custom`)
 | `component` | Props | Datos que usa |
@@ -34,7 +36,8 @@ Tonos de `label`: `normal`, `muted`, `accent`, `big`, `mono`, `ok`, `warn`.
 | `vu-meter` | — | evento `audio.levels` |
 | `analog-clock` | `timezone`, `name` | hora local de la emisora |
 | `fm-dial` | `name`, `frequency` (o `null` = ONLINE), `rds` | — |
-| `cartwall` | `pads:[{key,asset_id,title,sub,style}]`, `command` | teclas F1–F12; comando `cart.fire{asset_id}` |
+| `event-list` | `events:[{name,kind,minute}]` | cuenta regresiva local (eventos de ejemplo) |
+| `cartwall` | `pads:[{key,asset_id,title,sub,style}]`, `command` | teclas F1–F12; comando `cart.fire{asset_id}` (la Botonera) |
 
 Estilos de pad: `orange`, `bronze`, `graphite`, `cream`.
 Las props son JSON y **no son de confianza**: los componentes escriben con `textContent`.

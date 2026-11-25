@@ -40,6 +40,17 @@ with sync_playwright() as p:
     for key in ("F1", "F3", "F6"):
         page.keyboard.press(key)
         page.wait_for_timeout(500)
+    # listas auxiliares desde la barra de herramientas + Explorador de la Botonera
+    page.click('.aux-btn[data-n="1"]')
+    page.click('.aux-btn[data-n="2"]')
+    page.get_by_role("tab", name="Explorador").click()
+    page.get_by_role("button", name="Aux 1", exact=True).click()
+    for i in range(3):
+        page.get_by_role("button", name="＋").nth(i).click()
+        page.wait_for_timeout(300)
+    page.get_by_role("button", name="▶", exact=True).first.click()
+    shot(page, "botonera-explorador")
+    page.get_by_role("tab", name="Botonera", exact=True).click()
     shot(page, "aire-oscuro")
 
     page.get_by_role("tab", name="Producción").click()

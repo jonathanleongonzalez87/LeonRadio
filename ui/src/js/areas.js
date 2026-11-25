@@ -62,6 +62,7 @@ export class AreaManager {
     this.host = host;
     this.tree = null;
     this.views = new Map(); // id de área -> { body, last }
+    this.stores = new Map(); // id de área -> estado de su UI (p. ej. pestaña activa)
   }
 
   setTree(tree) {
@@ -80,6 +81,7 @@ export class AreaManager {
     this.views.clear();
     this.root.append(this.build(this.tree));
     this.refreshAll();
+    this.host.onPaint?.();
   }
 
   build(node) {
@@ -164,7 +166,7 @@ export class AreaManager {
     const body = document.createElement("div");
     body.className = "body";
     sec.append(head, body);
-    this.views.set(node.id, { body, editor: node.editor, last: "" });
+    this.views.set(node.id, { id: node.id, body, editor: node.editor, last: "" });
     return sec;
   }
 
@@ -178,7 +180,10 @@ export class AreaManager {
       const sig = JSON.stringify(tree);
       if (sig === view.last) return; // sin cambios: no tocar el DOM (evita parpadeo)
       view.last = sig;
-      view.body.replaceChildren(render(tree, { refresh: () => this.refreshAll() }));
+      if (!this.stores.has(view.id)) this.stores.set(view.id, {});
+      const top = view.body.scrollTop;                       // conservar el desplazamiento al redibujar
+      view.body.replaceChildren(render(tree, { refresh: () => this.refreshAll(), store: this.stores.get(view.id) }));
+      view.body.scrollTop = top;
     } catch (e) {
       console.error(`editor ${view.editor}:`, e);
       view.last = "";
@@ -188,4 +193,25 @@ export class AreaManager {
       view.body.replaceChildren(p);
     }
   }
+}
+
+// ---- listas auxiliares: mostrar/ocultar un editor junto a otro (barra de herramientas) ----
+export function findArea(node, pred) {
+  if (node.type === "area") return pred(node) ? node : null;
+  return findArea(node.a, pred) || findArea(node.b, pred);
+}
+
+export const hasEditor = (tree, editor) => !!findArea(tree, (n) => n.editor === editor);
+
+/**
+ * Alterna el editor `editor`: si está en pantalla lo cierra; si no, lo coloca junto a `anchor`
+ * (a su derecha). Con otro editor del mismo grupo ya visible (`group`), se apila debajo de él.
+ */
+export function toggleBeside(tree, editor, anchor, group = "aux") {
+  const existing = findArea(tree, (n) => n.editor === editor);
+  if (existing) return countAreas(tree) > 1 ? closeArea(tree, existing.id) : tree;
+  const sibling = findArea(tree, (n) => n.editor.startsWith(group));
+  if (sibling) return mapTree(tree, (n) => (n.id === sibling.id ? split("v", n, area(editor), 0.5) : n));
+  const target = findArea(tree, (n) => n.editor === anchor) || findArea(tree, () => true);
+  return mapTree(tree, (n) => (n.id === target.id ? split("h", n, area(editor), 0.7) : n));
 }

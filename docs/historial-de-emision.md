@@ -12,7 +12,7 @@ Objetivo: tener **prueba de lo que sonó**, no de lo que se programó. Sirve par
 1. **Inmutable.** Cada emisión es un hecho; se copian título/artista/ISRC en la fila para que editar o borrar el archivo no altere reportes pasados.
 2. **UTC.** Se guarda en UTC; los reportes convierten a la hora local de la emisora.
 3. **Estado real.** `completed` solo si sonó completo; `skipped`/`interrupted`/`failed` quedan registrados con los ms reproducidos.
-4. **Todo lo que suena se registra:** música, jingles, pisadores, separadores, cuñas, cartuchera y voz en vivo.
+4. **Todo lo que suena se registra:** música, jingles, pisadores, separadores, cuñas, botonera y voz en vivo.
 
 ## Tablas (en `core/src/leonradio_core/db.py`)
 - `assets` — biblioteca, con `isrc`, `composer`, `publisher`.

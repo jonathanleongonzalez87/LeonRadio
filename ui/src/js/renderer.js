@@ -20,7 +20,7 @@ const NODES = {
     return d;
   },
   button: (n, ctx) => {
-    const b = el("button", "u-btn", n.label);
+    const b = el("button", `u-btn${n.size === "sm" ? " sm" : ""}${n.selected ? " on" : ""}`, n.label);
     b.type = "button";
     b.addEventListener("click", async () => {
       b.disabled = true;
@@ -44,6 +44,34 @@ const NODES = {
     if (!make) return el("p", "u-label warn", `Componente desconocido: ${n.component}`);
     try { return make(n.props || {}, ctx); }
     catch (e) { console.error(e); return el("p", "u-label warn", `Error en componente ${n.component}`); }
+  },
+  tabs: (n, ctx) => {
+    const wrap = el("div", "u-tabs");
+    const bar = el("div", "u-tabbar");
+    bar.setAttribute("role", "tablist");
+    const panels = el("div", "u-tabpanels");
+    const store = (ctx.store ??= {});
+    store.tabs ??= {};                       // la pestaña activa se recuerda entre refrescos
+    let active = Number.isInteger(store.tabs[n.id]) ? store.tabs[n.id] : 0;
+    if (active >= n.tabs.length) active = 0;
+    const btns = [], bodies = [];
+    const show = (i) => {
+      store.tabs[n.id] = i;
+      btns.forEach((b, k) => b.setAttribute("aria-selected", String(k === i)));
+      bodies.forEach((p, k) => { p.hidden = k !== i; });
+    };
+    n.tabs.forEach((t, i) => {
+      const b = el("button", "u-tabbtn", t.label);
+      b.type = "button"; b.setAttribute("role", "tab");
+      b.addEventListener("click", () => show(i));
+      bar.append(b); btns.push(b);
+      const p = el("div", "u-col");
+      (t.children || []).forEach((c) => p.append(render(c, ctx)));
+      panels.append(p); bodies.push(p);
+    });
+    wrap.append(bar, panels);
+    show(active);
+    return wrap;
   },
   separator: () => el("hr", "u-sep"),
   table: (n) => {
@@ -69,7 +97,7 @@ const NODES = {
 };
 
 function container(cls, node, ctx) {
-  const d = el("div", cls);
+  const d = el("div", cls + (node.cls && /^[a-z-]+$/.test(node.cls) ? ` ${node.cls}` : ""));
   (node.children || []).forEach((c) => d.append(render(c, ctx)));
   return d;
 }

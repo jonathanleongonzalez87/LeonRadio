@@ -9,7 +9,7 @@ from __future__ import annotations
 from contextlib import contextmanager
 from typing import Any, Iterator
 
-TONES = {"normal", "muted", "accent", "big", "mono", "ok", "warn"}
+TONES = {"normal", "muted", "accent", "big", "mono", "ok", "warn", "title"}
 
 
 class UI:
@@ -29,8 +29,11 @@ class UI:
     def kv(self, key: str, value: object) -> None:
         self._add({"t": "kv", "key": key, "value": str(value)})
 
-    def button(self, label: str, command: str, args: dict | None = None) -> None:
-        self._add({"t": "button", "label": label, "command": command, "args": args or {}})
+    def button(self, label: str, command: str, args: dict | None = None, size: str = "md",
+               selected: bool = False) -> None:
+        """`size`: "md" | "sm". `selected`: botón encendido (p. ej. la opción elegida de un grupo)."""
+        self._add({"t": "button", "label": label, "command": command, "args": args or {},
+                   "size": size, "selected": bool(selected)})
 
     def progress(self, value: float, text: str | None = None) -> None:
         self._add({"t": "progress", "value": max(0.0, min(1.0, float(value))), "text": text})
@@ -49,15 +52,23 @@ class UI:
                    "rows": [[str(c) if c is not None else "" for c in r] for r in rows]})
 
     @contextmanager
-    def row(self) -> Iterator[None]:
-        yield from self._container("row")
+    def row(self, cls: str | None = None) -> Iterator[None]:
+        yield from self._container("row", cls)
 
     @contextmanager
-    def column(self) -> Iterator[None]:
-        yield from self._container("column")
+    def column(self, cls: str | None = None) -> Iterator[None]:
+        yield from self._container("column", cls)
 
-    def _container(self, kind: str) -> Iterator[None]:
+    @contextmanager
+    def tabs(self, id: str) -> Iterator["_Tabs"]:
+        """Pestañas: `with ui.tabs("id") as t: with t.tab("Nombre"): ...`. El `id` recuerda la pestaña activa."""
+        node = self._add({"t": "tabs", "id": id, "tabs": []})
+        yield _Tabs(self, node)
+
+    def _container(self, kind: str, cls: str | None = None) -> Iterator[None]:
         node = self._add({"t": kind, "children": []})
+        if cls:
+            node["cls"] = cls
         self._stack.append(node)
         try:
             yield
@@ -66,3 +77,18 @@ class UI:
 
     def build(self) -> dict[str, Any]:
         return self.root
+
+
+class _Tabs:
+    def __init__(self, ui: UI, node: dict[str, Any]) -> None:
+        self._ui, self._node = ui, node
+
+    @contextmanager
+    def tab(self, label: str) -> Iterator[None]:
+        t: dict[str, Any] = {"label": label, "children": []}
+        self._node["tabs"].append(t)
+        self._ui._stack.append(t)
+        try:
+            yield
+        finally:
+            self._ui._stack.pop()

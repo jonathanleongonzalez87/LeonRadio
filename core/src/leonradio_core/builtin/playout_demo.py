@@ -27,6 +27,7 @@ class DemoPlayout:
         self._started_at: str | None = None
         self._phase = 0.0
         self._lvl = [0.0, 0.0]
+        self.aux: list = []          # listas auxiliares (AuxDemo), las crea builtin.register
 
     # -- carga de cola -------------------------------------------------------
     def _build_queue(self) -> list[dict]:
@@ -96,6 +97,24 @@ class DemoPlayout:
         self.host.set_state("cart.last", {"title": row["title"], "at": now_utc()})
         return {"title": row["title"]}
 
+    def add_to(self, target: str, asset_id: int) -> dict:
+        """Agrega una pieza de la biblioteca a la emisión (`emision`) o a una auxiliar (`aux1`…`aux4`)."""
+        with self.host.db_lock:
+            row = self.host.db.execute(
+                "SELECT id, kind, title, artist, duration_ms FROM assets WHERE id = ?", (asset_id,)).fetchone()
+        if row is None:
+            raise ValueError(f"asset {asset_id} no existe")
+        item = dict(row) | {"duration_ms": row["duration_ms"] or 30000}
+        if target == "emision":
+            with self._lock:
+                self.queue.append(item)
+                self._publish()
+        elif target.startswith("aux") and target[3:].isdigit() and 1 <= int(target[3:]) <= len(self.aux):
+            self.aux[int(target[3:]) - 1].add(item)
+        else:
+            raise ValueError(f"destino desconocido: {target}")
+        return {"title": item["title"], "target": target}
+
     # -- niveles simulados -----------------------------------------------------
     def _levels(self, seconds: float) -> tuple[float, float]:
         playing = bool(self.now) and not self.now["paused"]
@@ -112,6 +131,8 @@ class DemoPlayout:
         return out[0], out[1]
 
     def tick(self, seconds: float = 0.1) -> None:
+        for a in self.aux:
+            a.tick(seconds, self.speed)
         with self._lock:
             lv_l, lv_r = self._levels(seconds)
             self.host.events.emit("audio.levels", {"l": lv_l, "r": lv_r, "simulated": True})

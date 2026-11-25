@@ -7,7 +7,7 @@ modo **automático + Live Assist** · monorepo público · código GPL-3.0, docs
 ## F0 — Consolidar (en curso)
 - [x] Repos y tablero creados; esquema de biblioteca e historial en core (con pruebas)
 - [x] UI: maqueta v0 separada en `index.html` + `css/` + `js/`, sin CDN, Space Grotesk/Inter locales
-- [x] Componentes vintage portados como componentes JS: VU analógico estéreo, reloj de pared, dial FM + RDS, cartuchera F1–F12
+- [x] Componentes vintage portados como componentes JS: VU analógico estéreo, reloj de pared, dial FM + RDS, botonera F1–F12
 - [x] Datos de ejemplo y configuración en JSON (`core/src/leonradio_core/data/`); contrato en [docs/api-v0.md](docs/api-v0.md)
 - [ ] Biblioteca de prueba RRC (36 archivos: música 00s/10s/20s, jingles, pisadores, separadores)
 
@@ -16,7 +16,7 @@ modo **automático + Live Assist** · monorepo público · código GPL-3.0, docs
 - [x] Registro de editores y comandos; bus de eventos por WebSocket
 - [x] API de addons v0: manifiesto `leonradio_addon.toml`, `register()/unregister()`, permisos comprobados en la API
 - [x] UI declarativa en Python (label, kv, button, progress, table, row/column) + renderer seguro (sin innerHTML)
-- [x] 3 editores incluidos (Aire, Cola, Historial) usando la misma API + addon de ejemplo (`addons/ejemplo_hora_emisora`)
+- [x] 3 editores incluidos (Aire, Emisión, Historial) usando la misma API + addon de ejemplo (`addons/ejemplo_hora_emisora`)
 - [ ] **Addons en proceso aparte** del motor de audio (hoy se cargan en el mismo proceso)
 - [ ] Guardar workspaces en el servidor (hoy: `localStorage`); exportar/importar workspace
 - [ ] Reproductor de Aire es **simulado** hasta F1
@@ -31,7 +31,7 @@ modo **automático + Live Assist** · monorepo público · código GPL-3.0, docs
 ## F2 — Biblioteca
 - [ ] Marcadores automáticos (intro/outro), loudness EBU R128
 - [ ] Edición de metadatos: ISRC, compositor, editorial (necesarios para reportes)
-- [ ] Gestión de duplicados («Copia de…»), cartuchera con audio real
+- [ ] Gestión de duplicados («Copia de…»), botonera con audio real
 
 ## F3 — Programación
 - [ ] Relojes (hot clocks), dayparts, eventos fijos y flotantes

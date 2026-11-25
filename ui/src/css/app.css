@@ -153,3 +153,100 @@ table.u-tab{width:100%;border-collapse:collapse;font-size:12.5px}
   .area.slim .body{max-height:none}
   .area.slim .cmp{min-height:150px}
 }
+
+/* =====================================================================================
+   ASPECTO VINTAGE (cabina de radio)
+   Referencias: consola con perillas moleteadas, teclas de baquelita, placas grabadas,
+   tornillos de rack, lámparas piloto y rótulos de cartucho. Solo colores de la marca
+   (carbón, naranja, crema, bronce, grafito); el verde fieltro queda para estados "OK".
+   ===================================================================================== */
+:root{--dark-bronze:color-mix(in srgb,var(--c-bronze-d) 55%,#000);--bevel-hi:rgba(242,232,218,.35)}
+
+/* ---- teclas (botones) ---- */
+.u-btn{background:linear-gradient(180deg,color-mix(in srgb,var(--c-bronze) 75%,#fff) 0%,var(--c-bronze) 42%,var(--c-bronze-d) 100%);
+  border:1px solid color-mix(in srgb,var(--c-cream) 45%,transparent);border-radius:9px;color:var(--c-carbon);
+  text-shadow:0 1px 0 rgba(242,232,218,.55);
+  box-shadow:0 3px 0 var(--dark-bronze),0 6px 8px rgba(0,0,0,.45),inset 0 1px 0 var(--bevel-hi),inset 0 -2px 4px rgba(0,0,0,.28)}
+.u-btn:active{transform:translateY(3px);box-shadow:0 0 0 var(--dark-bronze),0 1px 2px rgba(0,0,0,.5),inset 0 2px 5px rgba(0,0,0,.45)}
+.u-btn.sm{padding:3px 10px;font-size:11px;border-radius:7px;
+  box-shadow:0 2px 0 var(--dark-bronze),0 4px 5px rgba(0,0,0,.4),inset 0 1px 0 var(--bevel-hi)}
+.u-btn.sm:active{transform:translateY(2px);box-shadow:0 0 0 var(--dark-bronze),inset 0 2px 4px rgba(0,0,0,.45)}
+.u-btn.on{background:linear-gradient(180deg,#ff9a62,var(--c-orange) 48%,#c24a12);
+  box-shadow:0 2px 0 #6e2a08,0 0 10px rgba(253,103,36,.65),inset 0 1px 0 rgba(255,255,255,.5)}
+
+/* ---- perillas moleteadas (tema, restablecer) ---- */
+.btn-i{border:1px solid rgba(197,143,94,.6);color:var(--c-cream);
+  background:radial-gradient(circle,#2e2a27 0 52%,transparent 54%),repeating-conic-gradient(#4a4540 0 7deg,#1a1918 7deg 14deg);
+  box-shadow:0 2px 0 #000,0 4px 6px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.15)}
+.btn-i:active{transform:translateY(2px);box-shadow:0 0 0 #000,inset 0 2px 4px rgba(0,0,0,.5)}
+
+/* ---- barra de herramientas: lámparas-pulsador de las listas auxiliares ---- */
+.aux{display:flex;align-items:center;gap:7px}
+.aux-label{font:700 9px var(--display);letter-spacing:.16em;color:var(--c-bronze);text-shadow:0 1px 0 #000}
+#aux-toggles{display:flex;gap:7px}
+.aux-btn{width:28px;height:28px;border-radius:50%;cursor:pointer;padding:0;font:700 12px var(--display);color:var(--c-cream);
+  background:radial-gradient(circle at 50% 36%,#4a4540,#1a1918 72%);border:2px solid var(--c-bronze);
+  box-shadow:0 2px 0 #000,0 3px 5px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.2)}
+.aux-btn:active{transform:translateY(2px);box-shadow:0 0 0 #000}
+.aux-btn[aria-pressed="true"]{color:var(--c-carbon);border-color:var(--c-cream);
+  background:radial-gradient(circle at 50% 34%,#ffb184,var(--c-orange) 60%,#b8410c);
+  box-shadow:0 0 12px rgba(253,103,36,.75),0 2px 0 #000,inset 0 1px 0 rgba(255,255,255,.5)}
+
+/* ---- pestañas de workspaces (índices de carpeta) ---- */
+.tab{background:linear-gradient(var(--c-g700),var(--c-g900));border:1px solid rgba(197,143,94,.45);border-bottom:0;
+  color:var(--c-bronze);text-shadow:0 1px 0 #000;letter-spacing:.03em}
+.tab[aria-selected="true"]{background:linear-gradient(var(--c-cream),var(--c-sand));color:var(--c-carbon);
+  text-shadow:0 1px 0 rgba(255,255,255,.6);box-shadow:inset 0 2px 0 var(--c-orange)}
+.tab.add{color:var(--c-cream)}
+
+/* ---- paneles tipo rack: frente de metal, tornillos y encabezado grabado ---- */
+.area{position:relative;background:linear-gradient(180deg,rgba(242,232,218,.05),transparent 46px),var(--surface);
+  box-shadow:0 2px 8px rgba(0,0,0,.4),inset 0 1px 0 rgba(242,232,218,.12),inset 0 0 0 1px rgba(0,0,0,.35)}
+.area::after{content:"";position:absolute;left:0;right:0;bottom:0;height:14px;pointer-events:none;z-index:3;
+  background:radial-gradient(circle at 11px 8px,var(--c-bronze) 0 2px,var(--c-g900) 3px 4px,transparent 5px),
+             radial-gradient(circle at calc(100% - 26px) 8px,var(--c-bronze) 0 2px,var(--c-g900) 3px 4px,transparent 5px)}
+.area>header,.area.slim>header{
+  background:repeating-linear-gradient(90deg,rgba(197,143,94,.10) 0 2px,transparent 2px 6px),linear-gradient(180deg,#3d3935,#252220);
+  border-bottom:2px solid var(--c-bronze-d);box-shadow:inset 0 1px 0 rgba(242,232,218,.16)}
+.area select{text-shadow:0 1px 0 #000;letter-spacing:.03em}
+.u-tab th{text-shadow:0 1px 0 #000}
+
+/* ---- pestañas dentro de un panel (índices rotulados) ---- */
+.u-tabs{display:flex;flex-direction:column;gap:8px}
+.u-tabbar{display:flex;gap:4px;border-bottom:2px solid var(--c-bronze-d);padding:0 2px}
+.u-tabbtn{background:linear-gradient(var(--c-g700),var(--c-g900));color:var(--c-bronze);cursor:pointer;
+  border:1px solid rgba(197,143,94,.45);border-bottom:0;border-radius:7px 7px 0 0;padding:5px 12px;margin-bottom:-2px;
+  font:700 11px var(--display);letter-spacing:.08em;text-transform:uppercase;text-shadow:0 1px 0 #000}
+.u-tabbtn:hover{color:var(--c-cream)}
+.u-tabbtn[aria-selected="true"]{background:linear-gradient(var(--c-cream),var(--c-sand));color:var(--c-carbon);
+  text-shadow:0 1px 0 rgba(255,255,255,.6);box-shadow:inset 0 2px 0 var(--c-orange)}
+.u-tabpanels>[hidden]{display:none!important}
+
+/* ---- listas con botón (Explorador) ---- */
+.u-row.item{flex-wrap:nowrap;gap:8px;padding:2px 0;border-bottom:1px solid var(--line)}
+.item>.u-label:nth-child(1){flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.item>.u-label.muted{flex:0 1 28%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.item>.u-label.mono{flex:none;font-size:11px}
+.u-label.title{font:700 22px/1.15 var(--display);letter-spacing:-.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+@media (max-width:820px){.u-label.title{white-space:normal}}
+tr.next td{color:var(--c-orange);font-weight:600}
+
+/* ---- botonera: teclas de consola con placa grabada y lámpara ---- */
+.pad{border:0;border-radius:9px;padding:8px 9px 7px;
+  box-shadow:0 4px 0 var(--dark-bronze),0 7px 9px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.4),inset 0 0 0 3px rgba(0,0,0,.2)}
+.pad-orange{background:linear-gradient(180deg,#ff8a4d,var(--c-orange) 52%,#d9560f)}
+.pad-bronze{background:linear-gradient(180deg,#e3b891,var(--c-bronze) 55%,var(--c-bronze-d))}
+.pad-graphite{background:linear-gradient(180deg,#4a4540,var(--c-g700) 50%,var(--c-g900));color:var(--c-cream)}
+.pad-cream{background:linear-gradient(180deg,#fff7ea,var(--c-cream) 55%,#cfc2ae);color:var(--c-carbon)}
+.pad:active,.pad.fire{transform:translateY(3px);
+  box-shadow:0 1px 0 var(--dark-bronze),inset 0 2px 5px rgba(0,0,0,.4),inset 0 0 0 3px rgba(0,0,0,.2)}
+.pad-key{top:6px;left:8px;opacity:1;background:var(--c-cream);color:var(--c-carbon);padding:0 5px;border-radius:3px;
+  box-shadow:inset 0 -1px 0 rgba(0,0,0,.3)}
+.pad-lamp{position:absolute;top:7px;right:8px;width:7px;height:7px;border-radius:50%;background:rgba(0,0,0,.35);
+  box-shadow:inset 0 1px 1px rgba(0,0,0,.6)}
+.pad.fire .pad-lamp{background:var(--c-cream);box-shadow:0 0 8px 2px var(--c-cream)}
+
+/* los encabezados de panel son siempre de metal oscuro: texto claro también en el tema claro */
+.area>header select{color:var(--c-cream)}
+.area>header .hbtn{color:var(--c-g300)}
+.area>header .hbtn:hover{color:var(--c-orange)}

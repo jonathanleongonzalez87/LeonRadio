@@ -76,13 +76,24 @@ class Context:
                 "ORDER BY id DESC LIMIT ?", (limit,)).fetchall()
         return [dict(r) for r in rows]
 
-    def library(self, kind: str | None = None, limit: int = 200) -> list[dict]:
+    def library(self, kind: str | None = None, limit: int = 200, decade: str | None = None) -> list[dict]:
         self._need("library.read")
         sql, params = "SELECT id, kind, title, artist, decade, duration_ms FROM assets WHERE status='active'", []
         if kind:
             sql += " AND kind = ?"; params.append(kind)
+        if decade:
+            sql += " AND decade = ?"; params.append(decade)
         with self._host.db_lock:
             rows = self._host.db.execute(sql + " ORDER BY title LIMIT ?", (*params, limit)).fetchall()
+        return [dict(r) for r in rows]
+
+    def library_groups(self) -> list[dict]:
+        """Grupos de la biblioteca (tipo + década) con su cantidad de piezas."""
+        self._need("library.read")
+        with self._host.db_lock:
+            rows = self._host.db.execute(
+                "SELECT kind, decade, COUNT(*) AS n FROM assets WHERE status='active' "
+                "GROUP BY kind, decade ORDER BY kind, decade").fetchall()
         return [dict(r) for r in rows]
 
     def emit(self, name: str, data: dict | None = None) -> None:
