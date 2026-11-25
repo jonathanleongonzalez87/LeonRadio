@@ -198,3 +198,44 @@ def test_root_redirects_to_versioned_ui_url(tmp_path):
         assert page.status_code == 200 and "LeonRadio" in page.text
         assert page.headers["cache-control"] == "no-cache"
         assert c.get("/api/editors").status_code == 200      # la API no se ve afectada
+
+
+def test_demo_backend_runs_the_real_engine_in_memory():
+    import json
+    from leonradio_core.demo_web import create
+    be = create(str(REPO))                                    # lee el addon de ejemplo de <repo>/addons
+    assert json.loads(be.info())["station"] == "RRC"
+    ids = {e["id"] for e in json.loads(be.editors())}
+    assert {"aire", "emision", "botonera", "aux1", "ejemplo.hora"} <= ids
+    assert json.loads(be.draw("emision"))["t"] == "column"
+    assert "error" in json.loads(be.draw("no-existe"))
+    assert json.loads(be.run("playout.pause"))["ok"] is True
+    assert json.loads(be.run("no.existe"))["ok"] is False
+    events = json.loads(be.tick(0.1))                         # los eventos llegan por lotes
+    assert any(e["event"] == "audio.levels" for e in events)
+
+
+def test_build_demo_bundles_ui_and_engine_into_one_file(tmp_path):
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("build_demo", REPO / "tools" / "build_demo.py")
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    mod.OUT = tmp_path / "demo.html"
+    mod.main()
+    html = mod.OUT.read_text(encoding="utf-8")
+    for needle in ("lr-py-files", "LR_DEMO_BACKEND", "const m_main_js", "leonradio_core/demo_web.py",
+                   "addons/ejemplo_hora_emisora/leonradio_addon.toml", "data:font/woff2;base64"):
+        assert needle in html, needle
+    bundle = html[html.index("const m_api_js"):]
+    assert "\nimport {" not in bundle and "\nexport " not in bundle      # módulos ES ya resueltos
+    assert 'type="module"' not in html                                   # sin módulos: abre con doble clic
+    assert "leonradio_core/server.py" not in html                        # el servidor no va al navegador
+
+
+def test_legacy_paths_still_served_for_stale_cached_pages(tmp_path):
+    (tmp_path / "index.html").write_text("<!doctype html><title>LeonRadio</title>", encoding="utf-8")
+    (tmp_path / "app.css").write_text("body{}", encoding="utf-8")
+    app = create_app(tick=False, ui_dir=tmp_path, addon_dirs=[])
+    with TestClient(app) as c:
+        assert c.get("/app.css").status_code == 200       # una página vieja en caché que pide /app.css
+        assert c.get("/index.html").status_code == 200

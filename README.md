@@ -55,6 +55,16 @@ Para detenerlo, cierra la ventana negra o pulsa Ctrl+C.
 
 Necesita Python 3.12 o superior (python.org, marcando «Add python.exe to PATH») y conexión a internet la primera vez.
 
+## Probar la interfaz sin servidor
+Para iterar rápido en la interfaz no hace falta servidor: haz doble clic en **`probar-ui.bat`**. Genera
+`dist\LeonRadio-demo.html` (la interfaz **y el motor Python** en un solo archivo, con una insignia «DEMO LOCAL») y lo
+abre en tu navegador como archivo local. El motor corre dentro del navegador con Pyodide, así que se prueba el mismo
+código del servidor, sin copias. Tras cambiar el código, vuelve a ejecutar `probar-ui.bat` y recarga la página.
+
+- La primera vez necesita internet (el navegador descarga Pyodide, ~10 MB, y luego lo guarda).
+- Usa un catálogo de demostración (solo títulos y duraciones de la emisora RRC) y audio simulado.
+- Para la emisora real, con tus archivos de audio, usa `iniciar-leonradio.bat`.
+
 ## Empezar (desarrollo)
 ```powershell
 cd core

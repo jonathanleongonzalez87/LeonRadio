@@ -1,0 +1,222 @@
+{
+ "_comment": "Catálogo de DEMOSTRACIÓN (solo metadatos, sin audio) para el HTML autónomo.",
+ "assets": [
+  {
+   "kind": "jingle",
+   "title": "RRC Jingle 1 Acapella",
+   "artist": null,
+   "decade": null,
+   "duration_ms": 9431
+  },
+  {
+   "kind": "jingle",
+   "title": "RRC Jingle 2 End",
+   "artist": null,
+   "decade": null,
+   "duration_ms": 5500
+  },
+  {
+   "kind": "jingle",
+   "title": "RRC Jingle 3 In",
+   "artist": null,
+   "decade": null,
+   "duration_ms": 11230
+  },
+  {
+   "kind": "jingle",
+   "title": "RRC Jingle 4 End-In",
+   "artist": null,
+   "decade": null,
+   "duration_ms": 12420
+  },
+  {
+   "kind": "jingle",
+   "title": "RRC Jingle Alternative 0",
+   "artist": null,
+   "decade": null,
+   "duration_ms": 12675
+  },
+  {
+   "kind": "jingle",
+   "title": "RRC Jingle Alternative 1",
+   "artist": null,
+   "decade": null,
+   "duration_ms": 13257
+  },
+  {
+   "kind": "jingle",
+   "title": "RRC Jingle Alternative 2",
+   "artist": null,
+   "decade": null,
+   "duration_ms": 12738
+  },
+  {
+   "kind": "jingle",
+   "title": "RRC Jingle Alternative 3 Sintonía",
+   "artist": null,
+   "decade": null,
+   "duration_ms": 5939
+  },
+  {
+   "kind": "jingle",
+   "title": "RRC Jingle Rocksteady 01",
+   "artist": null,
+   "decade": null,
+   "duration_ms": 27497
+  },
+  {
+   "kind": "jingle",
+   "title": "RRC Jingle Rocksteady 02",
+   "artist": null,
+   "decade": null,
+   "duration_ms": 30000
+  },
+  {
+   "kind": "music",
+   "title": "19-2000",
+   "artist": "Gorillaz",
+   "decade": "00s",
+   "duration_ms": 210880
+  },
+  {
+   "kind": "music",
+   "title": "99 Red Balloons",
+   "artist": "Goldfinger",
+   "decade": "00s",
+   "duration_ms": 242133
+  },
+  {
+   "kind": "music",
+   "title": "A Forest",
+   "artist": "The Cure",
+   "decade": "00s",
+   "duration_ms": 282786
+  },
+  {
+   "kind": "music",
+   "title": "A mis amigos",
+   "artist": "Mojiganga",
+   "decade": "00s",
+   "duration_ms": 123977
+  },
+  {
+   "kind": "music",
+   "title": "¡Ay! Dolores",
+   "artist": "Reincidentes",
+   "decade": "00s",
+   "duration_ms": 248293
+  },
+  {
+   "kind": "music",
+   "title": "1-2-3",
+   "artist": "Café Tacvba",
+   "decade": "10s",
+   "duration_ms": 198400
+  },
+  {
+   "kind": "music",
+   "title": "Acá Hace Falta Rock N' Roll",
+   "artist": "La Toma",
+   "decade": "10s",
+   "duration_ms": 173766
+  },
+  {
+   "kind": "music",
+   "title": "Alma en Pedazos",
+   "artist": "Superlitio",
+   "decade": "10s",
+   "duration_ms": 249547
+  },
+  {
+   "kind": "music",
+   "title": "Antes (Con Lelo Arango)",
+   "artist": "My Nipples",
+   "decade": "10s",
+   "duration_ms": 248737
+  },
+  {
+   "kind": "music",
+   "title": "Armas Silenciosas",
+   "artist": "Los Suziox",
+   "decade": "10s",
+   "duration_ms": 186383
+  },
+  {
+   "kind": "music",
+   "title": "Alps",
+   "artist": "Vilevo",
+   "decade": "20s",
+   "duration_ms": 219389
+  },
+  {
+   "kind": "music",
+   "title": "Baby Burglar",
+   "artist": "Madness",
+   "decade": "20s",
+   "duration_ms": 245629
+  },
+  {
+   "kind": "music",
+   "title": "Brilla",
+   "artist": "Providencia",
+   "decade": "20s",
+   "duration_ms": 273449
+  },
+  {
+   "kind": "music",
+   "title": "Fracking y Shopping",
+   "artist": "Edson Velandia/Adriana Lizcano",
+   "decade": "20s",
+   "duration_ms": 118272
+  },
+  {
+   "kind": "music",
+   "title": "La Sentada",
+   "artist": "La Muchacha",
+   "decade": "20s",
+   "duration_ms": 148955
+  },
+  {
+   "kind": "pisador",
+   "title": "Pisa - Escuchas Rockland Radio Mujer 01",
+   "artist": null,
+   "decade": null,
+   "duration_ms": 4101
+  },
+  {
+   "kind": "pisador",
+   "title": "Pisa - Rockland Hombre 01",
+   "artist": null,
+   "decade": null,
+   "duration_ms": 1018
+  },
+  {
+   "kind": "pisador",
+   "title": "Pisa - Rockland Radio Hombre 01",
+   "artist": null,
+   "decade": null,
+   "duration_ms": 1097
+  },
+  {
+   "kind": "pisador",
+   "title": "Pisa - RocklandRadio.co Mujer 01",
+   "artist": null,
+   "decade": null,
+   "duration_ms": 2115
+  },
+  {
+   "kind": "separador",
+   "title": "Separa - Rockland Radio donde el rock suena mejor Hombre 01",
+   "artist": null,
+   "decade": null,
+   "duration_ms": 6504
+  },
+  {
+   "kind": "separador",
+   "title": "Separa - Tus oidos se llenan de rock Hombre 02",
+   "artist": null,
+   "decade": null,
+   "duration_ms": 7053
+  }
+ ]
+}

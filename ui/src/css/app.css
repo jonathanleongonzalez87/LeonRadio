@@ -250,3 +250,6 @@ tr.next td{color:var(--c-orange);font-weight:600}
 .area>header select{color:var(--c-cream)}
 .area>header .hbtn{color:var(--c-g300)}
 .area>header .hbtn:hover{color:var(--c-orange)}
+
+.demo-badge{font:700 9px var(--display);letter-spacing:.12em;color:var(--c-carbon);background:var(--c-orange);padding:3px 7px;border-radius:3px;box-shadow:0 0 8px rgba(253,103,36,.5)}
+.demo-badge[hidden]{display:none}

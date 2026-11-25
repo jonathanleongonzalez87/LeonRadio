@@ -2,7 +2,8 @@ import { connectEvents, getEditors, getInfo } from "./api.js";
 import { AreaManager, area, hasEditor, split, toggleBeside } from "./areas.js";
 
 const KEY = "leonradio.workspaces.v7";
-const $ = (s) => document.querySelector(s);
+// Tolerante: si un HTML viejo (en caché) no trae algún elemento, se usa uno suelto en vez de fallar.
+const $ = (s) => document.querySelector(s) ?? document.createElement("div");
 const store = {
   get() { try { return JSON.parse(localStorage.getItem(KEY)); } catch { return null; } },
   set(v) { try { localStorage.setItem(KEY, JSON.stringify(v)); } catch { /* sin almacenamiento */ } },

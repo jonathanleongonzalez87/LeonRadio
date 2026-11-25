@@ -129,6 +129,9 @@ def create_app(
         @app.get("/", include_in_schema=False)
         def root() -> RedirectResponse:
             return RedirectResponse(f"/v/{ver}/", status_code=307)
+
+        # Compatibilidad: una página vieja en caché que pida /css/app.css o /js/main.js sigue funcionando
+        app.mount("/", NoCacheStatic(directory=ui, html=True), name="ui-legacy")
     return app
 
 
