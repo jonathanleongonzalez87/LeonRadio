@@ -1,0 +1,1583 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LeonRadio — Old Radio Broadcast Studio (Jonathan León)</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Tone.js for real-time audio synthesis -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+  <!-- Google Fonts: Montserrat (Manual de Marca) + Space Grotesk + Inter + JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700;800&family=Montserrat:wght@300;400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            brand: ['Montserrat', 'sans-serif'],
+            display: ['"Space Grotesk"', 'Montserrat', 'sans-serif'],
+            sans: ['Inter', 'Montserrat', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace'],
+          },
+          colors: {
+            brand: {
+              carbon: '#262626',
+              graphite: '#1A1918',
+              graphite700: '#3A3633',
+              orange: '#FD6724',
+              cream: '#F2E8DA',
+              sand: '#EFE7DC',
+              bronze: '#C58F5E',
+              bronzeDark: '#865632',
+              gray500: '#6B625A',
+              gray300: '#B5A898',
+              ink: '#2A2420'
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    /* Custom warm broadcast scrollbars */
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: #1A1918; }
+    ::-webkit-scrollbar-thumb { background: #6B625A; border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: #C58F5E; }
+
+    /* Brand 28px / 140px subtle background grid from Jonathan León Brand Manual */
+    .brand-grid-bg {
+      background-color: #262626;
+      background-image:
+        linear-gradient(rgba(253, 103, 36, 0.08) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(253, 103, 36, 0.08) 1px, transparent 1px),
+        linear-gradient(rgba(253, 103, 36, 0.035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(253, 103, 36, 0.035) 1px, transparent 1px);
+      background-size: 140px 140px, 140px 140px, 28px 28px, 28px 28px;
+    }
+
+    /* Vintage Bakelite & Brushed Bronze Tactile Buttons */
+    .bevel-btn {
+      background: linear-gradient(180deg, #3A3633 0%, #221F1D 100%);
+      border: 1px solid rgba(197, 143, 94, 0.42);
+      box-shadow: inset 0 1px 0 rgba(242, 232, 218, 0.14), 0 2px 4px rgba(0, 0, 0, 0.45);
+    }
+    .bevel-btn:hover {
+      background: linear-gradient(180deg, #47413D 0%, #2B2724 100%);
+      border-color: #FD6724;
+    }
+    .bevel-btn:active {
+      background: #1A1918;
+      transform: translateY(1px);
+    }
+
+    /* Old Radio Perforated Speaker Grille Pattern */
+    .speaker-grille {
+      background-color: #1A1918;
+      background-image: radial-gradient(rgba(197, 143, 94, 0.25) 1.2px, transparent 1.2px);
+      background-size: 6px 6px;
+    }
+
+    /* Warm Bakelite Dial Glass Glow */
+    .dial-glass {
+      background: radial-gradient(ellipse at 50% 45%, #382B1E 0%, #1C1713 72%, #120F0C 100%);
+      box-shadow: inset 0 0 18px rgba(253, 103, 36, 0.22), inset 0 1px 2px rgba(242, 232, 218, 0.2);
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+  </style>
+</head>
+<body class="brand-grid-bg text-brand-cream font-sans antialiased selection:bg-brand-orange selection:text-brand-carbon lg:h-screen lg:overflow-hidden flex flex-col select-none">
+
+  <!-- Brand Official SVG Symbol (Isotipo Puma Hexagonal — Jonathan León) -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <defs>
+      <symbol id="jl-iso" viewBox="220.189 220.189 583.623 583.623">
+        <path fill="currentColor" d="M735.074 640.792 L512.001 769.584 L288.927 640.792 L288.927 383.209 L512.001 254.417 L735.074 383.209 Z M755.747 357.124 L524.254 223.472 C520.463 221.283 516.231 220.189 512.001 220.189 C507.769 220.189 503.538 221.283 499.747 223.472 L268.254 357.124 C260.672 361.502 256.001 369.593 256.001 378.348 L256.001 645.653 C256.001 654.408 260.672 662.499 268.254 666.877 L499.747 800.529 C503.538 802.717 507.769 803.812 512.001 803.812 C516.231 803.812 520.463 802.717 524.254 800.529 L755.747 666.877 C763.33 662.499 768.001 654.408 768.001 645.653 L768.001 378.348 C768.001 369.593 763.33 361.502 755.747 357.124"/>
+        <path fill="currentColor" d="M560.122 408.953 C576.693 411.007 590.705 412.886 590.845 412.904 L591 412.925 C596.607 413.566 602.265 412.17 606.926 408.985 L648.927 380.293 C651.705 378.395 655.452 378.74 657.837 381.114 L668.619 391.849 C670.579 393.8 671.211 396.73 670.228 399.315 L645.318 464.857 C643.566 469.467 643.306 474.422 644.563 479.19 L657.27 527.354 C657.938 529.888 657.152 532.558 655.219 534.325 L617.047 569.201 C614.555 571.477 612.547 574.326 611.238 577.437 L582.035 675.918 C580.587 679.364 576.696 681.07 573.181 679.798 L524.885 662.346 C522.114 661.345 520.252 658.692 520.252 655.745 L520.252 633.927 C520.252 631.296 521.702 628.909 524.037 627.697 L545.521 616.548 C550.669 613.877 554.632 609.416 556.678 603.988 L580.446 511.909 C581.206 509.893 582.818 508.359 584.87 507.701 L609.268 499.878 C613.598 498.49 615.981 493.855 614.594 489.526 C613.474 486.032 610.239 483.806 606.757 483.806 C605.925 483.806 605.077 483.933 604.242 484.201 L579.843 492.025 C572.977 494.226 567.583 499.358 565.041 506.103 L541.737 596.948 L482.262 596.948 L458.959 506.103 C456.416 499.358 451.021 494.226 444.156 492.025 L419.758 484.201 C415.428 482.812 410.794 485.197 409.405 489.526 C408.018 493.855 410.401 498.49 414.73 499.878 L439.129 507.701 C441.181 508.359 442.794 509.893 443.554 511.909 L467.322 603.988 C469.367 609.416 473.329 613.876 478.478 616.548 L499.962 627.697 C502.297 628.909 503.747 631.296 503.747 633.927 L503.747 655.745 C503.747 658.692 501.886 661.345 499.114 662.346 L450.818 679.798 C447.302 681.07 443.412 679.364 441.963 675.917 L412.761 577.437 C411.453 574.326 409.444 571.477 406.953 569.201 L368.78 534.325 C366.847 532.558 366.061 529.888 366.729 527.354 L379.436 479.189 C380.694 474.422 380.433 469.466 378.681 464.857 L353.771 399.315 C352.789 396.73 353.42 393.8 355.38 391.849 L366.162 381.114 C368.547 378.74 372.294 378.394 375.072 380.293 L417.051 408.971 C421.735 412.17 427.419 413.565 433.052 412.9 L433.211 412.88 C433.338 412.862 446.108 411.1 461.518 409.129 C488.652 405.655 532.886 405.577 560.122 408.953 M459.428 392.799 C444.638 394.691 432.261 396.391 431.055 396.557 C429.39 396.736 427.719 396.32 426.337 395.376 L384.359 366.699 C375.063 360.349 362.525 361.504 354.547 369.447 L343.765 380.181 C337.208 386.708 335.095 396.515 338.382 405.164 L363.292 470.707 C363.815 472.084 363.894 473.565 363.518 474.991 L350.811 523.154 C348.574 531.63 351.205 540.567 357.676 546.479 L395.849 581.355 C396.593 582.036 397.192 582.887 397.584 583.817 L426.787 682.297 C431.635 693.829 444.648 699.532 456.413 695.281 L504.71 677.829 C507.428 676.847 509.885 675.389 512 673.572 C514.115 675.389 516.571 676.847 519.29 677.829 L567.587 695.281 C570.222 696.233 572.917 696.686 575.571 696.686 C584.769 696.685 593.451 691.247 597.212 682.298 L626.416 583.817 C626.807 582.887 627.406 582.036 628.151 581.355 L666.323 546.479 C672.794 540.567 675.425 531.631 673.189 523.155 L660.481 474.991 C660.105 473.565 660.184 472.084 660.707 470.707 L685.617 405.164 C688.904 396.515 686.791 386.709 680.234 380.181 L669.452 369.447 C661.474 361.504 648.935 360.349 639.641 366.699 L597.64 395.391 C596.264 396.332 594.601 396.754 592.941 396.575 C591.687 396.408 578.094 394.592 562.147 392.615 C533.776 389.099 487.696 389.181 459.428 392.799"/>
+        <path fill="currentColor" d="M531.763 697.427 C527.012 700.184 519.285 703.431 509.347 703.339 C499.848 703.236 492.432 700.067 487.882 697.427 C485.262 695.906 481.903 696.799 480.382 699.419 C478.861 702.041 479.752 705.399 482.373 706.92 C488.064 710.222 497.34 714.185 509.227 714.314 C509.429 714.316 509.627 714.318 509.827 714.318 C521.953 714.318 531.426 710.312 537.272 706.92 C539.893 705.4 540.785 702.041 539.264 699.42 C537.743 696.799 534.384 695.907 531.763 697.427"/>
+      </symbol>
+    </defs>
+  </svg>
+
+  <!-- Toast Notification Container -->
+  <div id="toast-container" class="fixed bottom-3 right-3 z-50 flex flex-col gap-1.5 pointer-events-none max-w-xs w-full"></div>
+
+  <!-- =====================================================================
+       1. TOP WINDOW TITLE BAR (Jonathan León Ecosystem + Old Radio Tube Warmth)
+       ===================================================================== -->
+  <div class="h-8 bg-gradient-to-r from-brand-graphite via-[#2B2724] to-brand-graphite border-b border-brand-bronze/35 px-3 flex items-center justify-between shrink-0 text-xs">
+    <div class="flex items-center gap-2.5">
+      <div class="flex items-center gap-2">
+        <svg class="w-5 h-5 text-brand-orange shrink-0"><use href="#jl-iso"/></svg>
+        <span class="font-display font-bold tracking-tight text-base text-brand-cream leading-none">
+          <span class="font-sans font-normal text-brand-gray300 mr-0.5">Jonathan</span>León
+        </span>
+        <span class="text-brand-bronze/60">|</span>
+        <span class="font-display font-bold tracking-tight text-sm text-brand-orange">Leon<span class="text-brand-cream font-medium">Radio</span></span>
+        <span class="text-[10px] font-mono text-brand-bronze hidden md:inline">• OLD RADIO BROADCAST CONSOLE</span>
+      </div>
+    </div>
+
+    <div class="flex items-center gap-2 sm:gap-2.5">
+      <!-- Warm Vacuum Tube Status Indicator -->
+      <div class="hidden sm:flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-brand-graphite border border-brand-bronze/30 text-[10px] font-mono text-brand-bronze">
+        <span class="w-2 h-2 rounded-full bg-brand-orange shadow-[0_0_8px_#FD6724] animate-pulse"></span>
+        <span>98.5 FM • ON AIR</span>
+      </div>
+
+      <button id="btn-auto-toggle" onclick="toggleAutoMode()" class="px-2.5 py-0.5 rounded-full bg-brand-orange hover:brightness-110 text-brand-carbon font-display font-bold text-[11px] tracking-wider shadow transition">
+        AUTO
+      </button>
+      <button id="btn-mic-duck" onclick="toggleMicDuck()" class="px-2.5 py-0.5 rounded-full bg-brand-graphite700 hover:bg-brand-orange hover:text-brand-carbon border border-brand-bronze/40 text-brand-cream font-display font-medium text-[11px] transition" title="Atajo: Barra Espaciadora">
+        🎙️ MIC
+      </button>
+      <button id="btn-pisadores" onclick="togglePisadores()" class="px-2.5 py-0.5 rounded-full bg-brand-orange text-brand-carbon font-display font-bold text-[11px] transition" title="Salamandra: Pisadores automáticos en intro">
+        PISADORES ON
+      </button>
+      <div class="hidden xl:flex items-center gap-2 px-2 py-0.5 rounded-full bg-brand-graphite border border-brand-bronze/30 text-[10px] font-mono text-brand-cream">
+        <span>🌡️ 21°C</span>
+        <span class="text-brand-bronze">💧 68%</span>
+      </div>
+      <button onclick="toggleFullscreen()" class="px-2.5 py-0.5 rounded-full bg-brand-graphite700 hover:border-brand-orange border border-brand-bronze/40 text-brand-bronze font-mono font-bold text-[11px] transition" title="Pantalla Completa 16:9 (F11)">
+        ⛶ F11
+      </button>
+      <button onclick="initAudioEngine()" id="btn-dsp" class="px-2.5 py-0.5 rounded-full bg-brand-graphite border border-brand-bronze/50 text-brand-cream font-mono text-[11px] hover:border-brand-orange transition">
+        TUBES OFF
+      </button>
+    </div>
+  </div>
+
+  <!-- =====================================================================
+       2. TOP ON-AIR DECK BAR (Master Deck + Stereo VU L/R + Big Clock & Date)
+       ===================================================================== -->
+  <header class="bg-gradient-to-b from-[#2E2A27] to-brand-graphite border-b-2 border-brand-bronze/40 px-2 py-1.5 shrink-0">
+    <div class="grid grid-cols-12 gap-2 items-stretch min-h-[104px] lg:h-[104px]">
+
+      <!-- NEXT / FADE NEXT BUTTONS -->
+      <div class="col-span-3 sm:col-span-2 lg:col-span-1 flex flex-col gap-1 min-w-0">
+        <button onclick="triggerNextTrack(false)" class="flex-1 bevel-btn rounded-lg flex flex-col items-center justify-center py-1 text-brand-cream group">
+          <svg class="w-4 h-4 text-brand-orange group-hover:scale-110 transition-transform" viewBox="0 0 24 24" fill="currentColor"><path d="M4 18h16L12 6 4 18z"/></svg>
+          <span class="font-brand text-[10px] font-bold tracking-tight mt-0.5">Next</span>
+        </button>
+        <button onclick="triggerNextTrack(true)" class="h-6 bevel-btn rounded-lg flex items-center justify-center font-brand text-[10px] font-medium text-brand-bronze hover:text-brand-cream">
+          Fade Next
+        </button>
+      </div>
+
+      <!-- NOW PLAYING INFO + INTERACTIVE WAVEFORM PROGRESS CANVAS -->
+      <div class="col-span-9 sm:col-span-10 lg:col-span-5 bg-brand-graphite border border-brand-bronze/35 rounded-xl flex flex-col justify-between overflow-hidden shadow-inner min-w-0">
+        <div class="flex items-center justify-between px-3 pt-1.5 gap-2 min-w-0">
+          <div class="flex items-center gap-2.5 min-w-0">
+            <!-- Hexagonal Puma Emblem Box -->
+            <div id="now-icon-box" class="w-10 h-10 rounded-lg bg-brand-carbon border border-brand-bronze/40 flex items-center justify-center shrink-0 text-brand-orange shadow">
+              <svg class="w-6 h-6"><use href="#jl-iso"/></svg>
+            </div>
+            <div class="min-w-0">
+              <h1 id="onair-title" class="font-brand text-base sm:text-lg font-bold text-brand-cream leading-tight truncate tracking-tight">
+                X (Spanglish Version)
+              </h1>
+              <div id="onair-artist" class="font-brand text-xs sm:text-sm font-medium text-brand-bronze leading-tight truncate">
+                Nicky Jam &amp; J. Balvin
+              </div>
+              <div id="onair-meta" class="text-[10px] font-mono text-brand-gray300 truncate mt-0.5">
+                02:49 SONG | Latin Urban | 90 BPM
+              </div>
+            </div>
+          </div>
+
+          <!-- GIANT REMAINING TIME COUNTER -->
+          <div id="onair-countdown" class="font-mono text-3xl sm:text-4xl lg:text-[38px] font-extrabold text-brand-orange tracking-tight leading-none shrink-0 drop-shadow-[0_0_10px_rgba(253,103,36,0.35)]">
+            01:06
+          </div>
+        </div>
+
+        <!-- Canvas Progress & Waveform Timeline Bar -->
+        <div class="h-5 w-full bg-[#121110] border-t border-brand-bronze/25 relative cursor-pointer shrink-0 overflow-hidden" onclick="scrubOnAir(event)" title="Clic para adelantar o retroceder">
+          <canvas id="canvas-onair-bar"></canvas>
+        </div>
+      </div>
+
+      <!-- TRANSPORT + STEREO VU L/R + LARGE STUDIO CLOCK & CALENDAR -->
+      <div class="col-span-12 lg:col-span-6 grid grid-cols-12 gap-2 items-stretch min-w-0">
+        <!-- 4 Tactile Transport Buttons -->
+        <div class="col-span-12 sm:col-span-4 grid grid-cols-4 gap-1 min-w-0">
+          <button id="btn-loop" onclick="toggleLoop()" class="bevel-btn rounded-lg flex flex-col items-center justify-center p-1 text-brand-gray300 hover:text-brand-cream min-w-0">
+            <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 2l4 4-4 4"/><path d="M3 11v-1a4 4 0 0 1 4-4h14"/><path d="M7 22l-4-4 4-4"/><path d="M21 13v1a4 4 0 0 1-4 4H3"/></svg>
+            <span class="font-brand text-[9px] font-semibold mt-1 truncate">Loop</span>
+          </button>
+          <button id="btn-pause" onclick="togglePlayPause()" class="bevel-btn rounded-lg flex flex-col items-center justify-center p-1 text-brand-cream min-w-0">
+            <svg id="icon-pause" class="w-4 h-4 text-brand-orange shrink-0" fill="currentColor" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+            <span id="label-pause" class="font-brand text-[9px] font-semibold mt-1 truncate">Pause</span>
+          </button>
+          <button id="btn-stopnext" onclick="toggleStopAfterCurrent()" class="bevel-btn rounded-lg flex flex-col items-center justify-center p-1 text-brand-gray300 hover:text-brand-cream min-w-0">
+            <svg class="w-4 h-4 shrink-0" fill="currentColor" viewBox="0 0 24 24"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg>
+            <span class="font-brand text-[9px] font-semibold mt-1 truncate">StopNext</span>
+          </button>
+          <button onclick="restartCurrentTrack()" class="bevel-btn rounded-lg flex flex-col items-center justify-center p-1 text-brand-gray300 hover:text-brand-cream min-w-0">
+            <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+            <span class="font-brand text-[9px] font-semibold mt-1 truncate">Restart</span>
+          </button>
+        </div>
+
+        <!-- STEREO VU METER (L & R CHANNELS) -->
+        <div class="col-span-6 sm:col-span-4 bg-brand-graphite border border-brand-bronze/45 rounded-xl overflow-hidden min-w-0 flex flex-col">
+          <div class="px-2 py-0.5 bg-[#221F1D] border-b border-brand-bronze/25 flex items-center justify-between text-[9px] font-brand font-bold text-brand-bronze shrink-0">
+            <span>VU ESTÉREO</span>
+            <span class="text-brand-orange font-mono">L / R</span>
+          </div>
+          <div class="flex-1 min-h-0 p-1">
+            <canvas id="canvas-top-vu"></canvas>
+          </div>
+        </div>
+
+        <!-- LARGE DIGITAL & RING STUDIO CLOCK + BIG CALENDAR -->
+        <div class="col-span-6 sm:col-span-4 bg-brand-graphite border border-brand-bronze/45 rounded-xl overflow-hidden min-w-0 flex items-center justify-between px-2.5 py-1 gap-2">
+          <div class="w-16 h-16 sm:w-[68px] sm:h-[68px] shrink-0">
+            <canvas id="canvas-led-clock"></canvas>
+          </div>
+          <div class="flex-1 min-w-0 flex flex-col justify-center text-right">
+            <div id="big-clock-day" class="font-brand text-[10px] sm:text-xs font-bold uppercase tracking-wider text-brand-orange truncate">
+              MARTES
+            </div>
+            <div id="big-clock-time" class="font-mono text-xl sm:text-2xl font-extrabold text-brand-cream leading-none tracking-tight my-0.5">
+              13:41:00
+            </div>
+            <div id="big-clock-date" class="font-brand text-xs sm:text-sm font-bold text-brand-bronze leading-tight truncate">
+              24 Nov 2026
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- =====================================================================
+       3. MAIN 3-COLUMN WORKSPACE (Fills remaining 16:9 screen height)
+       ===================================================================== -->
+  <main class="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-12 gap-1.5 p-1.5">
+
+    <!-- ===================================================================
+         LEFT COLUMN (4 cols): LIVE PLAYLIST QUEUE
+         =================================================================== -->
+    <section class="lg:col-span-4 flex flex-col min-h-0 bg-brand-graphite/95 border border-brand-bronze/30 rounded-xl overflow-hidden shadow-lg">
+      <!-- Subtle Old Radio Grille Header -->
+      <div class="h-6 speaker-grille border-b border-brand-bronze/30 px-3 flex items-center justify-between shrink-0">
+        <span class="font-display text-xs font-bold text-brand-cream tracking-tight">Escaleta al Aire</span>
+        <span class="text-[10px] font-mono text-brand-bronze">DOBLE CLIC: DISPARAR</span>
+      </div>
+
+      <!-- Scrollable Playlist Stack -->
+      <div id="playlist-stack" class="flex-1 overflow-y-auto divide-y divide-brand-cream/10">
+        <!-- Populated dynamically with exact AT: HH:MM:SS timestamps -->
+      </div>
+
+      <!-- Playlist Bottom Footer Bar -->
+      <div class="h-11 bg-[#221F1D] border-t border-brand-bronze/30 px-3 flex items-center justify-between shrink-0">
+        <div>
+          <div class="text-[10px] text-brand-gray300 leading-none">Duración escaleta</div>
+          <div id="playlist-total-duration" class="font-mono text-base font-extrabold text-brand-cream leading-tight">1:40:31</div>
+        </div>
+        <div class="flex items-center gap-1.5">
+          <button onclick="insertSpotsBreak()" class="h-8 px-3 bevel-btn rounded-full flex items-center justify-center text-brand-orange font-display font-medium text-xs gap-1" title="Insertar Pauta Comercial">
+            <span>📢</span><span>Pauta</span>
+          </button>
+          <button onclick="refillPlaylistHour()" class="h-8 px-3 bevel-btn rounded-full flex items-center justify-center text-brand-cream font-display font-medium text-xs gap-1" title="Autollenar Hora con Reloj">
+            <span>☰</span><span>+ Hora</span>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================================================================
+         CENTER COLUMN (5 cols): LIBRARIES / JINGLES / SPOTS / VOICE TRACK / CARTWALL
+         =================================================================== -->
+    <section class="lg:col-span-5 flex flex-col min-h-0 bg-brand-carbon/95 border border-brand-bronze/30 rounded-xl overflow-hidden shadow-lg">
+      <!-- Window Header -->
+      <div class="h-6 speaker-grille border-b border-brand-bronze/30 px-3 flex items-center justify-between shrink-0">
+        <span id="center-panel-title" class="font-display text-xs font-bold text-brand-cream">Fonoteca &amp; Cartuchera Vintage</span>
+        <span class="text-[10px] font-mono text-brand-bronze">F1–F12: Cartuchera</span>
+      </div>
+
+      <!-- 7 Category Icon Tabs -->
+      <div class="grid grid-cols-7 bg-brand-graphite border-b border-brand-bronze/30 shrink-0">
+        <button onclick="selectCenterTab('songs')" id="ctab-songs" class="h-11 flex flex-col items-center justify-center border-r border-brand-cream/10 bg-gradient-to-b from-brand-graphite700 to-brand-carbon text-brand-cream">
+          <svg class="w-4 h-4 text-brand-orange" fill="currentColor" viewBox="0 0 24 24"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg>
+          <span class="font-display text-[9px] font-bold mt-0.5">Música</span>
+        </button>
+        <button onclick="selectCenterTab('jingles')" id="ctab-jingles" class="h-11 flex flex-col items-center justify-center border-r border-brand-cream/10 text-brand-gray300 hover:text-brand-cream hover:bg-brand-graphite700/40">
+          <svg class="w-4 h-4 text-brand-bronze" fill="currentColor" viewBox="0 0 24 24"><path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.63-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.64 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/></svg>
+          <span class="font-display text-[9px] font-bold mt-0.5">Jingles</span>
+        </button>
+        <button onclick="selectCenterTab('spots')" id="ctab-spots" class="h-11 flex flex-col items-center justify-center border-r border-brand-cream/10 text-brand-gray300 hover:text-brand-cream hover:bg-brand-graphite700/40">
+          <svg class="w-4 h-4 text-brand-orange" fill="currentColor" viewBox="0 0 24 24"><path d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z"/></svg>
+          <span class="font-display text-[9px] font-bold mt-0.5">Cuñas</span>
+        </button>
+        <button onclick="selectCenterTab('voicetrack')" id="ctab-voicetrack" class="h-11 flex flex-col items-center justify-center border-r border-brand-cream/10 text-brand-gray300 hover:text-brand-cream hover:bg-brand-graphite700/40">
+          <svg class="w-4 h-4 text-brand-cream" fill="currentColor" viewBox="0 0 24 24"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.91-3c-.49 0-.9.36-.98.85C16.52 14.2 14.47 16 12 16s-4.52-1.8-4.93-4.15c-.08-.49-.49-.85-.98-.85-.61 0-1.09.54-1 1.14.49 3 2.89 5.35 5.91 5.78V20c0 .55.45 1 1 1s1-.45 1-1v-2.08c3.02-.43 5.42-2.78 5.91-5.78.1-.6-.39-1.14-1-1.14z"/></svg>
+          <span class="font-display text-[9px] font-bold mt-0.5">Locución</span>
+        </button>
+        <button onclick="selectCenterTab('cartwall')" id="ctab-cartwall" class="h-11 flex flex-col items-center justify-center border-r border-brand-cream/10 text-brand-gray300 hover:text-brand-cream hover:bg-brand-graphite700/40">
+          <svg class="w-4 h-4 text-brand-bronze" fill="currentColor" viewBox="0 0 24 24"><path d="M4 4h4v4H4V4zm6 0h4v4h-4V4zm6 0h4v4h-4V4zM4 10h4v4H4v-4zm6 0h4v4h-4v-4zm6 0h4v4h-4v-4zM4 16h4v4H4v-4zm6 0h4v4h-4v-4zm6 0h4v4h-4v-4z"/></svg>
+          <span class="font-display text-[9px] font-bold mt-0.5">Cartwall</span>
+        </button>
+        <button onclick="selectCenterTab('clocks')" id="ctab-clocks" class="h-11 flex flex-col items-center justify-center border-r border-brand-cream/10 text-brand-gray300 hover:text-brand-cream hover:bg-brand-graphite700/40">
+          <svg class="w-4 h-4 text-brand-orange" fill="currentColor" viewBox="0 0 24 24"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg>
+          <span class="font-display text-[9px] font-bold mt-0.5">Relojes</span>
+        </button>
+        <button onclick="selectCenterTab('favorites')" id="ctab-favorites" class="h-11 flex flex-col items-center justify-center text-brand-gray300 hover:text-brand-cream hover:bg-brand-graphite700/40">
+          <svg class="w-4 h-4 text-brand-bronze" fill="currentColor" viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+          <span class="font-display text-[9px] font-bold mt-0.5">Clásicos</span>
+        </button>
+      </div>
+
+      <!-- Salamandra / RadioBOSS Quick Strip: Cartwall Mode + AUX 1 Mini-Deck -->
+      <div class="bg-[#221F1D] border-b border-brand-bronze/25 px-2.5 py-1 flex flex-wrap items-center justify-between gap-2 text-[10px] shrink-0">
+        <div class="flex items-center gap-1">
+          <span class="text-brand-gray300 font-display mr-0.5">Botonera:</span>
+          <button onclick="setCartMode('single')" id="cmode-single" class="px-1.5 py-0.5 rounded bg-brand-graphite700 text-brand-cream border border-brand-bronze/30">Uno a la vez</button>
+          <button onclick="setCartMode('multi')" id="cmode-multi" class="px-1.5 py-0.5 rounded bg-brand-orange text-brand-carbon font-bold">Una vez más</button>
+          <button onclick="setCartMode('fade')" id="cmode-fade" class="px-1.5 py-0.5 rounded bg-brand-graphite700 text-brand-cream border border-brand-bronze/30">Fade stop</button>
+        </div>
+        <div class="flex items-center gap-1.5">
+          <span class="font-mono text-brand-bronze truncate max-w-[110px]" id="aux1-label">AUX 1: AUTO AUX</span>
+          <button onclick="toggleAux1()" id="btn-aux1" class="px-2 py-0.5 rounded-full bg-brand-graphite700 hover:bg-brand-orange hover:text-brand-carbon border border-brand-bronze/40 text-brand-cream font-mono font-bold transition">▶ AUX</button>
+        </div>
+      </div>
+
+      <!-- INNER WORKSPACE: VERTICAL ACTION SIDEBAR + DATA TABLE / CARTWALL -->
+      <div class="flex-1 min-h-0 flex">
+        <!-- Vertical Action Buttons (Add, Insert, Replace, prepAIR, Delete, Clear) -->
+        <div class="w-14 bg-brand-graphite border-r border-brand-bronze/25 flex flex-col divide-y divide-brand-cream/10 shrink-0">
+          <button onclick="actionPlaylist('add')" class="flex-1 flex flex-col items-center justify-center hover:bg-brand-graphite700 text-brand-cream transition group" title="Añadir al final de la lista">
+            <span class="text-lg font-black text-brand-orange leading-none">+</span>
+            <span class="font-display text-[9px] font-medium mt-0.5">Add</span>
+          </button>
+          <button onclick="actionPlaylist('insert')" class="flex-1 flex flex-col items-center justify-center bg-brand-orange/90 hover:bg-brand-orange text-brand-carbon transition" title="Insertar justo después de la canción actual">
+            <span class="text-sm font-black leading-none">⇥</span>
+            <span class="font-display text-[9px] font-bold mt-0.5">Insert</span>
+          </button>
+          <button onclick="actionPlaylist('replace')" class="flex-1 flex flex-col items-center justify-center hover:bg-brand-graphite700 text-brand-cream transition" title="Reemplazar siguiente pista">
+            <span class="text-sm font-black leading-none">↱</span>
+            <span class="font-display text-[9px] font-medium mt-0.5">Replace</span>
+          </button>
+          <button onclick="actionPlaylist('prepair')" class="flex-1 flex flex-col items-center justify-center hover:bg-brand-graphite700 text-brand-bronze transition" title="Pre-escucha en audífonos (PFL)">
+            <span class="text-sm font-black leading-none">🎧</span>
+            <span class="font-display text-[9px] font-medium mt-0.5">prepAIR</span>
+          </button>
+          <button onclick="actionPlaylist('delete')" class="flex-1 flex flex-col items-center justify-center bg-brand-bronzeDark/60 hover:bg-brand-bronzeDark text-brand-cream transition" title="Eliminar pista seleccionada de la escaleta">
+            <span class="text-sm font-black leading-none">🗑</span>
+            <span class="font-display text-[9px] font-medium mt-0.5">Delete</span>
+          </button>
+          <button onclick="actionPlaylist('clear')" class="flex-1 flex flex-col items-center justify-center bg-brand-graphite hover:bg-brand-bronzeDark/80 text-brand-gray300 hover:text-brand-cream transition" title="Limpiar toda la escaleta">
+            <span class="text-xs font-black leading-none">✕</span>
+            <span class="font-display text-[9px] font-medium mt-0.5">Clear</span>
+          </button>
+        </div>
+
+        <!-- Right Content Area inside Center Panel -->
+        <div class="flex-1 min-w-0 flex flex-col bg-[#1F1D1B]">
+
+          <!-- VIEW A: DATABASE TABLE -->
+          <div id="view-table" class="flex-1 min-h-0 flex flex-col">
+            <div class="grid grid-cols-12 bg-brand-graphite700 border-b border-brand-bronze/30 px-2.5 py-1 font-display text-[10px] font-bold text-brand-cream shrink-0">
+              <div class="col-span-4">Artista</div>
+              <div class="col-span-5">Título</div>
+              <div class="col-span-1 text-right">Dur.</div>
+              <div class="col-span-2 text-right">Categoría</div>
+            </div>
+            <div id="library-rows" class="flex-1 overflow-y-auto divide-y divide-brand-cream/5 text-xs">
+              <!-- Populated by JS -->
+            </div>
+          </div>
+
+          <!-- VIEW B: INSTANT JINGLE CARTWALL (12 Pads F1-F12) -->
+          <div id="view-cartwall" class="hidden flex-1 p-2 grid grid-cols-3 sm:grid-cols-4 gap-1.5 overflow-y-auto">
+            <!-- Populated by JS -->
+          </div>
+
+          <!-- VIEW C: VOICE TRACK & AUTO TIME/WEATHER -->
+          <div id="view-voicetrack" class="hidden flex-1 p-3 flex-col justify-between gap-2 overflow-y-auto">
+            <div class="bg-brand-graphite border border-brand-bronze/35 rounded-xl p-3">
+              <div class="font-display text-xs font-bold text-brand-orange mb-1">Cabina Voice-Tracking &amp; Locución Analógica</div>
+              <p class="text-[11px] text-brand-gray300">Dispara señales horarias clásicas o activa el atenuador de consola para locutar sobre la intro del disco.</p>
+            </div>
+            <div class="grid grid-cols-2 gap-2">
+              <button onclick="insertAutoTime()" class="bevel-btn rounded-xl p-3 text-left">
+                <div class="font-display text-xs font-bold text-brand-cream">🕒 Señal Horaria</div>
+                <div class="text-[10px] text-brand-bronze">Inserta la hora exacta</div>
+              </button>
+              <button onclick="playWeatherBulletin()" class="bevel-btn rounded-xl p-3 text-left">
+                <div class="font-display text-xs font-bold text-brand-orange">🌤️ Boletín Clima 21°C</div>
+                <div class="text-[10px] text-brand-bronze">Disparo con cortina</div>
+              </button>
+            </div>
+          </div>
+
+          <!-- VIEW D: CLOCKS SCHEDULER -->
+          <div id="view-clocks" class="hidden flex-1 p-2 flex-col gap-1.5 overflow-y-auto text-xs">
+            <div class="bg-brand-graphite border border-brand-orange/40 rounded-lg px-2.5 py-1.5 flex items-center justify-between">
+              <span class="font-display font-bold text-brand-orange">Reloj Horario: Old Radio &amp; Éxitos</span>
+              <button onclick="refillPlaylistHour()" class="px-2.5 py-0.5 rounded-full bg-brand-orange text-brand-carbon font-display font-bold text-[10px]">Aplicar</button>
+            </div>
+            <div id="clocks-table" class="space-y-1"></div>
+          </div>
+
+          <!-- SEARCH & CATEGORY FILTER FOOTER -->
+          <div class="bg-[#221F1D] border-t border-brand-bronze/30 p-2 shrink-0">
+            <div class="grid grid-cols-12 gap-1.5 items-center">
+              <div class="col-span-6 flex flex-col gap-1">
+                <div class="flex items-center justify-between text-[10px] text-brand-gray300">
+                  <span>Buscar</span>
+                  <span id="songs-found-label" class="font-mono text-brand-orange">12 Pistas</span>
+                </div>
+                <div class="flex gap-1">
+                  <input id="search-input" oninput="renderLibraryRows()" type="text" placeholder="Artista o título..." class="w-full bg-brand-graphite border border-brand-bronze/40 rounded-lg px-2 py-1 text-xs text-brand-cream placeholder:text-brand-gray500 focus:outline-none focus:border-brand-orange">
+                  <button onclick="resetSearch()" class="px-2 py-1 bg-brand-graphite700 hover:bg-brand-orange hover:text-brand-carbon text-brand-cream text-[10px] font-display font-bold rounded-lg transition">Reset</button>
+                </div>
+              </div>
+              <div class="col-span-6 grid grid-cols-2 gap-1 text-[10px]">
+                <select id="filter-category" onchange="renderLibraryRows()" class="bg-brand-graphite border border-brand-bronze/40 rounded-lg px-1.5 py-1 text-brand-cream">
+                  <option value="ALL">Género (Todos)</option>
+                  <option value="Latin Urban">Latin Urban</option>
+                  <option value="Pop">Pop</option>
+                  <option value="Dance">Dance / Club</option>
+                  <option value="80s">Oldies / 80s</option>
+                </select>
+                <select id="filter-rotation" onchange="renderLibraryRows()" class="bg-brand-orange text-brand-carbon border border-brand-orange rounded-lg px-1.5 py-1 font-display font-bold">
+                  <option value="ALL">ROTACIÓN</option>
+                  <option value="HIGH">ALTA</option>
+                  <option value="GOLD">CLÁSICOS</option>
+                </select>
+                <div class="col-span-2 flex items-center justify-between bg-brand-graphite border border-brand-bronze/25 rounded-lg px-2 py-0.5 text-[10px] text-brand-gray300">
+                  <span>Pre-escucha PFL</span>
+                  <span id="pfl-status" class="font-mono text-brand-bronze">LISTO</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================================================================
+         RIGHT COLUMN (3 cols): MAIN -> HISTORY, NEXT BREAK, RDS, BRAND SIGNATURE
+         =================================================================== -->
+    <section class="lg:col-span-3 flex flex-col min-h-0 bg-brand-carbon/95 border border-brand-bronze/30 rounded-xl overflow-hidden shadow-lg">
+      <!-- Top Header -->
+      <div class="h-6 speaker-grille border-b border-brand-bronze/30 px-3 flex items-center justify-between shrink-0">
+        <span class="font-display text-xs font-bold text-brand-cream">Testigo &amp; Transmisión</span>
+        <span class="w-2 h-2 rounded-full bg-brand-orange animate-pulse"></span>
+      </div>
+
+      <!-- HISTORY SUB-HEADER -->
+      <div class="bg-brand-graphite700 border-b border-brand-bronze/30 px-3 py-1 font-display text-xs font-bold text-brand-cream shrink-0">
+        History (Emitido)
+      </div>
+
+      <!-- HISTORY LOG TABLE -->
+      <div id="history-list" class="flex-1 min-h-0 overflow-y-auto divide-y divide-brand-cream/5 bg-brand-graphite font-mono text-[11px]">
+        <!-- Populated dynamically -->
+      </div>
+
+      <!-- RADIOBOSS STYLE SCHEDULED EVENTS MINI-PANEL -->
+      <div class="bg-[#221F1D] border-t border-brand-bronze/30 px-2.5 py-1.5 shrink-0">
+        <div class="flex items-center justify-between text-[10px] mb-1">
+          <span class="font-display font-bold text-brand-orange">Eventos (RadioBOSS / Dinesat)</span>
+          <button onclick="runScheduledEventNow()" class="px-1.5 py-0.5 rounded bg-brand-graphite700 hover:bg-brand-orange hover:text-brand-carbon text-brand-cream font-mono">Ejecutar ya</button>
+        </div>
+        <div id="scheduled-events-list" class="space-y-1 text-[10px] font-mono"></div>
+      </div>
+
+      <!-- NEXT BREAK GIANT COUNTDOWN BOX -->
+      <div class="bg-brand-carbon border-t border-brand-bronze/30 shrink-0">
+        <div class="bg-brand-graphite700 border-b border-brand-bronze/25 px-3 py-1 flex items-center justify-between font-display text-xs font-bold text-brand-cream">
+          <span>Próxima Tanda</span>
+          <span class="text-[10px] font-mono text-brand-bronze">CORTE :20 / :50</span>
+        </div>
+        <div class="py-1.5 px-3 flex items-center justify-end bg-brand-graphite">
+          <div id="next-break-timer" class="font-mono text-3xl sm:text-4xl font-extrabold text-brand-cream tracking-wider leading-none">
+            10:44
+          </div>
+        </div>
+      </div>
+
+      <!-- R·D·S LIVE ENCODER MONITOR (Old Radio Bakelite Display) -->
+      <div class="bg-brand-carbon border-t border-brand-bronze/30 shrink-0">
+        <div class="bg-brand-graphite700 border-b border-brand-bronze/25 px-3 py-1 flex items-center justify-between">
+          <span class="font-mono font-extrabold tracking-[0.25em] text-xs text-brand-cream">R·D·S</span>
+          <span class="text-[10px] font-mono text-brand-orange">STEREO LOCKED</span>
+        </div>
+        <div class="p-2.5 dial-glass text-center">
+          <div class="font-display text-base font-bold text-brand-orange tracking-wider">**LEON FM 98.5**</div>
+          <div id="rds-now-text" class="font-mono text-[11px] text-brand-cream truncate mt-0.5">
+            Nicky Jam &amp; J. Balvin - X
+          </div>
+        </div>
+      </div>
+
+      <!-- BRAND ECOSYSTEM SIGNATURE FOOTER -->
+      <div class="bg-[#221F1D] border-t border-brand-bronze/30 px-3 py-1 flex items-center justify-between text-[11px] shrink-0">
+        <span class="font-display font-medium text-brand-gray300 flex items-center gap-1.5">
+          <svg class="w-3.5 h-3.5 text-brand-orange"><use href="#jl-iso"/></svg>
+          <span>Jonathan<b class="font-display text-brand-cream">León</b></span>
+        </span>
+        <span id="system-status-text" class="font-mono text-[10px] text-brand-bronze">0 Errores • Silencio OK</span>
+      </div>
+    </section>
+
+  </main>
+
+  <script>
+    /**
+     * =========================================================================
+     * LEONRADIO — OLD RADIO STUDIO AUTOMATION (JONATHAN LEÓN BRAND SYSTEM)
+     * =========================================================================
+     */
+
+    const DATABASE = {
+      songs: [
+        { id: 's-1', type: 'song', artist: 'Nicky Jam & J. Balvin', title: 'X (Spanglish Version)', duration: 169, intro: 9, outro: 161, bpm: 90, cat: 'Latin Urban', rot: 'HIGH', note: 'C3' },
+        { id: 's-2', type: 'song', artist: 'Otilia', title: 'Diamante', duration: 158, intro: 8, outro: 150, bpm: 122, cat: 'Dance', rot: 'HIGH', note: 'A3' },
+        { id: 's-3', type: 'song', artist: 'Janelle Monae', title: 'What Is Love', duration: 208, intro: 12, outro: 198, bpm: 118, cat: 'Pop', rot: 'HIGH', note: 'F3' },
+        { id: 's-4', type: 'song', artist: 'Rihanna', title: 'Shut Up And Drive', duration: 210, intro: 10, outro: 200, bpm: 133, cat: 'Pop', rot: 'GOLD', note: 'E3' },
+        { id: 's-5', type: 'song', artist: 'UB40', title: '1 In 10 (Classic)', duration: 248, intro: 14, outro: 236, bpm: 88, cat: '80s', rot: 'GOLD', note: 'G3' },
+        { id: 's-6', type: 'song', artist: 'Nickelback', title: 'Someday', duration: 199, intro: 11, outro: 189, bpm: 82, cat: 'Pop', rot: 'GOLD', note: 'D3' },
+        { id: 's-7', type: 'song', artist: 'Dua Lipa', title: 'Levitating (Radio Edit)', duration: 203, intro: 8, outro: 194, bpm: 103, cat: 'Pop', rot: 'HIGH', note: 'B3' },
+        { id: 's-8', type: 'song', artist: 'The Weeknd', title: 'Blinding Lights', duration: 200, intro: 12, outro: 190, bpm: 171, cat: '80s', rot: 'HIGH', note: 'F3' },
+        { id: 's-9', type: 'song', artist: 'Donna Summer', title: 'I Feel Love (Vintage Mix)', duration: 245, intro: 15, outro: 234, bpm: 125, cat: '80s', rot: 'GOLD', note: 'G2' },
+        { id: 's-10', type: 'song', artist: 'CNCO', title: 'My Boo', duration: 190, intro: 7, outro: 181, bpm: 96, cat: 'Latin Urban', rot: 'HIGH', note: 'E3' },
+        { id: 's-11', type: 'song', artist: 'Bon Entendeur', title: 'Le temps est bon', duration: 196, intro: 10, outro: 186, bpm: 115, cat: 'Dance', rot: 'GOLD', note: 'A3' },
+        { id: 's-12', type: 'song', artist: 'Karol G & Shakira', title: 'TQG', duration: 198, intro: 6, outro: 188, bpm: 90, cat: 'Latin Urban', rot: 'HIGH', note: 'E3' }
+      ],
+      jingles: [
+        { id: 'j-1', type: 'jingle', artist: 'LEON JINGLE', title: 'SHOT 02 — ¡La #1 en tu Dial!', duration: 4, intro: 0, outro: 3.5, bpm: 128, cat: 'Sweeper', rot: 'HIGH', note: 'C4' },
+        { id: 'j-2', type: 'jingle', artist: 'LEON JINGLE', title: 'SHOTGUN 07 — Sonido Analógico', duration: 5, intro: 0, outro: 4.5, bpm: 130, cat: 'Shotgun', rot: 'HIGH', note: 'G4' },
+        { id: 'j-3', type: 'jingle', artist: 'LEON JINGLE', title: 'TOP OF THE HOUR — 98.5 FM', duration: 8, intro: 0, outro: 7.2, bpm: 124, cat: 'ID Hora', rot: 'HIGH', note: 'E4' },
+        { id: 'j-4', type: 'jingle', artist: 'LEON JINGLE', title: 'JIN MUSIC OF THE CITY', duration: 6, intro: 0, outro: 5.5, bpm: 120, cat: 'ID Ciudad', rot: 'HIGH', note: 'A4' }
+      ],
+      spots: [
+        { id: 'sp-1', type: 'spot', artist: 'PAUTA COMERCIAL', title: 'Tanda Comercial 01:30 (Bloque A)', duration: 90, intro: 0, outro: 89, bpm: 120, cat: 'Comercial', rot: 'HIGH', note: 'D3' },
+        { id: 'sp-2', type: 'spot', artist: 'CAFÉ CORDILLERA', title: 'Cuña 20s — Origen Antioqueño', duration: 20, intro: 0, outro: 19, bpm: 120, cat: 'Cliente', rot: 'HIGH', note: 'F3' },
+        { id: 'sp-3', type: 'spot', artist: 'LEONSTUDIO SUITE', title: 'Cuña 25s — Animación & VFX Libre', duration: 25, intro: 0, outro: 24, bpm: 120, cat: 'Cliente', rot: 'HIGH', note: 'G3' }
+      ]
+    };
+
+    /* Cartwall Pads styled strictly with Jonathan León Brand Palette */
+    const CARTWALL_PADS = [
+      { key: 'F1', title: 'ID PRINCIPAL', sub: 'LeonRadio 98.5', style: 'bg-brand-orange text-brand-carbon border-brand-cream/40', notes: ['C4', 'E4', 'G4', 'C5'] },
+      { key: 'F2', title: 'SHOT 02', sub: '¡Número 1!', style: 'bg-brand-bronze text-brand-carbon border-brand-cream/30', notes: ['G4', 'B4', 'D5'] },
+      { key: 'F3', title: 'APLAUSOS', sub: 'Estudio en Vivo', style: 'bg-brand-graphite700 text-brand-cream border-brand-bronze/50', notes: ['C3', 'G3', 'E4'] },
+      { key: 'F4', title: 'TRANSICIÓN', sub: 'Efecto Cinta', style: 'bg-brand-bronzeDark text-brand-cream border-brand-bronze/50', notes: ['A5', 'D4', 'A2'] },
+      { key: 'F5', title: 'FLASH NEWS', sub: 'Última Hora', style: 'bg-brand-orange/90 text-brand-carbon border-brand-cream/40', notes: ['D4', 'D4', 'A4', 'D5'] },
+      { key: 'F6', title: 'TRÁFICO VÍAS', sub: 'Reporte Movilidad', style: 'bg-brand-graphite text-brand-bronze border-brand-bronze/50', notes: ['E4', 'G#4', 'B4'] },
+      { key: 'F7', title: 'CAMPANA', sub: 'Señal Clásica', style: 'bg-brand-bronze text-brand-carbon border-brand-cream/30', notes: ['F4', 'F4', 'F4'] },
+      { key: 'F8', title: 'RISAS SHOW', sub: 'Mañanas FM', style: 'bg-brand-graphite700 text-brand-cream border-brand-bronze/50', notes: ['C4', 'D4', 'E4', 'G4'] },
+      { key: 'F9', title: 'OYENTES', sub: 'Línea Directa', style: 'bg-brand-bronzeDark text-brand-cream border-brand-bronze/50', notes: ['G4', 'C5', 'E5'] },
+      { key: 'F10', title: 'GOL ESTADIO', sub: 'Deportes en Vivo', style: 'bg-brand-orange text-brand-carbon border-brand-cream/40', notes: ['C4', 'G4', 'C5', 'E5'] },
+      { key: 'F11', title: 'CLIMA HOY', sub: 'Cortina Tiempo', style: 'bg-brand-graphite text-brand-cream border-brand-bronze/50', notes: ['F4', 'A4', 'C5'] },
+      { key: 'F12', title: 'SEÑAL HORA', sub: 'Top of Hour', style: 'bg-brand-cream text-brand-carbon border-brand-orange', notes: ['A4', 'A4', 'A5'] }
+    ];
+
+    const state = {
+      autoMode: true,
+      playing: true,
+      loop: false,
+      stopNext: false,
+      micDuck: false,
+      pisadores: true,
+      cartMode: 'multi',
+      aux1Playing: false,
+      dspReady: false,
+      centerTab: 'songs',
+      selectedLibraryId: 's-7',
+      nextBreakSeconds: 644,
+      dialFreq: 98.5, // Interactive Old Radio FM frequency
+      scheduledEvents: [
+        { id: 'ev-1', name: 'AUTO AUX — Top Hora', countdown: 144, active: true, action: 'time' },
+        { id: 'ev-2', name: 'FMT VARIADOS — Bloque', countdown: 410, active: true, action: 'refill' }
+      ],
+      onAir: {
+        track: { ...DATABASE.songs[0] },
+        elapsed: 103
+      },
+      playlist: [
+        { ...DATABASE.songs[1], uid: 'p-1' },
+        { ...DATABASE.songs[2], uid: 'p-2' },
+        { ...DATABASE.jingles[0], uid: 'p-3' },
+        { ...DATABASE.songs[3], uid: 'p-4' },
+        { ...DATABASE.spots[0], uid: 'p-5' },
+        { ...DATABASE.songs[4], uid: 'p-6' },
+        { ...DATABASE.jingles[1], uid: 'p-7' },
+        { ...DATABASE.songs[5], uid: 'p-8' }
+      ],
+      history: [
+        { time: '01:29:37', type: 'spot', text: '>> TANDA COMERCIAL :30 - BLOQUE MATINAL' },
+        { time: '01:29:47', type: 'song', text: 'Gregory Porter - Liquid Spirit (Claptone Remix)' },
+        { time: '01:36:07', type: 'song', text: 'Donna Summer - I Feel Love (Vintage Mix)' },
+        { time: '01:41:17', type: 'jingle', text: 'LEON JINGLE - SHOTGUN 03' },
+        { time: '01:41:19', type: 'song', text: 'Karen Overton - Your Loving Arms' },
+        { time: '01:49:26', type: 'song', text: 'BICEP - OPAL' },
+        { time: '01:53:52', type: 'jingle', text: 'LEON JINGLE - JIN MUSIC OF THE CITY' },
+        { time: '02:03:09', type: 'jingle', text: '@TOP OF THE HOUR - 98.5 FM' },
+        { time: '02:05:53', type: 'song', text: 'Reamonn - Supergirl' }
+      ],
+      vu: { left: 0.65, right: 0.62 }
+    };
+
+    // --- TONE.JS WARM ANALOG AUDIO ENGINE ---
+    let polySynth = null;
+    let fxSynth = null;
+    let masterGain = null;
+
+    async function initAudioEngine() {
+      try {
+        await Tone.start();
+        if (!masterGain) {
+          masterGain = new Tone.Gain(0.85).toDestination();
+          polySynth = new Tone.PolySynth(Tone.Synth, {
+            oscillator: { type: 'triangle' },
+            envelope: { attack: 0.05, decay: 0.25, sustain: 0.35, release: 0.7 }
+          }).connect(masterGain);
+          polySynth.volume.value = -15;
+
+          fxSynth = new Tone.PolySynth(Tone.AMSynth).connect(masterGain);
+          fxSynth.volume.value = -6;
+
+          let step = 0;
+          new Tone.Loop((time) => {
+            if (!state.playing) return;
+            const root = state.onAir.track.note || 'C3';
+            const notes = Tone.Frequency(root).harmonize([0, 4, 7, 11]);
+            polySynth.triggerAttackRelease(notes[step % notes.length], '8n', time);
+            step++;
+          }, '4n').start(0);
+
+          Tone.Transport.bpm.value = state.onAir.track.bpm || 110;
+          Tone.Transport.start();
+        }
+        state.dspReady = true;
+        const btn = document.getElementById('btn-dsp');
+        btn.textContent = 'TUBES WARM';
+        btn.className = 'px-2.5 py-0.5 rounded-full bg-brand-orange border border-brand-cream/50 text-brand-carbon font-mono text-[11px] font-bold';
+        showToast('Válvulas de audio analógico encendidas');
+      } catch (e) {
+        showToast('Haz clic nuevamente para encender el audio');
+      }
+    }
+
+    function showToast(msg) {
+      const box = document.getElementById('toast-container');
+      const el = document.createElement('div');
+      el.className = 'bg-brand-graphite border border-brand-orange text-brand-cream px-3 py-1.5 rounded-xl shadow-2xl text-xs font-medium transition-opacity duration-300';
+      el.textContent = msg;
+      box.appendChild(el);
+      setTimeout(() => {
+        el.style.opacity = '0';
+        setTimeout(() => el.remove(), 300);
+      }, 2600);
+    }
+
+    function toggleFullscreen() {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(() => {
+          showToast('Pulsa F11 en tu teclado para pantalla completa 16:9');
+        });
+      } else {
+        document.exitFullscreen();
+      }
+    }
+
+    function toggleAutoMode() {
+      state.autoMode = !state.autoMode;
+      const btn = document.getElementById('btn-auto-toggle');
+      if (state.autoMode) {
+        btn.textContent = 'AUTO';
+        btn.className = 'px-2.5 py-0.5 rounded-full bg-brand-orange hover:brightness-110 text-brand-carbon font-display font-bold text-[11px] tracking-wider shadow';
+      } else {
+        btn.textContent = 'MANUAL';
+        btn.className = 'px-2.5 py-0.5 rounded-full bg-brand-bronze hover:brightness-110 text-brand-carbon font-display font-bold text-[11px] tracking-wider shadow';
+      }
+    }
+
+    function toggleMicDuck() {
+      if (!state.dspReady) initAudioEngine();
+      state.micDuck = !state.micDuck;
+      const btn = document.getElementById('btn-mic-duck');
+      if (state.micDuck) {
+        btn.className = 'px-2.5 py-0.5 rounded-full bg-brand-orange text-brand-carbon font-display font-bold text-[11px] animate-pulse';
+        if (masterGain) masterGain.gain.rampTo(0.22, 0.15);
+        showToast('🎙️ MIC ON AIR: Música atenuada');
+      } else {
+        btn.className = 'px-2.5 py-0.5 rounded-full bg-brand-graphite700 hover:bg-brand-orange hover:text-brand-carbon border border-brand-bronze/40 text-brand-cream font-display font-medium text-[11px]';
+        if (masterGain) masterGain.gain.rampTo(0.85, 0.2);
+      }
+    }
+
+    /* Salamandra Pisadores (Auto ducking during song intro) */
+    function togglePisadores() {
+      state.pisadores = !state.pisadores;
+      const btn = document.getElementById('btn-pisadores');
+      if (state.pisadores) {
+        btn.textContent = 'PISADORES ON';
+        btn.className = 'px-2.5 py-0.5 rounded-full bg-brand-orange text-brand-carbon font-display font-bold text-[11px] transition';
+        showToast('Pisadores automáticos activados (Salamandra)');
+      } else {
+        btn.textContent = 'PISADORES OFF';
+        btn.className = 'px-2.5 py-0.5 rounded-full bg-brand-graphite700 border border-brand-bronze/40 text-brand-gray300 font-display font-medium text-[11px] transition';
+        if (masterGain && !state.micDuck) masterGain.gain.rampTo(0.85, 0.15);
+        showToast('Pisadores automáticos desactivados');
+      }
+    }
+
+    /* Salamandra Cartwall Trigger Mode */
+    function setCartMode(mode) {
+      state.cartMode = mode;
+      ['single', 'multi', 'fade'].forEach((m) => {
+        const el = document.getElementById(`cmode-${m}`);
+        if (!el) return;
+        if (m === mode) {
+          el.className = 'px-1.5 py-0.5 rounded bg-brand-orange text-brand-carbon font-bold';
+        } else {
+          el.className = 'px-1.5 py-0.5 rounded bg-brand-graphite700 text-brand-cream border border-brand-bronze/30';
+        }
+      });
+      if (mode === 'fade' && fxSynth && masterGain) {
+        masterGain.gain.rampTo(0.85, 0.4);
+      }
+      showToast(`Modo botonera: ${mode.toUpperCase()}`);
+    }
+
+    /* Dinesat / Salamandra AUX 1 Player */
+    function toggleAux1() {
+      if (!state.dspReady) initAudioEngine();
+      state.aux1Playing = !state.aux1Playing;
+      const btn = document.getElementById('btn-aux1');
+      if (state.aux1Playing) {
+        btn.textContent = '■ AUX';
+        btn.className = 'px-2 py-0.5 rounded-full bg-brand-orange text-brand-carbon font-mono font-bold';
+        if (fxSynth && Tone) {
+          fxSynth.triggerAttackRelease('G4', '4n');
+        }
+        showToast('AUX 1 al aire (Dinesat AUTO AUX)');
+      } else {
+        btn.textContent = '▶ AUX';
+        btn.className = 'px-2 py-0.5 rounded-full bg-brand-graphite700 hover:bg-brand-orange hover:text-brand-carbon border border-brand-bronze/40 text-brand-cream font-mono font-bold transition';
+      }
+    }
+
+    /* RadioBOSS Scheduled Events Renderer & Runner */
+    function renderScheduledEvents() {
+      const box = document.getElementById('scheduled-events-list');
+      if (!box) return;
+      box.innerHTML = state.scheduledEvents.map((ev) => `
+        <div class="flex items-center justify-between bg-brand-graphite border border-brand-bronze/20 rounded px-2 py-0.5">
+          <span class="truncate text-brand-cream">${ev.name}</span>
+          <span class="text-brand-orange font-bold ml-2 shrink-0">${formatMMSS(ev.countdown)}</span>
+        </div>
+      `).join('');
+    }
+
+    function runScheduledEventNow() {
+      const ev = state.scheduledEvents[0];
+      if (!ev) return;
+      ev.countdown = 600;
+      if (ev.action === 'time') insertAutoTime();
+      else refillPlaylistHour();
+      renderScheduledEvents();
+      showToast(`Evento ejecutado: ${ev.name}`);
+    }
+
+    function formatMMSS(sec) {
+      const s = Math.max(0, Math.floor(sec));
+      const m = Math.floor(s / 60);
+      const r = s % 60;
+      return `${String(m).padStart(2, '0')}:${String(r).padStart(2, '0')}`;
+    }
+
+    function formatHHMMSS(dateObj) {
+      return dateObj.toTimeString().split(' ')[0];
+    }
+
+    // --- INTERACTIVE OLD RADIO TUNING DIAL ---
+    function tuneOldRadioDial(e) {
+      if (!state.dspReady) initAudioEngine();
+      const rect = e.currentTarget.getBoundingClientRect();
+      const ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+      state.dialFreq = +(88.0 + ratio * 20.0).toFixed(1);
+      if (fxSynth && Tone) {
+        fxSynth.triggerAttackRelease('E5', '32n');
+      }
+      showToast(`📻 Sintonizado: ${state.dialFreq.toFixed(1)} MHz FM`);
+    }
+
+    // --- ON-AIR TRANSPORT & NEXT LOGIC ---
+    function triggerNextTrack(withFade) {
+      if (!state.dspReady) initAudioEngine();
+      const nowStr = formatHHMMSS(new Date());
+      state.history.push({
+        time: nowStr,
+        type: state.onAir.track.type,
+        text: `${state.onAir.track.artist} - ${state.onAir.track.title}`
+      });
+      if (state.history.length > 35) state.history.shift();
+      renderHistory();
+
+      if (state.stopNext) {
+        state.playing = false;
+        state.stopNext = false;
+        document.getElementById('btn-stopnext').classList.remove('ring-2', 'ring-brand-orange');
+        updateOnAirUI();
+        return;
+      }
+
+      if (state.playlist.length === 0) {
+        refillPlaylistHour();
+      }
+
+      const nextItem = state.playlist.shift();
+      state.onAir.track = { ...nextItem };
+      state.onAir.elapsed = 0;
+      state.playing = true;
+
+      if (Tone && Tone.Transport) {
+        Tone.Transport.bpm.value = nextItem.bpm || 120;
+      }
+
+      if (withFade) {
+        showToast(`Fade Next ➔ ${nextItem.title}`);
+      }
+
+      renderPlaylist();
+      updateOnAirUI();
+    }
+
+    function togglePlayPause() {
+      if (!state.dspReady) initAudioEngine();
+      state.playing = !state.playing;
+      updateOnAirUI();
+    }
+
+    function toggleLoop() {
+      state.loop = !state.loop;
+      const btn = document.getElementById('btn-loop');
+      btn.classList.toggle('ring-2', state.loop);
+      btn.classList.toggle('ring-brand-orange', state.loop);
+    }
+
+    function toggleStopAfterCurrent() {
+      state.stopNext = !state.stopNext;
+      const btn = document.getElementById('btn-stopnext');
+      btn.classList.toggle('ring-2', state.stopNext);
+      btn.classList.toggle('ring-brand-orange', state.stopNext);
+      showToast(state.stopNext ? 'StopNext activado: se detendrá al terminar esta pista' : 'StopNext desactivado');
+    }
+
+    function restartCurrentTrack() {
+      state.onAir.elapsed = 0;
+      state.playing = true;
+      updateOnAirUI();
+    }
+
+    function scrubOnAir(e) {
+      const rect = e.currentTarget.getBoundingClientRect();
+      const ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+      state.onAir.elapsed = ratio * state.onAir.track.duration;
+      updateOnAirUI();
+    }
+
+    function updateOnAirUI() {
+      const trk = state.onAir.track;
+      const remain = Math.max(0, trk.duration - state.onAir.elapsed);
+
+      document.getElementById('onair-title').textContent = trk.title;
+      document.getElementById('onair-artist').textContent = trk.artist;
+      document.getElementById('onair-meta').textContent = `${formatMMSS(trk.duration)} ${trk.type.toUpperCase()} | ${trk.cat} | ${trk.bpm} BPM`;
+      document.getElementById('rds-now-text').textContent = `${trk.artist} - ${trk.title}`;
+
+      const cd = document.getElementById('onair-countdown');
+      cd.textContent = formatMMSS(remain);
+      if (remain <= 10 && state.playing) {
+        cd.className = 'font-mono text-3xl sm:text-4xl lg:text-[40px] font-extrabold text-brand-cream tracking-tight leading-none shrink-0 animate-pulse';
+      } else {
+        cd.className = 'font-mono text-3xl sm:text-4xl lg:text-[40px] font-extrabold text-brand-orange tracking-tight leading-none shrink-0 drop-shadow-[0_0_10px_rgba(253,103,36,0.35)]';
+      }
+
+      document.getElementById('label-pause').textContent = state.playing ? 'Pause' : 'Play';
+    }
+
+    // --- PLAYLIST RENDERER (Jonathan León Brand Palette) ---
+    function renderPlaylist() {
+      const container = document.getElementById('playlist-stack');
+      container.innerHTML = '';
+
+      let cursorTime = new Date(Date.now() + Math.max(0, state.onAir.track.duration - state.onAir.elapsed) * 1000);
+      let totalSec = 0;
+
+      state.playlist.forEach((item, idx) => {
+        totalSec += item.duration;
+        const atStr = formatHHMMSS(cursorTime);
+        cursorTime = new Date(cursorTime.getTime() + item.duration * 1000);
+
+        let rowBg = idx % 2 === 0 ? 'bg-brand-graphite' : 'bg-[#221F1D]';
+        let badgeIcon = '🎵';
+        let titleClass = 'font-display text-sm font-bold text-brand-cream';
+        let subClass = 'text-xs text-brand-gray300';
+
+        if (item.type === 'jingle') {
+          rowBg = 'bg-gradient-to-r from-[#3A2B1F] to-[#2B221A]';
+          badgeIcon = '🔔';
+          titleClass = 'font-display text-sm font-bold text-brand-bronze uppercase';
+          subClass = 'text-[11px] font-medium text-brand-cream/80';
+        } else if (item.type === 'spot') {
+          rowBg = 'bg-gradient-to-r from-[#572613] to-[#3B1B0F]';
+          badgeIcon = '📻';
+          titleClass = 'font-display text-base font-bold text-brand-cream tracking-tight';
+          subClass = 'text-[11px] text-brand-orange';
+        }
+
+        const row = document.createElement('div');
+        row.className = `${rowBg} hover:brightness-110 px-3 py-1.5 flex items-center justify-between gap-2 cursor-pointer transition`;
+        row.ondblclick = () => {
+          state.playlist.splice(0, idx);
+          triggerNextTrack(false);
+        };
+
+        row.innerHTML = `
+          <div class="flex items-center gap-2.5 min-w-0">
+            <div class="w-7 h-7 rounded-lg bg-black/35 border border-brand-bronze/30 flex items-center justify-center text-sm shrink-0">
+              ${badgeIcon}
+            </div>
+            <div class="min-w-0">
+              <div class="text-[10px] font-mono leading-none mb-0.5">
+                <span class="text-brand-gray300 font-bold">${idx + 1} AT: ${atStr}</span>
+                <span class="text-brand-orange font-bold ml-1.5">Dur:${formatMMSS(item.duration)}</span>
+              </div>
+              <div class="${titleClass} truncate leading-tight">${item.title}</div>
+              ${item.type !== 'spot' ? `<div class="${subClass} truncate leading-tight">${item.artist}</div>` : ''}
+            </div>
+          </div>
+          <button onclick="removePlaylistItem(${idx}); event.stopPropagation();" class="text-brand-gray300 hover:text-brand-orange text-xs px-1.5 py-1 rounded" title="Quitar de escaleta">✕</button>
+        `;
+        container.appendChild(row);
+      });
+
+      const hrs = Math.floor(totalSec / 3600);
+      const mins = Math.floor((totalSec % 3600) / 60);
+      const secs = totalSec % 60;
+      document.getElementById('playlist-total-duration').textContent = `${hrs}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+    }
+
+    function removePlaylistItem(idx) {
+      state.playlist.splice(idx, 1);
+      renderPlaylist();
+    }
+
+    function insertSpotsBreak() {
+      state.playlist.unshift({ ...DATABASE.spots[0], uid: 'sp-' + Date.now() });
+      renderPlaylist();
+      showToast('Tanda Comercial insertada al inicio de la escaleta');
+    }
+
+    function refillPlaylistHour() {
+      const additions = [
+        DATABASE.songs[6],
+        DATABASE.jingles[2],
+        DATABASE.songs[7],
+        DATABASE.songs[8],
+        DATABASE.jingles[3],
+        DATABASE.songs[9]
+      ];
+      additions.forEach((item, i) => {
+        state.playlist.push({ ...item, uid: `auto-${Date.now()}-${i}` });
+      });
+      renderPlaylist();
+      showToast('Escaleta rellenada con 6 elementos musicales');
+    }
+
+    // --- CENTER PANEL TABS, LIBRARY TABLE & ACTION SIDEBAR ---
+    function selectCenterTab(tab) {
+      state.centerTab = tab;
+      ['songs', 'jingles', 'spots', 'voicetrack', 'cartwall', 'clocks', 'favorites'].forEach((t) => {
+        const btn = document.getElementById(`ctab-${t}`);
+        if (t === tab) {
+          btn.className = 'h-11 flex flex-col items-center justify-center border-r border-brand-cream/10 bg-gradient-to-b from-brand-graphite700 to-brand-carbon text-brand-cream';
+        } else {
+          btn.className = 'h-11 flex flex-col items-center justify-center border-r border-brand-cream/10 text-brand-gray300 hover:text-brand-cream hover:bg-brand-graphite700/40';
+        }
+      });
+
+      const viewTable = document.getElementById('view-table');
+      const viewCart = document.getElementById('view-cartwall');
+      const viewVoice = document.getElementById('view-voicetrack');
+      const viewClocks = document.getElementById('view-clocks');
+
+      [viewTable, viewCart, viewVoice, viewClocks].forEach((v) => v.classList.add('hidden'));
+
+      if (tab === 'cartwall') {
+        viewCart.classList.remove('hidden');
+        renderCartwall();
+      } else if (tab === 'voicetrack') {
+        viewVoice.classList.remove('hidden');
+        viewVoice.classList.add('flex');
+      } else if (tab === 'clocks') {
+        viewClocks.classList.remove('hidden');
+        viewClocks.classList.add('flex');
+        renderClocksView();
+      } else {
+        viewTable.classList.remove('hidden');
+        renderLibraryRows();
+      }
+    }
+
+    function getActiveDataset() {
+      if (state.centerTab === 'jingles') return DATABASE.jingles;
+      if (state.centerTab === 'spots') return DATABASE.spots;
+      if (state.centerTab === 'favorites') return DATABASE.songs.filter((s) => s.rot === 'GOLD');
+      return DATABASE.songs;
+    }
+
+    function renderLibraryRows() {
+      const container = document.getElementById('library-rows');
+      const query = document.getElementById('search-input').value.toLowerCase();
+      const catFilter = document.getElementById('filter-category').value;
+      const rotFilter = document.getElementById('filter-rotation').value;
+
+      let items = getActiveDataset().filter((item) => {
+        const matchQuery = item.artist.toLowerCase().includes(query) || item.title.toLowerCase().includes(query);
+        const matchCat = catFilter === 'ALL' || item.cat === catFilter;
+        const matchRot = rotFilter === 'ALL' || item.rot === rotFilter;
+        return matchQuery && matchCat && matchRot;
+      });
+
+      document.getElementById('songs-found-label').textContent = `${items.length} Pistas`;
+      container.innerHTML = '';
+
+      items.forEach((item) => {
+        const isSelected = item.id === state.selectedLibraryId;
+        const row = document.createElement('div');
+        row.className = `grid grid-cols-12 px-2.5 py-1.5 cursor-pointer items-center transition ${
+          isSelected
+            ? 'bg-brand-orange/20 text-brand-cream font-bold border-l-2 border-brand-orange'
+            : 'hover:bg-brand-graphite700/50 text-brand-bronze'
+        }`;
+        row.onclick = () => {
+          state.selectedLibraryId = item.id;
+          renderLibraryRows();
+        };
+        row.ondblclick = () => {
+          state.selectedLibraryId = item.id;
+          actionPlaylist('add');
+        };
+
+        row.innerHTML = `
+          <div class="col-span-4 truncate pr-1">${item.artist}</div>
+          <div class="col-span-5 truncate pr-1 text-brand-cream">${item.title}</div>
+          <div class="col-span-1 text-right font-mono text-[11px] text-brand-gray300">${formatMMSS(item.duration)}</div>
+          <div class="col-span-2 text-right truncate text-[10px] text-brand-gray300 pl-1">${item.cat}</div>
+        `;
+        container.appendChild(row);
+      });
+    }
+
+    function resetSearch() {
+      document.getElementById('search-input').value = '';
+      document.getElementById('filter-category').value = 'ALL';
+      document.getElementById('filter-rotation').value = 'ALL';
+      renderLibraryRows();
+    }
+
+    function actionPlaylist(action) {
+      const allItems = [...DATABASE.songs, ...DATABASE.jingles, ...DATABASE.spots];
+      const selected = allItems.find((i) => i.id === state.selectedLibraryId) || DATABASE.songs[0];
+
+      if (action === 'add') {
+        state.playlist.push({ ...selected, uid: 'add-' + Date.now() });
+        renderPlaylist();
+        showToast(`+ Add: ${selected.title}`);
+      } else if (action === 'insert') {
+        state.playlist.unshift({ ...selected, uid: 'ins-' + Date.now() });
+        renderPlaylist();
+        showToast(`⇥ Insert siguiente: ${selected.title}`);
+      } else if (action === 'replace') {
+        if (state.playlist.length > 0) state.playlist[0] = { ...selected, uid: 'rep-' + Date.now() };
+        else state.playlist.push({ ...selected, uid: 'rep-' + Date.now() });
+        renderPlaylist();
+        showToast(`↱ Reemplazada siguiente pista por ${selected.title}`);
+      } else if (action === 'prepair') {
+        if (!state.dspReady) initAudioEngine();
+        document.getElementById('pfl-status').textContent = `PFL: ${selected.title.substring(0, 12)}`;
+        if (fxSynth && Tone) {
+          fxSynth.triggerAttackRelease(selected.note || 'C4', '8n');
+        }
+        showToast(`🎧 Pre-escucha PFL: ${selected.artist} - ${selected.title}`);
+      } else if (action === 'delete') {
+        if (state.playlist.length > 0) {
+          const removed = state.playlist.shift();
+          renderPlaylist();
+          showToast(`🗑 Eliminado: ${removed.title}`);
+        }
+      } else if (action === 'clear') {
+        state.playlist = [];
+        renderPlaylist();
+        showToast('✕ Escaleta vaciada');
+      }
+    }
+
+    function renderCartwall() {
+      const container = document.getElementById('view-cartwall');
+      container.innerHTML = CARTWALL_PADS.map((pad, idx) => `
+        <button onclick="fireCartPad(${idx})" id="pad-btn-${idx}" class="rounded-xl ${pad.style} border p-2 text-left flex flex-col justify-between hover:brightness-110 active:scale-95 transition shadow">
+          <span class="px-1.5 py-0.5 rounded-full bg-black/30 font-mono text-[10px] font-extrabold text-current self-start">${pad.key}</span>
+          <div>
+            <div class="font-display text-xs font-bold truncate">${pad.title}</div>
+            <div class="text-[10px] opacity-80 truncate">${pad.sub}</div>
+          </div>
+        </button>
+      `).join('');
+    }
+
+    function fireCartPad(idx) {
+      if (!state.dspReady) initAudioEngine();
+      const pad = CARTWALL_PADS[idx];
+      if (!pad) return;
+      if (fxSynth && Tone) {
+        const now = Tone.now();
+        pad.notes.forEach((n, i) => fxSynth.triggerAttackRelease(n, '16n', now + i * 0.07));
+      }
+      state.vu.left = 0.94;
+      state.vu.right = 0.91;
+      state.history.push({ time: formatHHMMSS(new Date()), type: 'jingle', text: `CARTWALL [${pad.key}] - ${pad.title}` });
+      renderHistory();
+      showToast(`🔔 Cartwall [${pad.key}]: ${pad.title}`);
+    }
+
+    function renderClocksView() {
+      const slots = [
+        { min: ':00', name: 'TOP OF THE HOUR + Señal Horaria', color: 'text-brand-orange' },
+        { min: ':02', name: 'ALTA ROTACIÓN — Éxito Principal', color: 'text-brand-cream' },
+        { min: ':06', name: 'LATIN URBAN — Novedad', color: 'text-brand-bronze' },
+        { min: ':10', name: 'SHOTGUN JINGLE (5s)', color: 'text-brand-orange' },
+        { min: ':20', name: 'TANDA COMERCIAL 1 (Pauta)', color: 'text-brand-cream' },
+        { min: ':23', name: 'CLÁSICOS OLD RADIO — Oro', color: 'text-brand-bronze' }
+      ];
+      document.getElementById('clocks-table').innerHTML = slots.map((s) => `
+        <div class="bg-brand-graphite border border-brand-bronze/25 rounded-lg px-2.5 py-1.5 flex items-center justify-between">
+          <div><span class="font-mono font-bold text-brand-orange mr-2">${s.min}</span><span class="font-display font-medium ${s.color}">${s.name}</span></div>
+          <span class="text-[10px] font-mono text-brand-gray300">AUTO</span>
+        </div>
+      `).join('');
+    }
+
+    function insertAutoTime() {
+      const now = new Date();
+      const hhmm = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+      state.playlist.unshift({
+        id: 'time-' + Date.now(),
+        uid: 'time-' + Date.now(),
+        type: 'jingle',
+        artist: 'SEÑAL HORARIA',
+        title: `🕒 Son las ${hhmm} en LeonRadio`,
+        duration: 5,
+        intro: 0,
+        outro: 4.5,
+        bpm: 120,
+        cat: 'Hora',
+        rot: 'HIGH',
+        note: 'E4'
+      });
+      renderPlaylist();
+      showToast(`🕒 Hora exacta (${hhmm}) insertada`);
+    }
+
+    function playWeatherBulletin() {
+      if (!state.dspReady) initAudioEngine();
+      if (fxSynth && Tone) {
+        const t = Tone.now();
+        fxSynth.triggerAttackRelease('F4', '8n', t);
+        fxSynth.triggerAttackRelease('A4', '8n', t + 0.14);
+        fxSynth.triggerAttackRelease('C5', '4n', t + 0.28);
+      }
+      showToast('🌤️ Boletín de clima emitido (21°C)');
+    }
+
+    // --- RIGHT COLUMN: HISTORY RENDERER ---
+    function renderHistory() {
+      const box = document.getElementById('history-list');
+      box.innerHTML = state.history.map((item) => {
+        let rowStyle = 'text-brand-gray300';
+        if (item.type === 'jingle') rowStyle = 'bg-[#3A2B1F] text-brand-bronze font-semibold';
+        if (item.type === 'spot') rowStyle = 'bg-[#572613] text-brand-cream font-semibold';
+        return `
+          <div class="px-2.5 py-1 flex items-center gap-2 ${rowStyle}">
+            <span class="text-brand-gray500 shrink-0">${item.time}</span>
+            <span class="truncate">${item.text}</span>
+          </div>
+        `;
+      }).join('');
+      box.scrollTop = box.scrollHeight;
+    }
+
+    // --- CANVAS RENDERERS (WAVEFORM BAR, STEREO L/R VU, BIG CLOCK & CALENDAR) ---
+    function resizeCanvases() {
+      ['canvas-onair-bar', 'canvas-top-vu', 'canvas-led-clock'].forEach((id) => {
+        const c = document.getElementById(id);
+        if (!c || !c.parentElement) return;
+        const dpr = window.devicePixelRatio || 1;
+        const rect = c.parentElement.getBoundingClientRect();
+        c.width = Math.max(10, Math.floor(rect.width * dpr));
+        c.height = Math.max(10, Math.floor(rect.height * dpr));
+        c.getContext('2d').setTransform(dpr, 0, 0, dpr, 0, 0);
+      });
+    }
+
+    function drawOnAirProgressCanvas() {
+      const c = document.getElementById('canvas-onair-bar');
+      if (!c) return;
+      const ctx = c.getContext('2d');
+      const dpr = window.devicePixelRatio || 1;
+      const w = c.width / dpr;
+      const h = c.height / dpr;
+
+      ctx.clearRect(0, 0, w, h);
+      const trk = state.onAir.track;
+      const ratio = Math.min(1, state.onAir.elapsed / trk.duration);
+      const introRatio = Math.min(1, trk.intro / trk.duration);
+
+      // Played progress bar in warm Bronze/Orange
+      ctx.fillStyle = 'rgba(197, 143, 94, 0.25)';
+      ctx.fillRect(0, 0, w * ratio, h);
+
+      // Top highlight strip on progress (#FD6724)
+      ctx.fillStyle = '#FD6724';
+      ctx.fillRect(0, 0, w * ratio, 2.5);
+
+      // Intro zone marker
+      if (introRatio > 0) {
+        ctx.fillStyle = 'rgba(253, 103, 36, 0.32)';
+        ctx.fillRect(0, 0, w * introRatio, h);
+      }
+
+      // Dinesat OUTRO marker line
+      if (trk.outro && trk.outro < trk.duration) {
+        const outroX = (trk.outro / trk.duration) * w;
+        ctx.strokeStyle = '#C58F5E';
+        ctx.setLineDash([3, 2]);
+        ctx.beginPath();
+        ctx.moveTo(outroX, 0);
+        ctx.lineTo(outroX, h);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.fillStyle = '#C58F5E';
+        ctx.font = 'bold 8px "JetBrains Mono", monospace';
+        ctx.fillText('OUTRO', outroX - 28, 9);
+      }
+
+      // Minute grid ticks
+      ctx.strokeStyle = 'rgba(242, 232, 218, 0.16)';
+      ctx.fillStyle = '#B5A898';
+      ctx.font = '10px "JetBrains Mono", monospace';
+      for (let sec = 60; sec < trk.duration; sec += 60) {
+        const tx = (sec / trk.duration) * w;
+        ctx.beginPath();
+        ctx.moveTo(tx, 0);
+        ctx.lineTo(tx, h);
+        ctx.stroke();
+        ctx.fillText(formatMMSS(sec), tx + 4, h - 5);
+      }
+
+      // Current elapsed timestamp tag next to playhead
+      const px = w * ratio;
+      ctx.strokeStyle = '#F2E8DA';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(px, 0);
+      ctx.lineTo(px, h);
+      ctx.stroke();
+
+      ctx.fillStyle = '#F2E8DA';
+      ctx.font = 'bold 11px "JetBrains Mono", monospace';
+      const labelX = px + 6 > w - 42 ? px - 42 : px + 6;
+      ctx.fillText(formatMMSS(state.onAir.elapsed), labelX, h - 5);
+    }
+
+    /* OLD RADIO ILLUMINATED TUNING DIAL (88 - 108 MHz FM) */
+    function drawOldRadioDial() {
+      const c = document.getElementById('canvas-oldradio-dial');
+      if (!c) return;
+      const ctx = c.getContext('2d');
+      const dpr = window.devicePixelRatio || 1;
+      const w = c.width / dpr;
+      const h = c.height / dpr;
+
+      ctx.clearRect(0, 0, w, h);
+
+      // Warm horizontal tuning rail
+      const railY = h * 0.56;
+      ctx.strokeStyle = 'rgba(197, 143, 94, 0.45)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(10, railY);
+      ctx.lineTo(w - 10, railY);
+      ctx.stroke();
+
+      // Frequency tick marks (88 to 108 MHz)
+      const freqs = [88, 90, 92, 94, 96, 98, 100, 102, 104, 106, 108];
+      ctx.textAlign = 'center';
+      freqs.forEach((f, idx) => {
+        const x = 12 + (idx / (freqs.length - 1)) * (w - 24);
+        ctx.strokeStyle = f === 98 ? '#FD6724' : '#C58F5E';
+        ctx.beginPath();
+        ctx.moveTo(x, railY - 6);
+        ctx.lineTo(x, railY + 6);
+        ctx.stroke();
+
+        if (idx % 2 === 0 || f === 98) {
+          ctx.fillStyle = f === 98 ? '#FD6724' : '#F2E8DA';
+          ctx.font = f === 98 ? 'bold 9px "JetBrains Mono", monospace' : '8px "JetBrains Mono", monospace';
+          ctx.fillText(String(f), x, railY - 10);
+        }
+      });
+
+      // Top "OLD RADIO FM STEREO" engraving
+      ctx.fillStyle = '#C58F5E';
+      ctx.font = 'bold 8px "Space Grotesk", sans-serif';
+      ctx.textAlign = 'left';
+      ctx.fillText('FM • MHz', 10, 13);
+
+      ctx.textAlign = 'right';
+      ctx.fillStyle = '#FD6724';
+      ctx.fillText(`${state.dialFreq.toFixed(1)} MHz`, w - 10, 13);
+
+      // Glowing Orange Tuning Needle
+      const norm = (state.dialFreq - 88.0) / 20.0;
+      const needleX = 12 + norm * (w - 24);
+
+      ctx.shadowColor = '#FD6724';
+      ctx.shadowBlur = 10;
+      ctx.strokeStyle = '#FD6724';
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.moveTo(needleX, 18);
+      ctx.lineTo(needleX, h - 6);
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+
+      // Bottom Stereo Lamp Indicator
+      ctx.fillStyle = state.playing ? '#FD6724' : '#6B625A';
+      ctx.beginPath();
+      ctx.arc(14, h - 10, 3, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#B5A898';
+      ctx.font = '8px "Inter", sans-serif';
+      ctx.textAlign = 'left';
+      ctx.fillText('STEREO', 21, h - 7);
+    }
+
+    /* WARM VINTAGE ANALOG NEEDLE VU METER */
+    function drawTopVerticalVu() {
+      const c = document.getElementById('canvas-top-vu');
+      if (!c) return;
+      const ctx = c.getContext('2d');
+      const dpr = window.devicePixelRatio || 1;
+      const w = c.width / dpr;
+      const h = c.height / dpr;
+
+      ctx.clearRect(0, 0, w, h);
+    /* STEREO VU METER (INDEPENDENT LEFT & RIGHT CHANNELS) */
+    function drawTopVerticalVu() {
+      const c = document.getElementById('canvas-top-vu');
+      if (!c) return;
+      const ctx = c.getContext('2d');
+      const dpr = window.devicePixelRatio || 1;
+      const w = c.width / dpr;
+      const h = c.height / dpr;
+
+      ctx.clearRect(0, 0, w, h);
+
+      const duckFactor = state.micDuck ? 0.35 : (state.pisadores && state.onAir.track.intro > 0 && state.onAir.elapsed <= state.onAir.track.intro ? 0.65 : 1);
+      const targetL = state.playing ? (0.45 + Math.random() * 0.5) * duckFactor : 0.04;
+      const targetR = state.playing ? (0.45 + Math.random() * 0.5) * duckFactor : 0.04;
+      state.vu.left += (targetL - state.vu.left) * 0.25;
+      state.vu.right += (targetR - state.vu.right) * 0.25;
+
+      const channels = [
+        { label: 'L', val: state.vu.left },
+        { label: 'R', val: state.vu.right }
+      ];
+
+      const rowGap = 6;
+      const rowH = Math.max(10, (h - rowGap * 3) / 2);
+      const labelW = 14;
+      const meterX = labelW + 4;
+      const meterW = Math.max(20, w - meterX - 4);
+      const segments = 18;
+
+      channels.forEach((ch, idx) => {
+        const y = rowGap + idx * (rowH + rowGap);
+
+        ctx.fillStyle = '#F2E8DA';
+        ctx.font = 'bold 10px "JetBrains Mono", monospace';
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(ch.label, 2, y + rowH / 2);
+
+        const activeSegs = Math.round(Math.min(1, ch.val) * segments);
+        const segGap = 2;
+        const segW = Math.max(2, (meterW - segGap * (segments - 1)) / segments);
+
+        for (let s = 0; s < segments; s++) {
+          const sx = meterX + s * (segW + segGap);
+          let color = '#2A2420';
+          if (s < activeSegs) {
+            if (s >= segments - 3) color = '#FD6724';
+            else if (s >= segments - 7) color = '#C58F5E';
+            else color = '#F2E8DA';
+          }
+          ctx.fillStyle = color;
+          ctx.fillRect(sx, y, segW, rowH);
+        }
+      });
+    }
+
+    function drawCircularLedClock() {
+      const c = document.getElementById('canvas-led-clock');
+      if (!c) return;
+      const ctx = c.getContext('2d');
+      const dpr = window.devicePixelRatio || 1;
+      const w = c.width / dpr;
+      const h = c.height / dpr;
+
+      ctx.clearRect(0, 0, w, h);
+
+      const now = new Date();
+      const secs = now.getSeconds();
+      const cx = w / 2;
+      const cy = h / 2;
+      const radius = Math.max(8, Math.min(cx, cy) - 4);
+
+      for (let i = 0; i < 60; i++) {
+        const angle = (i / 60) * Math.PI * 2 - Math.PI / 2;
+        const dx = cx + Math.cos(angle) * radius;
+        const dy = cy + Math.sin(angle) * radius;
+
+        ctx.beginPath();
+        ctx.arc(dx, dy, i % 5 === 0 ? 1.8 : 1.1, 0, Math.PI * 2);
+        if (i <= secs) {
+          ctx.fillStyle = i % 5 === 0 ? '#FD6724' : '#C58F5E';
+        } else {
+          ctx.fillStyle = '#3A3633';
+        }
+        ctx.fill();
+      }
+
+      ctx.fillStyle = '#FD6724';
+      ctx.font = 'bold 11px "JetBrains Mono", monospace';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(String(secs).padStart(2, '0'), cx, cy);
+
+      const dayNames = ['DOMINGO', 'LUNES', 'MARTES', 'MIÉRCOLES', 'JUEVES', 'VIERNES', 'SÁBADO'];
+      const monthNames = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+
+      const dayEl = document.getElementById('big-clock-day');
+      const timeEl = document.getElementById('big-clock-time');
+      const dateEl = document.getElementById('big-clock-date');
+
+      if (dayEl) dayEl.textContent = dayNames[now.getDay()];
+      if (timeEl) timeEl.textContent = formatHHMMSS(now);
+      if (dateEl) dateEl.textContent = `${now.getDate()} ${monthNames[now.getMonth()]} ${now.getFullYear()}`;
+    }
+
+    // --- MAIN BROADCAST LOOP ---
+    let lastTime = 0;
+    let secAccumulator = 0;
+
+    function mainLoop(ts) {
+      if (!lastTime) lastTime = ts;
+      const dt = (ts - lastTime) / 1000;
+      lastTime = ts;
+
+      if (state.playing) {
+        state.onAir.elapsed += dt;
+
+        if (masterGain && !state.micDuck) {
+          const inIntro = state.pisadores && state.onAir.track.intro > 0 && state.onAir.elapsed <= state.onAir.track.intro;
+          masterGain.gain.rampTo(inIntro ? 0.58 : 0.85, 0.15);
+        }
+
+        if (state.onAir.elapsed >= state.onAir.track.outro && state.autoMode && !state.loop) {
+          triggerNextTrack(true);
+        } else if (state.onAir.elapsed >= state.onAir.track.duration) {
+          if (state.loop) state.onAir.elapsed = 0;
+          else triggerNextTrack(false);
+        }
+      }
+
+      secAccumulator += dt;
+      if (secAccumulator >= 1) {
+        secAccumulator -= 1;
+        state.nextBreakSeconds = state.nextBreakSeconds > 0 ? state.nextBreakSeconds - 1 : 1200;
+        document.getElementById('next-break-timer').textContent = formatMMSS(state.nextBreakSeconds);
+
+        state.scheduledEvents.forEach((ev) => {
+          if (!ev.active) return;
+          if (ev.countdown > 0) {
+            ev.countdown -= 1;
+          } else {
+            ev.countdown = 600;
+            if (ev.action === 'time') insertAutoTime();
+            else refillPlaylistHour();
+          }
+        });
+        renderScheduledEvents();
+        renderPlaylist();
+      }
+
+      updateOnAirUI();
+      drawOnAirProgressCanvas();
+      drawTopVerticalVu();
+      drawCircularLedClock();
+
+      requestAnimationFrame(mainLoop);
+    }
+
+    // Keyboard Shortcuts: F1-F12 for Cartwall, Spacebar for Mic Duck
+    window.addEventListener('keydown', (e) => {
+      if (document.activeElement && document.activeElement.tagName === 'INPUT') return;
+      if (e.code === 'Space') {
+        e.preventDefault();
+        toggleMicDuck();
+      } else if (e.key.startsWith('F') && e.key.length <= 3) {
+        const n = parseInt(e.key.substring(1), 10);
+        if (n >= 1 && n <= 12) {
+          e.preventDefault();
+          fireCartPad(n - 1);
+        }
+      }
+    });
+
+    window.addEventListener('resize', resizeCanvases);
+
+    window.onload = function () {
+      resizeCanvases();
+      renderPlaylist();
+      renderLibraryRows();
+      renderHistory();
+      renderScheduledEvents();
+      updateOnAirUI();
+      requestAnimationFrame(mainLoop);
+    };
+  </script>
+</body>
+</html>
