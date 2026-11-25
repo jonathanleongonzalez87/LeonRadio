@@ -35,6 +35,11 @@ class UI:
     def progress(self, value: float, text: str | None = None) -> None:
         self._add({"t": "progress", "value": max(0.0, min(1.0, float(value))), "text": text})
 
+    def custom(self, component: str, **props: Any) -> None:
+        """Componente JS incluido en la UI (vu-meter, analog-clock, fm-dial, cartwall…).
+        Las props deben ser JSON; el componente se dibuja en el navegador."""
+        self._add({"t": "custom", "component": component, "props": props})
+
     def separator(self) -> None:
         self._add({"t": "separator"})
 

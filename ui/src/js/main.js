@@ -1,7 +1,7 @@
 import { connectEvents, getEditors, getInfo } from "./api.js";
 import { AreaManager, area, split } from "./areas.js";
 
-const KEY = "leonradio.workspaces.v1";
+const KEY = "leonradio.workspaces.v3";
 const $ = (s) => document.querySelector(s);
 const store = {
   get() { try { return JSON.parse(localStorage.getItem(KEY)); } catch { return null; } },
@@ -11,7 +11,9 @@ const store = {
 const defaults = () => ({
   active: 0,
   list: [
-    { name: "Aire", tree: split("h", split("v", area("aire"), area("historial"), 0.5), area("cola"), 0.62) },
+    { name: "Aire", tree: split("v",
+        split("h", area("aire"), split("h", area("vu"), split("h", area("reloj"), area("dial"), 0.42), 0.42), 0.30),
+        split("h", area("cola"), split("h", area("cartuchera"), area("historial"), 0.55), 0.34), 0.5) },
     { name: "Programación", tree: split("h", area("cola"), area("historial"), 0.45) },
     { name: "Producción", tree: split("h", area("aire"), area("ejemplo.hora"), 0.6) },
   ],
@@ -80,7 +82,7 @@ async function boot() {
 
   let pending = false;
   connectEvents(
-    () => { if (!pending) { pending = true; setTimeout(() => { pending = false; mgr.refreshAll(); }, 700); } },
+    (ev) => { if (ev.event === "audio.levels") return; if (!pending) { pending = true; setTimeout(() => { pending = false; mgr.refreshAll(); }, 700); } },
     (on) => $("#lamp").classList.toggle("on", on),
   );
 }

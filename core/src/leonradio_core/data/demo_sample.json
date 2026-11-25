@@ -1,0 +1,5 @@
+[
+  {"id": null, "kind": "jingle", "title": "RRC Jingle 1", "artist": "Rockland Radio", "duration_ms": 8000},
+  {"id": null, "kind": "music", "title": "Muestra A", "artist": "Artista A", "duration_ms": 30000},
+  {"id": null, "kind": "music", "title": "Muestra B", "artist": "Artista B", "duration_ms": 30000}
+]

@@ -19,6 +19,9 @@ export async function runCommand(name, args = {}) {
   return r.json();
 }
 
+// Bus de eventos del servidor: los componentes se suscriben con bus.addEventListener("audio.levels", …)
+export const bus = new EventTarget();
+
 // Eventos en vivo con reconexión automática.
 export function connectEvents(onEvent, onStatus) {
   let ws, wait = 500;
@@ -26,7 +29,13 @@ export function connectEvents(onEvent, onStatus) {
     const proto = location.protocol === "https:" ? "wss" : "ws";
     ws = new WebSocket(`${proto}://${location.host}/ws`);
     ws.onopen = () => { wait = 500; onStatus(true); };
-    ws.onmessage = (m) => { try { onEvent(JSON.parse(m.data)); } catch { /* ignorar */ } };
+    ws.onmessage = (m) => {
+      try {
+        const msg = JSON.parse(m.data);
+        bus.dispatchEvent(new CustomEvent(msg.event, { detail: msg.data }));
+        onEvent(msg);
+      } catch { /* ignorar */ }
+    };
     ws.onclose = () => { onStatus(false); setTimeout(open, wait); wait = Math.min(wait * 2, 8000); };
   };
   open();

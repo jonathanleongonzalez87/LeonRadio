@@ -1,6 +1,7 @@
 // Renderer de UI declarativa: convierte el árbol que describe un editor (Python) en DOM.
 // Nunca usa innerHTML con datos: todo texto entra por textContent (los addons no son de confianza).
 import { runCommand } from "./api.js";
+import { COMPONENTS } from "./components/index.js";
 
 function el(tag, cls, text) {
   const n = document.createElement(tag);
@@ -37,6 +38,12 @@ const NODES = {
     w.append(bar);
     if (n.text) w.append(el("div", "u-prog-t", n.text));
     return w;
+  },
+  custom: (n, ctx) => {
+    const make = COMPONENTS[n.component];
+    if (!make) return el("p", "u-label warn", `Componente desconocido: ${n.component}`);
+    try { return make(n.props || {}, ctx); }
+    catch (e) { console.error(e); return el("p", "u-label warn", `Error en componente ${n.component}`); }
   },
   separator: () => el("hr", "u-sep"),
   table: (n) => {

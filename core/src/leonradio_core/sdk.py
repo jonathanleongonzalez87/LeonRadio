@@ -5,8 +5,10 @@ Los editores incluidos (`builtin/`) usan EXACTAMENTE esta misma API que un addon
 
 from __future__ import annotations
 
+import json
 import logging
 import threading
+from pathlib import Path
 from types import MappingProxyType
 from typing import Any, Callable, Mapping
 
@@ -17,6 +19,14 @@ from .uischema import UI
 
 API_VERSION = "0.1"
 log = logging.getLogger("leonradio.sdk")
+
+_DATA = Path(__file__).parent / "data"
+
+
+def load_json(name: str):
+    """Datos de ejemplo/configuración empaquetados en `leonradio_core/data/`."""
+    return json.loads((_DATA / name).read_text(encoding="utf-8"))
+
 
 PERMISSIONS = {"library.read", "playlog.read", "playlog.write", "state.write", "network"}
 
@@ -45,6 +55,10 @@ class Context:
     def _need(self, perm: str) -> None:
         if perm not in self.permissions:
             raise PermissionDenied(f"{self.owner} no tiene el permiso '{perm}'")
+
+    @property
+    def config(self) -> Mapping[str, Any]:
+        return MappingProxyType(dict(self._host.config))
 
     @property
     def state(self) -> Mapping[str, Any]:
@@ -78,8 +92,9 @@ class Context:
 class Host:
     """Estado compartido del programa: registros, bus de eventos, base de datos."""
 
-    def __init__(self, db_path: str = ":memory:", station: str = "RRC") -> None:
-        self.station = station
+    def __init__(self, db_path: str = ":memory:", config: dict | None = None) -> None:
+        self.config: dict[str, Any] = config or load_json("station.json")
+        self.station: str = self.config["short"]
         self.db = _db.connect(db_path, shared=True)
         self.db_lock = threading.RLock()
         self.events = EventBus()

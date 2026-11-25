@@ -6,13 +6,17 @@ Se conecta al motor [`core/`](../core) por REST + WebSocket.
 ## Contenido
 - `prototypes/` — las maquetas originales (v0 es la base visual: dial FM, tubos, VU estéreo, cartuchera).
 - `src/css/tokens.css` — tokens de marca (paleta + Space Grotesk / Inter).
-- `data/` — datos de ejemplo en JSON (contrato de la futura API).
+- `src/` — la interfaz: `index.html`, `css/`, `js/` (áreas, renderer, `components/` vintage), `fonts/`.
+- Contrato con el motor: [`../docs/api-v0.md`](../docs/api-v0.md).
 
-## Siguiente (F0)
-1. Separar `v0-old-radio-console.html` en `index.html` + `css/` + `js/` por componentes.
-2. Quitar Tailwind CDN y Google Fonts remotos (empaquetar local).
-3. Sustituir `DATABASE` embebida por JSON y luego por la API.
-4. Corregir tipografías al manual (la maqueta usa Montserrat/JetBrains Mono).
+## Hecho en F0
+Separada la maqueta, sin CDN (fuentes locales), tipografías del manual, datos en JSON y los componentes
+vintage (VU, reloj, dial/RDS, cartuchera) portados como componentes JS.
+
+## Pendiente
+- Pruebas automáticas del gestor de áreas.
+- Componentes de más editores (mezclador, voice-track, relojes de programación).
+- Componentes JS propios para addons (hoy solo los incluidos).
 
 ## Licencia
 Código: GPL-3.0-or-later (`LICENSE`). Diseño y documentación: CC BY-SA 4.0 (`../LICENSE`).

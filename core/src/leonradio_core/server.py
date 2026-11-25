@@ -58,8 +58,8 @@ def create_app(
 
         async def clock() -> None:
             while True:
-                await asyncio.sleep(1)
-                playout.tick(1.0)
+                await asyncio.sleep(0.1)
+                playout.tick(0.1)
 
         tasks = [asyncio.create_task(broadcaster())]
         if tick:
@@ -73,7 +73,7 @@ def create_app(
 
     @app.get("/api/info")
     def info() -> dict:
-        return {"station": host.station, "api_version": sdk.API_VERSION,
+        return {"station": host.station, "config": host.config, "api_version": sdk.API_VERSION,
                 "addons": [{"id": m.id, "name": m.name, "version": m.version,
                             "permissions": sorted(m.permissions)} for m in loaded]}
 

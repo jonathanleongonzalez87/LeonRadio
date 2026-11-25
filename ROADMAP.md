@@ -6,8 +6,9 @@ modo **automático + Live Assist** · monorepo público · código GPL-3.0, docs
 
 ## F0 — Consolidar (en curso)
 - [x] Repos y tablero creados; esquema de biblioteca e historial en core (con pruebas)
-- [ ] UI: separar la maqueta v0 en `index.html`/`css`/`js`, sin CDN, tipografías del manual
-- [ ] Datos de ejemplo → JSON; definir contrato de API v0
+- [x] UI: maqueta v0 separada en `index.html` + `css/` + `js/`, sin CDN, Space Grotesk/Inter locales
+- [x] Componentes vintage portados como componentes JS: VU analógico estéreo, reloj de pared, dial FM + RDS, cartuchera F1–F12
+- [x] Datos de ejemplo y configuración en JSON (`core/src/leonradio_core/data/`); contrato en [docs/api-v0.md](docs/api-v0.md)
 - [ ] Biblioteca de prueba RRC (36 archivos: música 00s/10s/20s, jingles, pisadores, separadores)
 
 ## F0.5 — Plataforma de editores y addons (nueva, antes de añadir funciones)
