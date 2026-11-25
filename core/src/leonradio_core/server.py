@@ -8,10 +8,12 @@ from __future__ import annotations
 import asyncio
 import logging
 import os
+import time
 from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
+from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
@@ -119,11 +121,32 @@ def create_app(
 
     ui = ui_dir or Path(os.environ.get("LEONRADIO_UI", REPO / "ui" / "src"))
     if ui.is_dir():
-        app.mount("/", NoCacheStatic(directory=ui, html=True), name="ui")
+        # Cada arranque sirve la UI bajo una URL nueva (/v/<versión>/): el navegador nunca reutiliza
+        # archivos viejos de una ejecución anterior, ni hace falta Ctrl+F5.
+        ver = f"v{int(time.time())}"
+        app.mount(f"/v/{ver}", NoCacheStatic(directory=ui, html=True), name="ui")
+
+        @app.get("/", include_in_schema=False)
+        def root() -> RedirectResponse:
+            return RedirectResponse(f"/v/{ver}/", status_code=307)
     return app
 
 
 def serve(library_dir: str | None, port: int = 8765) -> None:
+    import socket
+
     import uvicorn
+
+    with socket.socket() as probe:
+        if probe.connect_ex(("127.0.0.1", port)) == 0:
+            print(f"\nYa hay algo escuchando en el puerto {port}.\n"
+                  f"  · Si es LeonRadio, abre http://127.0.0.1:{port}/\n"
+                  f"  · Si no, usa otro puerto:  leonradio serve --port {port + 1}\n")
+            raise SystemExit(1)
+    if library_dir and not Path(library_dir).is_dir():
+        print(f"\nAVISO: la carpeta de la emisora no existe: {library_dir}\n"
+              "       Arranco con la biblioteca vacía (verás datos de muestra).\n")
+        library_dir = None
     logging.basicConfig(level=logging.INFO)
+    print(f"\nLeonRadio listo en  http://127.0.0.1:{port}/   (Ctrl+C para detener)\n")
     uvicorn.run(create_app(library_dir=library_dir), host="127.0.0.1", port=port, log_level="info")

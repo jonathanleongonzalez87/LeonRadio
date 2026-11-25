@@ -46,7 +46,16 @@ leonradio/
 
 Tablero: [Proyecto LeonRadio](https://github.com/users/jonathanleongonzalez87/projects/1) · Issues: pestaña *Issues* de este repo.
 
-## Empezar
+## Iniciar el programa (Windows)
+Haz doble clic en **`iniciar-leonradio.bat`**. La primera vez crea su entorno de Python (fuera de OneDrive, en
+`%LOCALAPPDATA%\LeonRadioenv`) e instala lo necesario; después arranca el servidor y abre el navegador en
+`http://127.0.0.1:8765/`. Usa la carpeta de la emisora que esté junto al repo (`..\Rockland Radio`), o pásala como
+argumento: `iniciar-leonradio.bat "D:\Mi Emisora"`. Si ya hay un servidor, solo abre el navegador.
+Para detenerlo, cierra la ventana negra o pulsa Ctrl+C.
+
+Necesita Python 3.12 o superior (python.org, marcando «Add python.exe to PATH») y conexión a internet la primera vez.
+
+## Empezar (desarrollo)
 ```powershell
 cd core
 python -m venv .venv

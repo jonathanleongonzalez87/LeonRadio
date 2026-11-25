@@ -186,3 +186,15 @@ def test_explorer_sends_to_emision_and_auxiliares(tmp_path):
     tree = host.draw_editor("aux3")
     assert any(n["t"] == "progress" for n in _walk(tree))
     assert {"aux1", "aux2", "aux3", "aux4"} <= set(host.editors)
+
+
+def test_root_redirects_to_versioned_ui_url(tmp_path):
+    (tmp_path / "index.html").write_text("<!doctype html><title>LeonRadio</title>", encoding="utf-8")
+    app = create_app(tick=False, ui_dir=tmp_path, addon_dirs=[])
+    with TestClient(app) as c:
+        r = c.get("/", follow_redirects=False)
+        assert r.status_code == 307 and r.headers["location"].startswith("/v/v")
+        page = c.get(r.headers["location"])
+        assert page.status_code == 200 and "LeonRadio" in page.text
+        assert page.headers["cache-control"] == "no-cache"
+        assert c.get("/api/editors").status_code == 200      # la API no se ve afectada
