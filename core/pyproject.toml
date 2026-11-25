@@ -13,14 +13,14 @@ authors = [{ name = "Jonathan León" }]
 dependencies = ["mutagen>=1.47"]
 
 [project.optional-dependencies]
-api = ["fastapi>=0.115", "uvicorn>=0.32"]
+api = ["fastapi>=0.115", "uvicorn>=0.32", "websockets>=13"]
 dev = ["pytest>=8"]
 
 [project.scripts]
 leonradio = "leonradio_core.cli:main"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/leonradio_core"]
+packages = ["src/leonradio_core", "src/leonradio"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

@@ -78,8 +78,9 @@ CREATE INDEX IF NOT EXISTS idx_playlog_commit ON playlog(commitment_id);
 """
 
 
-def connect(path: str | Path = ":memory:") -> sqlite3.Connection:
-    conn = sqlite3.connect(str(path))
+def connect(path: str | Path = ":memory:", *, shared: bool = False) -> sqlite3.Connection:
+    """`shared=True` permite usar la conexión desde varios hilos (servidor); proteger con un lock."""
+    conn = sqlite3.connect(str(path), check_same_thread=not shared)
     conn.row_factory = sqlite3.Row
     conn.executescript(SCHEMA)
     return conn

@@ -9,8 +9,9 @@ Estación de prueba: **RRC – Rockland Radio Colombia**.
 - [x] Escáner de biblioteca (clasifica por carpeta, lee etiquetas, detecta duplicados por hash)
 - [x] Importador `.m3u` con rutas de otra máquina
 - [x] Historial inmutable (`playlog`), exportación CSV y cumplimiento de compromisos
+- [x] Plataforma F0.5: `sdk` (editores, comandos, permisos), `addons` (manifiesto + carga), `uischema` (UI declarativa), `events`, servidor FastAPI + WebSocket
+- [x] Editores incluidos: Aire, Cola, Historial (reproductor **simulado**, sin audio)
 - [ ] Motor de reproducción (segue, crossfade, ducking, VU) — hito 1
-- [ ] API FastAPI + WebSocket para la UI
 
 ## Uso
 ```powershell

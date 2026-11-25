@@ -1,0 +1,6 @@
+id = "com.leonradio.ejemplo-hora"
+name = "Ejemplo: hora de la emisora"
+version = "0.1.0"
+api_version = "0.1"
+license = "GPL-3.0-or-later"
+permissions = ["playlog.read", "state.write"]

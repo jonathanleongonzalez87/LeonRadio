@@ -1,0 +1,120 @@
+"""Servidor: API REST + WebSocket de eventos + archivos de la UI.
+
+    leonradio serve [--library CARPETA] [--port 8765]
+"""
+
+from __future__ import annotations
+
+import asyncio
+import logging
+import os
+from contextlib import asynccontextmanager
+from pathlib import Path
+
+from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
+from fastapi.staticfiles import StaticFiles
+from pydantic import BaseModel
+
+from . import addons, builtin, library, sdk
+
+log = logging.getLogger("leonradio.server")
+REPO = Path(__file__).resolve().parents[3]  # <repo>/core/src/leonradio_core/server.py
+
+
+class CommandBody(BaseModel):
+    args: dict = {}
+
+
+def create_app(
+    *, library_dir: str | None = None, db_path: str = ":memory:",
+    addon_dirs: list[Path] | None = None, ui_dir: Path | None = None, tick: bool = True,
+) -> FastAPI:
+    host = sdk.Host(db_path=db_path)
+    if library_dir:
+        library.scan(host.db, library_dir)
+    playout = builtin.register(host)
+    roots = addon_dirs if addon_dirs is not None else [REPO / "addons"]
+    env = os.environ.get("LEONRADIO_ADDONS")
+    if env and addon_dirs is None:
+        roots += [Path(p) for p in env.split(os.pathsep) if p]
+    loaded = addons.discover(host, *roots)
+
+    clients: set[WebSocket] = set()
+    queue: asyncio.Queue = asyncio.Queue()
+
+    @asynccontextmanager
+    async def lifespan(app: FastAPI):
+        loop = asyncio.get_running_loop()
+        host.events.subscribe(lambda n, d: loop.call_soon_threadsafe(queue.put_nowait, {"event": n, "data": d}))
+
+        async def broadcaster() -> None:
+            while True:
+                msg = await queue.get()
+                for ws in list(clients):
+                    try:
+                        await ws.send_json(msg)
+                    except Exception:
+                        clients.discard(ws)
+
+        async def clock() -> None:
+            while True:
+                await asyncio.sleep(1)
+                playout.tick(1.0)
+
+        tasks = [asyncio.create_task(broadcaster())]
+        if tick:
+            tasks.append(asyncio.create_task(clock()))
+        yield
+        for t in tasks:
+            t.cancel()
+
+    app = FastAPI(title="LeonRadio", version="0.0.1", lifespan=lifespan)
+    app.state.host = host
+
+    @app.get("/api/info")
+    def info() -> dict:
+        return {"station": host.station, "api_version": sdk.API_VERSION,
+                "addons": [{"id": m.id, "name": m.name, "version": m.version,
+                            "permissions": sorted(m.permissions)} for m in loaded]}
+
+    @app.get("/api/editors")
+    def editors() -> list[dict]:
+        return [{"id": e.id, "label": e.label, "icon": e.icon, "owner": owner}
+                for e, owner, _ in host.editors.values()]
+
+    @app.get("/api/editors/{editor_id}/draw")
+    def draw(editor_id: str) -> dict:
+        if editor_id not in host.editors:
+            raise HTTPException(404, f"editor desconocido: {editor_id}")
+        return host.draw_editor(editor_id)
+
+    @app.post("/api/commands/{name}")
+    def run(name: str, body: CommandBody | None = None) -> dict:
+        if name not in host.commands:
+            raise HTTPException(404, f"comando desconocido: {name}")
+        try:
+            result = host.run_command(name, (body.args if body else {}))
+        except sdk.PermissionDenied as exc:
+            raise HTTPException(403, str(exc)) from exc
+        return {"ok": True, "result": result if isinstance(result, (str, int, float, bool, dict, list, type(None))) else None}
+
+    @app.websocket("/ws")
+    async def ws(sock: WebSocket) -> None:
+        await sock.accept()
+        clients.add(sock)
+        try:
+            while True:
+                await sock.receive_text()
+        except WebSocketDisconnect:
+            clients.discard(sock)
+
+    ui = ui_dir or Path(os.environ.get("LEONRADIO_UI", REPO / "ui" / "src"))
+    if ui.is_dir():
+        app.mount("/", StaticFiles(directory=ui, html=True), name="ui")
+    return app
+
+
+def serve(library_dir: str | None, port: int = 8765) -> None:
+    import uvicorn
+    logging.basicConfig(level=logging.INFO)
+    uvicorn.run(create_app(library_dir=library_dir), host="127.0.0.1", port=port, log_level="info")

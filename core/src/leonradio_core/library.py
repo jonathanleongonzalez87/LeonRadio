@@ -80,7 +80,8 @@ def scan(conn: sqlite3.Connection, root: str | Path) -> dict:
             "SELECT id FROM assets WHERE sha256 = ? AND status = 'active'", (digest,)
         ).fetchone()
         tags = _tags(p)
-        name_title, name_artist = title_artist_from_name(p.stem)
+        name_title, name_artist = (title_artist_from_name(p.stem) if kind == "music"
+                                   else (re.sub(r"^Copia de\s+", "", p.stem).strip(), None))
         conn.execute(
             """INSERT INTO assets (path, sha256, kind, title, artist, album, decade,
                                    duration_ms, status, duplicate_of)

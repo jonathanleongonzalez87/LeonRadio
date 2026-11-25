@@ -11,11 +11,14 @@ modo **automático + Live Assist** · monorepo público · código GPL-3.0, docs
 - [ ] Biblioteca de prueba RRC (36 archivos: música 00s/10s/20s, jingles, pisadores, separadores)
 
 ## F0.5 — Plataforma de editores y addons (nueva, antes de añadir funciones)
-- [ ] Gestor de áreas y workspaces propio (dividir, unir, redimensionar, guardar JSON)
-- [ ] Registro de editores y comandos; bus de eventos por WebSocket
-- [ ] API de addons v0: manifiesto `leonradio_addon.toml`, `register()/unregister()`, permisos
-- [ ] Addons en proceso aparte del motor de audio
-- [ ] 3 editores incluidos (Aire, Cola, Historial) usando la misma API + 1 addon de ejemplo
+- [x] Gestor de áreas y workspaces propio (dividir, unir, redimensionar, cambiar editor, guardar en el navegador)
+- [x] Registro de editores y comandos; bus de eventos por WebSocket
+- [x] API de addons v0: manifiesto `leonradio_addon.toml`, `register()/unregister()`, permisos comprobados en la API
+- [x] UI declarativa en Python (label, kv, button, progress, table, row/column) + renderer seguro (sin innerHTML)
+- [x] 3 editores incluidos (Aire, Cola, Historial) usando la misma API + addon de ejemplo (`addons/ejemplo_hora_emisora`)
+- [ ] **Addons en proceso aparte** del motor de audio (hoy se cargan en el mismo proceso)
+- [ ] Guardar workspaces en el servidor (hoy: `localStorage`); exportar/importar workspace
+- [ ] Reproductor de Aire es **simulado** hasta F1
 
 ## F1 — Audio real (hito 1, en paralelo a F0.5, en su propio proceso)
 - [ ] Reproducir una playlist (`.m3u` de RRC) con salida WASAPI

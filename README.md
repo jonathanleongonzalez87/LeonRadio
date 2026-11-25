@@ -17,9 +17,12 @@ Tablero: [Proyecto LeonRadio](https://github.com/users/jonathanleongonzalez87/pr
 ```powershell
 cd core
 python -m venv .venv
-.venv\Scripts\python -m pip install -e ".[dev]"
+.venv\Scripts\python -m pip install -e ".[api,dev]" httpx
 .venv\Scripts\python -m pytest
+.venv\Scripts\leonradio serve --library "C:uta\Rockland Radio"
+# abre http://127.0.0.1:8765
 ```
+La UI tiene áreas (◫ ⬓ ✕, selector de editor), workspaces (pestañas; doble clic = renombrar/eliminar) y un addon de ejemplo en `addons/`.
 
 ## Documentos
 - [ROADMAP.md](ROADMAP.md)
