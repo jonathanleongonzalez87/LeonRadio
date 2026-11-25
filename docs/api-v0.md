@@ -42,6 +42,23 @@ Tonos de `label`: `normal`, `muted`, `accent`, `big`, `title` (una línea con pu
 Estilos de pad: `orange`, `bronze`, `graphite`, `cream`.
 Las props son JSON y **no son de confianza**: los componentes escriben con `textContent`.
 
+## Estado que publica el motor (`ctx.state`)
+| Clave | Contenido |
+|---|---|
+| `playout.now` | fichero en el aire: `{uid, file, kind, title, artist, duration_ms, elapsed_ms, paused}` |
+| `playout.queue` / `playout.queue_total` | próximos ficheros de la Emisión (máx. 200) y el total |
+| `playout.playing` | la Emisión está sonando |
+| `aux.1` … `aux.4` | `{now, queue, playing}` de cada Auxiliar |
+| `audio.info` | `{backend, device, simulated, sample_rate, latency_ms}` |
+| `playout.message` | último aviso al operador (lista cargada, archivo que falló…) |
+
+Eventos: `audio.levels` → `{l, r, db_l, db_r, peak_l, peak_r, simulated}` (≈20 por segundo con servidor).
+
+## Comandos del motor
+`playout.next|pause|play|clear` · `aux.play|pause|stop|next|clear {n}` · `cart.fire {asset_id}` ·
+`list.add {asset_id | template}` (al destino elegido en el Explorador) · `list.load_m3u {path}` ·
+`explorer.group {key}` · `explorer.target {target}`. Ver [ficheros.md](ficheros.md).
+
 ## Datos de ejemplo y configuración (empaquetados en `core/src/leonradio_core/data/`)
 - `station.json` — nombre, sigla, frecuencia (`null` = solo online), zona horaria.
 - `cartwall.json` — número de pads, tipos de pieza y estilo por tipo.

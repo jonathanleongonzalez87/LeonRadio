@@ -9,6 +9,7 @@ Objetivo: tener **prueba de lo que sonó**, no de lo que se programó. Sirve par
 | **Operación y auditoría** | fuente (auto/live/cart), salida (fm/stream), fallas, saltos | todo |
 
 ## Principios
+0. **Todo fichero** (audio, evento u otro) queda con su `file_type`: ver [ficheros.md](ficheros.md).
 1. **Inmutable.** Cada emisión es un hecho; se copian título/artista/ISRC en la fila para que editar o borrar el archivo no altere reportes pasados.
 2. **UTC.** Se guarda en UTC; los reportes convierten a la hora local de la emisora.
 3. **Estado real.** `completed` solo si sonó completo; `skipped`/`interrupted`/`failed` quedan registrados con los ms reproducidos.

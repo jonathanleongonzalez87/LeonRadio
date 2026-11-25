@@ -72,7 +72,7 @@ class Context:
         self._need("playlog.read")
         with self._host.db_lock:
             rows = self._host.db.execute(
-                "SELECT started_at, kind, title, artist, source, status FROM playlog "
+                "SELECT started_at, file_type, kind, title, artist, source, status FROM playlog "
                 "ORDER BY id DESC LIMIT ?", (limit,)).fetchall()
         return [dict(r) for r in rows]
 
@@ -86,6 +86,15 @@ class Context:
         with self._host.db_lock:
             rows = self._host.db.execute(sql + " ORDER BY title LIMIT ?", (*params, limit)).fetchall()
         return [dict(r) for r in rows]
+
+    def playlists(self) -> list[dict]:
+        """Listas .m3u de la carpeta de la emisora (en `Playlists/` o en la raíz)."""
+        self._need("library.read")
+        if not self._host.library_dir:
+            return []
+        root = Path(self._host.library_dir)
+        found = sorted((root / "Playlists").glob("*.m3u")) + sorted(root.glob("*.m3u"))
+        return [{"name": p.stem, "path": str(p)} for p in found]
 
     def library_groups(self) -> list[dict]:
         """Grupos de la biblioteca (tipo + década) con su cantidad de piezas."""
@@ -106,6 +115,7 @@ class Host:
     def __init__(self, db_path: str = ":memory:", config: dict | None = None) -> None:
         self.config: dict[str, Any] = config or load_json("station.json")
         self.station: str = self.config["short"]
+        self.library_dir: str | None = None   # carpeta de la emisora (la fija el servidor)
         self.db = _db.connect(db_path, shared=True)
         self.db_lock = threading.RLock()
         self.events = EventBus()

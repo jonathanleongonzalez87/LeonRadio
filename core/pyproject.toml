@@ -10,10 +10,11 @@ readme = "README.md"
 requires-python = ">=3.12"
 license = "GPL-3.0-or-later"
 authors = [{ name = "Jonathan León" }]
-dependencies = ["mutagen>=1.47"]
+dependencies = ["mutagen>=1.47", "numpy>=2.0"]
 
 [project.optional-dependencies]
 api = ["fastapi>=0.115", "uvicorn>=0.32", "websockets>=13"]
+audio = ["sounddevice>=0.5", "miniaudio>=1.60"]
 dev = ["pytest>=8"]
 
 [project.scripts]

@@ -21,12 +21,18 @@ modo **automático + Live Assist** · monorepo público · código GPL-3.0, docs
 - [ ] Guardar workspaces en el servidor (hoy: `localStorage`); exportar/importar workspace
 - [ ] Reproductor de Aire es **simulado** hasta F1
 
-## F1 — Audio real (hito 1, en paralelo a F0.5, en su propio proceso)
-- [ ] Reproducir una playlist (`.m3u` de RRC) con salida WASAPI
-- [ ] Segue por marcadores intro/outro y crossfade
-- [ ] Ducking: pisadores y separadores sobre la música
-- [ ] Niveles VU reales por WebSocket → agujas de la UI
-- [ ] **Registro en historial de cada emisión** (inicio, fin, ms reproducidos, estado)
+## F1 — Audio real (hito 1)
+- [x] Motor de audio en Python: mezclador estéreo (NumPy), decodificación con miniaudio, salida WASAPI (sounddevice)
+- [x] Listas de **ficheros** (audios, eventos y otros) en la Emisión y las 4 Auxiliares → [docs/ficheros.md](docs/ficheros.md)
+- [x] Reproducir una playlist (`.m3u` de RRC): carga por nombre de archivo desde Botonera ▸ Explorador ▸ Listas
+- [x] Segue por marcadores (`outro_ms`) y crossfade de potencia constante; saltar con fundido de 300 ms
+- [x] Ducking: las piezas de la Botonera suenan encima de la mezcla y bajan la música
+- [x] Niveles VU reales (RMS) por WebSocket → agujas de la UI
+- [x] **Registro en historial de cada fichero** (tipo, inicio, fin, ms reales, estado, fuente)
+- [x] Salida nula (pruebas y demo en el navegador) y respaldo automático si el dispositivo no abre
+- [x] Probado: 37 pruebas sin dispositivo + prueba en silencio del dispositivo real (hilo de audio ≈ 0,3 ms por bloque de 23 ms)
+- [ ] **Confirmación auditiva** (la hace el usuario): sonido correcto, crossfade y ducking agradables
+- [ ] Selector de dispositivo de audio en la UI; editar la Emisión (quitar, mover); pisadores automáticos sobre la intro
 
 ## F2 — Biblioteca
 - [ ] Marcadores automáticos (intro/outro), loudness EBU R128

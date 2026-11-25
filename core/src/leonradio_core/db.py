@@ -62,6 +62,7 @@ CREATE TABLE IF NOT EXISTS playlog (
     played_ms     INTEGER,
     asset_id      INTEGER REFERENCES assets(id) ON DELETE SET NULL,
     kind          TEXT NOT NULL,
+    file_type     TEXT NOT NULL DEFAULT 'audio' CHECK (file_type IN ('audio','event','other')),
     title         TEXT NOT NULL,
     artist        TEXT,
     isrc          TEXT,
@@ -83,4 +84,7 @@ def connect(path: str | Path = ":memory:", *, shared: bool = False) -> sqlite3.C
     conn = sqlite3.connect(str(path), check_same_thread=not shared)
     conn.row_factory = sqlite3.Row
     conn.executescript(SCHEMA)
+    cols = {r["name"] for r in conn.execute("PRAGMA table_info(playlog)")}
+    if "file_type" not in cols:          # base creada antes de existir el tipo de fichero
+        conn.execute("ALTER TABLE playlog ADD COLUMN file_type TEXT NOT NULL DEFAULT 'audio'")
     return conn

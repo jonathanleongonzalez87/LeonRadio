@@ -11,6 +11,16 @@ from leonradio_core.uischema import UI
 REPO = Path(__file__).resolve().parents[2]
 
 
+def make_wav(path, seconds=1.0, rate=22050):
+    """Audio WAV real (tono de 330 Hz) para pruebas: el motor ahora decodifica de verdad los archivos."""
+    import wave
+    import numpy as np
+    t = np.arange(int(rate * seconds)) / rate
+    pcm = (0.4 * 32767 * np.sin(2 * np.pi * 330 * t)).astype("<i2")
+    with wave.open(str(path), "wb") as w:
+        w.setnchannels(1); w.setsampwidth(2); w.setframerate(rate); w.writeframes(pcm.tobytes())
+
+
 def test_ui_builder_nests_and_validates():
     ui = UI()
     with ui.row():
@@ -25,7 +35,7 @@ def test_ui_builder_nests_and_validates():
 
 def test_builtin_editors_draw_with_demo_playout():
     host = sdk.Host()
-    builtin.register(host)
+    playout = builtin.register(host)
     assert {"aire", "emision", "historial", "proxima", "botonera"} <= set(host.editors)
     tree = host.draw_editor("aire")
     def walk(n):
@@ -33,7 +43,8 @@ def test_builtin_editors_draw_with_demo_playout():
         for c in n.get("children", []):
             yield from walk(c)
     assert "progress" in set(walk(tree))      # el progreso está (ahora junto a los botones, en una fila)
-    host.run_command("playout.next")  # salta: queda registrado como 'skipped'
+    host.run_command("playout.next")  # salta con un fundido de 300 ms; al terminar queda registrado como 'skipped'
+    playout.tick(0.5)
     plays = host.db.execute("SELECT status FROM playlog").fetchall()
     assert [p["status"] for p in plays] == ["skipped"]
 
@@ -108,11 +119,11 @@ def _walk(n):
 def test_vintage_editors_use_custom_components_and_cartwall_fires(tmp_path):
     lib = tmp_path / "Radio" / "Vestido General" / "Jingles"
     lib.mkdir(parents=True)
-    (lib / "Jingle 1.wav").write_bytes(b"X")
+    make_wav(lib / "Jingle 1.wav")
     from leonradio_core import library
     host = sdk.Host()
     library.scan(host.db, tmp_path / "Radio")
-    builtin.register(host)
+    playout = builtin.register(host)
     comps = {}
     for ed in ("vu", "reloj", "dial", "botonera"):
         customs = [n for n in _walk(host.draw_editor(ed)) if n["t"] == "custom"]
@@ -125,8 +136,9 @@ def test_vintage_editors_use_custom_components_and_cartwall_fires(tmp_path):
     pad = cart["props"]["pads"][0]
     assert pad["key"] == "F1" and pad["style"] == "orange"
     host.run_command("cart.fire", {"asset_id": pad["asset_id"]})
-    row = host.db.execute("SELECT source, title FROM playlog").fetchone()
-    assert (row["source"], row["title"]) == ("cart", "Jingle 1")
+    playout.tick(1.5)                                   # el jingle dura 1 s: al terminar queda en el historial
+    row = host.db.execute("SELECT source, title FROM playlog WHERE source = 'cart'").fetchone()
+    assert (row["source"], row["title"]) == ("cart", "Jingle 1")   # la Emisión (auto) también suena: se filtra la botonera
 
 
 def test_demo_playout_emits_levels_and_ticks_once_per_second():
@@ -167,7 +179,7 @@ def test_botonera_has_tabs_events_and_explorer(tmp_path):
 def test_explorer_sends_to_emision_and_auxiliares(tmp_path):
     lib = tmp_path / "Radio" / "Música" / "20s"
     lib.mkdir(parents=True)
-    (lib / "Brilla - Providencia.mp3").write_bytes(b"A")
+    make_wav(lib / "Brilla - Providencia.wav")
     from leonradio_core import library
     host = sdk.Host()
     library.scan(host.db, tmp_path / "Radio")

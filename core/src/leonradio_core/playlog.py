@@ -8,7 +8,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 REPORT_COLUMNS = [
-    "started_at", "ended_at", "played_ms", "kind", "title", "artist",
+    "started_at", "ended_at", "played_ms", "file_type", "kind", "title", "artist",
     "isrc", "composer", "publisher", "source", "output", "status",
 ]
 
@@ -29,6 +29,7 @@ def record_play(
     output: str = "all",
     commitment_id: int | None = None,
     status: str = "completed",
+    file_type: str = "audio",
     **override: str | None,
 ) -> int:
     """Registra algo que sonó. Copia los metadatos del asset al momento de emitir."""
@@ -43,11 +44,11 @@ def record_play(
     cur = conn.execute(
         """INSERT INTO playlog (station, started_at, ended_at, played_ms, asset_id,
                kind, title, artist, isrc, composer, publisher,
-               source, output, commitment_id, status)
-           VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+               source, output, commitment_id, status, file_type)
+           VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
         (station, started_at or now_utc(), ended_at, played_ms, asset_id,
          meta["kind"], meta["title"], meta["artist"], meta["isrc"],
-         meta["composer"], meta["publisher"], source, output, commitment_id, status),
+         meta["composer"], meta["publisher"], source, output, commitment_id, status, file_type),
     )
     conn.commit()
     return cur.lastrowid

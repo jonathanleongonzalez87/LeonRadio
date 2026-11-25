@@ -106,7 +106,7 @@ BOOT = """
   globalThis.LR_DEMO_BACKEND = (async () => {
     await loadScript(PYODIDE + "pyodide.js");
     const py = await loadPyodide({ indexURL: PYODIDE });
-    await py.loadPackage("sqlite3");
+    await py.loadPackage(["sqlite3", "numpy"]);
     for (const [path, text] of Object.entries(files)) {
       const full = "/lr/" + path;
       py.FS.mkdirTree(full.slice(0, full.lastIndexOf("/")));

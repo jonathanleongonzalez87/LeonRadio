@@ -19,3 +19,18 @@ ui/ (HTML/CSS/JS)  ──REST + WebSocket──►  core/ (Python)
 ## Stack previsto
 Python ≥ 3.12 · SQLite · mutagen (etiquetas) · FastAPI/uvicorn (API) · pywebview + PyInstaller (escritorio) ·
 motor de audio por decidir en F1 (candidatos: `miniaudio`/`sounddevice` + NumPy).
+
+## Motor de audio (`core/src/leonradio_core/engine/`)
+```
+Playout (hilo de control)  ── comandos, historial, estado ──►  UI
+   │  tick ~20 Hz                                   ▲ avisos (cola segura)
+   ▼                                                │
+Engine.render(frames)  ◄── hilo de audio (WASAPI) ──┘
+   ├─ Deck "emision" + Decks "aux1…aux4"   (listas de ficheros, segue/crossfade, pausa sin clic)
+   ├─ Voces superpuestas (Botonera) + ducking de la música
+   └─ Medidor VU (RMS) → `audio.levels`
+```
+- El hilo de audio **no toca la base de datos ni el disco**: solo mezcla y deja avisos en una cola; el Playout los lee y los escribe.
+- Los archivos se decodifican **fuera** del candado del motor (precarga de los 2 primeros de cada lista).
+- Con la salida nula (`--audio null`, pruebas y demo en el navegador) el Playout renderiza por tiempo: mismo código, sin dispositivo.
+- Ficheros de audio sin archivo real (`demo://`) suenan como tono sintético; un archivo real que falta se registra como `failed`.

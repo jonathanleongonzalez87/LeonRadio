@@ -38,7 +38,7 @@ if not exist "%VENV%\Scripts\python.exe" (
 
 rem ===== Dependencias: rapido si ya estan instaladas =====
 echo  Comprobando dependencias...
-"%VENV%\Scripts\python.exe" -m pip install --quiet --disable-pip-version-check -e "core[api]"
+"%VENV%\Scripts\python.exe" -m pip install --quiet --disable-pip-version-check -e "core[api,audio]"
 if errorlevel 1 (
   echo.
   echo  ERROR: no se pudieron instalar las dependencias. Revisa tu conexion a internet.
@@ -50,6 +50,7 @@ rem ===== Abrir el navegador cuando el servidor este listo =====
 if not defined LEONRADIO_NO_BROWSER start "" powershell -NoProfile -WindowStyle Hidden -Command "Start-Sleep 4; Start-Process 'http://127.0.0.1:%PORT%/'"
 
 echo  Biblioteca: %LIB%
+echo  La emision empieza en PAUSA: pulsa Reproducir en el panel Aire.
 echo  Para detener LeonRadio cierra esta ventana o pulsa Ctrl+C.
 echo.
 "%VENV%\Scripts\leonradio.exe" serve --library "%LIB%" --port %PORT%

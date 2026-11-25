@@ -1,0 +1,12 @@
+{
+  "_comment": "Plantillas de ficheros que NO son audio: eventos y otros. Se agregan a una lista desde Botonera > Explorador.",
+  "templates": [
+    {"key": "pausa-5s", "file": "event", "type": "pause", "title": "Pausa de 5 s", "params": {"seconds": 5}},
+    {"key": "pausa-30s", "file": "event", "type": "pause", "title": "Pausa de 30 s", "params": {"seconds": 30}},
+    {"key": "esperar-00", "file": "event", "type": "wait_until", "title": "Esperar hasta el minuto :00", "params": {"minute": 0}},
+    {"key": "esperar-30", "file": "event", "type": "wait_until", "title": "Esperar hasta el minuto :30", "params": {"minute": 30}},
+    {"key": "marca-tanda", "file": "event", "type": "marker", "title": "Inicio de tanda comercial", "params": {}},
+    {"key": "cmd-aux1", "file": "event", "type": "command", "title": "Comando: Auxiliar 1 ▶", "params": {"command": "aux.play", "args": {"n": 1}}},
+    {"key": "nota-locutor", "file": "other", "type": "note", "title": "Nota: saludo y clima", "params": {"text": "Saludar a la audiencia y dar el clima."}}
+  ]
+}

@@ -18,6 +18,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from . import addons, builtin, library, sdk
+from .engine.output import make_output
 
 log = logging.getLogger("leonradio.server")
 REPO = Path(__file__).resolve().parents[3]  # <repo>/core/src/leonradio_core/server.py
@@ -39,11 +40,13 @@ class CommandBody(BaseModel):
 def create_app(
     *, library_dir: str | None = None, db_path: str = ":memory:",
     addon_dirs: list[Path] | None = None, ui_dir: Path | None = None, tick: bool = True,
+    audio: str = "null", device: str | int | None = None, autoplay: bool | None = None,
 ) -> FastAPI:
     host = sdk.Host(db_path=db_path)
+    host.library_dir = library_dir
     if library_dir:
         library.scan(host.db, library_dir)
-    playout = builtin.register(host)
+    playout = builtin.register(host, output=make_output(audio, device), autoplay=autoplay)
     roots = addon_dirs if addon_dirs is not None else [REPO / "addons"]
     env = os.environ.get("LEONRADIO_ADDONS")
     if env and addon_dirs is None:
@@ -69,8 +72,8 @@ def create_app(
 
         async def clock() -> None:
             while True:
-                await asyncio.sleep(0.1)
-                playout.tick(0.1)
+                await asyncio.sleep(0.05)
+                playout.tick(0.05)
 
         tasks = [asyncio.create_task(broadcaster())]
         if tick:
@@ -78,9 +81,11 @@ def create_app(
         yield
         for t in tasks:
             t.cancel()
+        playout.stop()
 
     app = FastAPI(title="LeonRadio", version="0.0.1", lifespan=lifespan)
     app.state.host = host
+    app.state.playout = playout
 
     @app.get("/api/info")
     def info() -> dict:
@@ -135,7 +140,8 @@ def create_app(
     return app
 
 
-def serve(library_dir: str | None, port: int = 8765) -> None:
+def serve(library_dir: str | None, port: int = 8765, audio: str = "device", device: str | int | None = None,
+          autoplay: bool | None = None) -> None:
     import socket
 
     import uvicorn
@@ -151,5 +157,10 @@ def serve(library_dir: str | None, port: int = 8765) -> None:
               "       Arranco con la biblioteca vacía (verás datos de muestra).\n")
         library_dir = None
     logging.basicConfig(level=logging.INFO)
+    app = create_app(library_dir=library_dir, audio=audio, device=device, autoplay=autoplay)
+    out = app.state.playout.output
+    print(f"\nAudio: {out.name}" + ("  (SIN dispositivo: todo es simulado)" if out.simulated else ""))
+    if not out.simulated and not app.state.playout.autoplay:
+        print("La emisión empieza en PAUSA: pulsa ▶ Reproducir en el panel Aire (o inicia con --autoplay).")
     print(f"\nLeonRadio listo en  http://127.0.0.1:{port}/   (Ctrl+C para detener)\n")
-    uvicorn.run(create_app(library_dir=library_dir), host="127.0.0.1", port=port, log_level="info")
+    uvicorn.run(app, host="127.0.0.1", port=port, log_level="info")

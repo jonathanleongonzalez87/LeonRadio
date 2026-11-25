@@ -55,6 +55,15 @@ Para detenerlo, cierra la ventana negra o pulsa Ctrl+C.
 
 Necesita Python 3.12 o superior (python.org, marcando «Add python.exe to PATH») y conexión a internet la primera vez.
 
+## Audio real
+`iniciar-leonradio.bat` abre tu dispositivo de salida de Windows (WASAPI) y la emisión **empieza en pausa**: pulsa
+**▶ Reproducir** en el panel Aire. El panel muestra el dispositivo en uso (si el VU dice «SIMULADO», no hay audio real).
+
+- Probar la salida sin música: `%LOCALAPPDATA%\LeonRadio\venv\Scripts\leonradio.exe beep` (tono por el izquierdo y luego el derecho).
+- Ver los dispositivos: `leonradio devices`. Elegir uno: variable `LEONRADIO_DEVICE` (número o parte del nombre).
+- Empezar a sonar al arrancar: variable `LEONRADIO_AUTOPLAY=1`. Sin sonido (solo simulado): `leonradio serve --audio null`.
+- Las listas (Emisión y 4 Auxiliares) reproducen **ficheros**: audios, eventos y otros ([docs/ficheros.md](docs/ficheros.md)).
+
 ## Probar la interfaz sin servidor
 Para iterar rápido en la interfaz no hace falta servidor: haz doble clic en **`probar-ui.bat`**. Genera
 `dist\LeonRadio-demo.html` (la interfaz **y el motor Python** en un solo archivo, con una insignia «DEMO LOCAL») y lo
