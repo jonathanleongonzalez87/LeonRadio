@@ -13,6 +13,7 @@ from types import MappingProxyType
 from typing import Any, Callable, Mapping
 
 from . import db as _db
+from . import paths as _paths
 from . import playlog as _playlog
 from .events import EventBus
 from .uischema import UI
@@ -26,6 +27,16 @@ _DATA = Path(__file__).parent / "data"
 def load_json(name: str):
     """Datos de ejemplo/configuración empaquetados en `leonradio_core/data/`."""
     return json.loads((_DATA / name).read_text(encoding="utf-8"))
+
+
+RISKS = ("normal", "emision", "config", "archivos")
+
+
+def safe_message(exc: BaseException) -> str:
+    """Texto de un error para la interfaz: en un `OSError` solo el `strerror`, que no trae rutas."""
+    if isinstance(exc, OSError) and exc.strerror:
+        return exc.strerror
+    return str(exc) or type(exc).__name__
 
 
 PERMISSIONS = {"library.read", "playlog.read", "playlog.write", "state.write", "network"}
@@ -64,6 +75,11 @@ class Context:
     @property
     def state(self) -> Mapping[str, Any]:
         return MappingProxyType(dict(self._host.state))
+
+    def safe_path(self, path: str, must: str = "any", create_ok: bool = False) -> Path:
+        """Ruta resuelta si está en una carpeta permitida (`dir`/`file`/`any`); si no, `ValueError` sin la ruta.
+        Los comandos que reciben rutas desde la red deben pasar por aquí."""
+        return _paths.check(path, self._host.path_roots(), must=must, create_ok=create_ok)  # type: ignore[arg-type]
 
     def draw_editor(self, editor_id: str) -> dict:
         """Árbol de UI de otro editor (lo usa «Varios» para acoplar paneles por pestañas)."""
@@ -121,17 +137,27 @@ class Host:
         self.config: dict[str, Any] = config or load_json("station.json")
         self.station: str = self.config["short"]
         self.library_dir: str | None = None   # carpeta de la emisora (la fija el servidor)
+        self.home: Path = Path.home()         # de aquí salen Música, Descargas y Escritorio (las pruebas lo cambian)
+        self.extra_roots: list[Path] = []     # carpetas permitidas adicionales (pruebas)
         self.db = _db.connect(db_path, shared=True)
         self.db_lock = threading.RLock()
         self.events = EventBus()
         self.state: dict[str, Any] = {}
         self.editors: dict[str, tuple[Editor, str, frozenset[str]]] = {}
         self.commands: dict[str, tuple[Callable[..., Any], str, frozenset[str]]] = {}
+        self.command_risk: dict[str, str] = {}   # nivel de cada comando: normal | emision | config | archivos (S7 lo usa)
 
     # -- estado ---------------------------------------------------------
     def set_state(self, key: str, value: Any) -> None:
         self.state[key] = value
         self.events.emit("state_changed", {"key": key})
+
+    # -- rutas permitidas --------------------------------------------------
+    def places(self) -> list[tuple[str, Path]]:
+        return _paths.places(self.library_dir, self.home) + [(p.name, p) for p in self.extra_roots]
+
+    def path_roots(self) -> list[Path]:
+        return [p for _l, p in self.places()]
 
     # -- registro ----------------------------------------------------------
     def register_editor(self, editor: Editor, owner: str = "builtin",
@@ -146,16 +172,20 @@ class Host:
         self.editors.pop(editor_id, None)
 
     def register_command(self, name: str, fn: Callable[..., Any], owner: str = "builtin",
-                         permissions: frozenset[str] = frozenset(PERMISSIONS)) -> None:
+                         permissions: frozenset[str] = frozenset(PERMISSIONS), risk: str = "normal") -> None:
         if name in self.commands:
             raise ValueError(f"comando duplicado: {name}")
+        if risk not in RISKS:
+            raise ValueError(f"riesgo desconocido: {risk}")
         self.commands[name] = (fn, owner, permissions)
+        self.command_risk[name] = risk
 
     def unregister_owner(self, owner: str) -> None:
         for k in [k for k, v in self.editors.items() if v[1] == owner]:
             del self.editors[k]
         for k in [k for k, v in self.commands.items() if v[1] == owner]:
             del self.commands[k]
+            self.command_risk.pop(k, None)
 
     # -- uso -------------------------------------------------------------
     def draw_editor(self, editor_id: str) -> dict:
@@ -167,7 +197,7 @@ class Host:
             log.exception("editor %s falló", editor_id)
             ui = UI()
             ui.label(f"Error en el editor «{editor.label}»", "warn")
-            ui.label(f"{type(exc).__name__}: {exc}", "muted")
+            ui.label(f"{type(exc).__name__}: {safe_message(exc)}", "muted")
         return ui.build()
 
     def run_command(self, name: str, args: dict | None = None) -> Any:
@@ -208,11 +238,13 @@ def unregister_editor(editor: type[Editor] | Editor) -> None:
     _host().unregister_editor(editor.id)
 
 
-def command(name: str) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
-    """Decorador: registra un comando. Se activa al llamar `register_command` o al cargar el módulo."""
+def command(name: str, risk: str = "normal") -> Callable[[Callable[..., Any]], Callable[..., Any]]:
+    """Decorador: registra un comando. Se activa al llamar `register_command` o al cargar el módulo.
+    `risk`: normal | emision | config | archivos (S7 asigna permisos por nivel)."""
     def deco(fn: Callable[..., Any]) -> Callable[..., Any]:
         fn._lr_command = name  # type: ignore[attr-defined]
-        _host().register_command(name, fn, *_current_owner)
+        fn._lr_risk = risk  # type: ignore[attr-defined]
+        _host().register_command(name, fn, *_current_owner, risk=risk)
         return fn
     return deco
 
@@ -220,4 +252,4 @@ def command(name: str) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
 def register_command(fn: Callable[..., Any]) -> None:
     name = getattr(fn, "_lr_command", None)
     if name and name not in _host().commands:
-        _host().register_command(name, fn, *_current_owner)
+        _host().register_command(name, fn, *_current_owner, risk=getattr(fn, "_lr_risk", "normal"))

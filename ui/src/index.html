@@ -24,6 +24,44 @@
     </div>
   </div>
 </div>
+<form id="acceso" role="dialog" aria-modal="true" aria-labelledby="acc-title" novalidate hidden>
+  <div class="acc-wrap">
+    <div class="acc-brand"><svg aria-hidden="true"><use href="#jl-iso"/></svg><span class="acc-word" role="img" aria-label="LeonRadio"><b>Leon</b><span>Radio</span></span></div>
+    <h1 id="acc-title">Acceso a la emisora</h1>
+    <p id="acc-station" class="acc-sub"></p>
+    <div id="acc-notice" role="status" aria-live="polite"></div>
+    <div id="acc-status" class="acc-sr" role="status" aria-live="polite"></div>
+    <label for="clave">Clave de acceso</label>
+    <input class="acc-user" type="text" name="usuario" value="LeonRadio" autocomplete="username" tabindex="-1" aria-hidden="true">
+    <div class="acc-field">
+      <input type="password" name="clave" id="clave" autocomplete="current-password" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="go" aria-required="true" aria-describedby="acc-help">
+      <button type="button" id="acc-show" aria-pressed="false" aria-label="Mostrar clave">Mostrar</button>
+    </div>
+    <p id="acc-help" class="acc-help">Es de 16 letras y números, por ejemplo XXXX-XXXX-XXXX-XXXX. Puedes pegarla.</p>
+    <div id="acc-alert" role="alert"></div>
+    <div id="acc-lock" hidden>
+      <div class="acc-msg"><span class="acc-ico" aria-hidden="true">!</span><span>Demasiados intentos. Por seguridad, espera <b id="acc-count" aria-hidden="true">15:00</b> antes de volver a probar.</span></div>
+      <p class="acc-help">Durante la espera ni la clave correcta entra.</p>
+    </div>
+    <p id="acc-lostlink" class="acc-help" hidden>¿Perdiste la clave? <a href="#acc-lost">Mira abajo.</a></p>
+    <button type="submit" id="acc-go" class="acc-btn">Entrar</button>
+    <button type="button" id="acc-retry" class="acc-btn" hidden>Reintentar</button>
+    <details id="acc-lost">
+      <summary>¿Perdiste la clave?</summary>
+      <div class="acc-lost-body">
+        <p>La clave no se puede ver otra vez, pero se puede crear una nueva desde el PC de la emisora:</p>
+        <ol>
+          <li>Abre una ventana de comandos en el PC.</li>
+          <li>Escribe <code>leonradio clave</code> y pulsa Enter.</li>
+          <li>Anota la clave nueva que aparece y úsala aquí.</li>
+        </ol>
+        <p>Al crear una nueva, la anterior deja de valer en todos los dispositivos.</p>
+        <p class="acc-help" id="acc-plain">Esta conexión no está cifrada: úsala solo en una red de confianza.</p>
+      </div>
+    </details>
+  </div>
+</form>
+<div id="acc-live" class="acc-sr" role="status" aria-live="polite"></div>
 <nav class="menubar" id="menubar" aria-label="Menú principal"></nav>
 <div class="top">
   <div class="brand"><svg aria-hidden="true"><use href="#jl-iso"/></svg><span>Leon<b>Radio</b></span></div>
@@ -34,6 +72,7 @@
     <span class="station" id="station"></span>
     <span class="lamp" id="lamp">EN LÍNEA</span>
     <span class="clock" id="clock" aria-label="Hora de la emisora">--:--:--</span>
+    <button class="btn-t" id="logout" type="button" hidden>Salir</button>
     <button class="btn-i" id="theme" title="Tema claro/oscuro" aria-label="Cambiar tema">◐</button>
     <button class="btn-i" id="reset" title="Restablecer workspaces" aria-label="Restablecer workspaces">↺</button>
   </div>

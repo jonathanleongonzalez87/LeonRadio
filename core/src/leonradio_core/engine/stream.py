@@ -66,6 +66,7 @@ class StreamService:
         self._record_path = ""
         self._song = ""
         self._pending_song = False
+        self.record_check: Callable[[str], Path] | None = None   # valida la carpeta de grabación (la fija quien lo crea)
 
     # ------------------------------------------------------------- configuración
     def config(self) -> dict[str, Any]:
@@ -268,7 +269,12 @@ class StreamService:
             pass
 
     def _open_record(self, c: dict[str, Any]) -> Any:
-        folder = Path(c["record_dir"]) if c["record_dir"] else Path.home() / "Music" / "LeonRadio grabaciones"
+        folder = Path.home() / "Music" / "LeonRadio grabaciones"
+        if c["record_dir"]:
+            try:                                  # la config podría venir de un config.json editado a mano: se revalida
+                folder = self.record_check(c["record_dir"]) if self.record_check else Path(c["record_dir"])
+            except ValueError:
+                self._set(self._state, "La carpeta de grabaciones no está permitida: se graba en la carpeta por defecto")
         folder.mkdir(parents=True, exist_ok=True)
         path = folder / f"LeonRadio {datetime.now():%Y-%m-%d %H-%M-%S}.mp3"
         self._record_path = str(path)

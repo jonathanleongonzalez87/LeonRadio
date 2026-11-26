@@ -4,6 +4,8 @@
 //
 // El motor de escucha vive fuera de los paneles (se redibujan a menudo): `mon` guarda el estado entre dibujos.
 
+import { bus, needsLogin } from "../api.js";
+
 const NS = "http://www.w3.org/2000/svg";
 const KEY = "leonradio.monitor.vol";
 const LATENCY = 0.25;                 // segundos de colchón antes de sonar (ahorra cortes en Wi-Fi)
@@ -45,7 +47,11 @@ function start() {
     play(new Int16Array(m.data));
   };
   ws.onerror = () => { if (mon.ws === ws) setStatus("error"); };
-  ws.onclose = () => { if (mon.ws === ws) { stop(); setStatus("error"); } };
+  ws.onclose = () => {
+    if (mon.ws !== ws) return;
+    stop(); setStatus("error");
+    needsLogin().then((n) => { if (n) bus.dispatchEvent(new Event("auth.required")); });   // sin sesión: pantalla de acceso, no bucle
+  };
 }
 
 function stop() {

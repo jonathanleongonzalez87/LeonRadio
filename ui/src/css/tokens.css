@@ -26,6 +26,14 @@
   --ink-2: var(--c-g300);
   --accent: var(--c-orange);
   --line: rgba(242, 232, 218, .14);
+  /* pantalla de acceso */
+  --acc-ctl: 48px;          /* alto mínimo de campo y botones (objetivo táctil) */
+  --acc-card: 400px;
+  --acc-show-w: 72px;
+  --acc-bar: 4px;
+  --acc-border: var(--c-g300);
+  --acc-ring: var(--c-orange);
+  --acc-ink2: var(--ink-2);
   color-scheme: dark;
 }
 :root[data-theme="light"] {
@@ -34,6 +42,9 @@
   --ink: var(--c-ink);
   --ink-2: var(--c-g500);
   --line: rgba(42, 36, 32, .16);
+  --acc-border: var(--c-g500);
+  --acc-ring: var(--c-bronze-d);
+  --acc-ink2: var(--c-g700);   /* AA sobre --surface en tema claro */
   color-scheme: light;
 }
 @media (prefers-reduced-motion: reduce) {

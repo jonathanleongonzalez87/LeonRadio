@@ -13,12 +13,12 @@ import time
 from contextlib import asynccontextmanager
 from pathlib import Path
 
-from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
-from fastapi.responses import RedirectResponse, Response
+from fastapi import Depends, FastAPI, HTTPException, Request, WebSocket, WebSocketDisconnect
+from fastapi.responses import JSONResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
-from . import addons, backup, builtin, db, estaciones, library, meta, sdk, settings
+from . import addons, auth, backup, builtin, db, estaciones, library, meta, paths, sdk, security, settings
 from .engine.monitor import MonitorHub
 from .engine.output import make_output
 
@@ -35,23 +35,36 @@ class NoCacheStatic(StaticFiles):
         return resp
 
 
+LOST_KEY_HELP = (
+    "  Anótala: no se puede ver otra vez. Si la pierdes, se crea una nueva desde este PC:\n"
+    "    1. Abre una ventana de comandos en el PC.\n"
+    "    2. Escribe  leonradio clave  y pulsa Enter.\n"
+    "    3. Anota la clave nueva que aparece y úsala en los dispositivos.\n"
+    "  Al crear una nueva, la anterior deja de valer en todos los dispositivos.")
+
+
 class CommandBody(BaseModel):
     args: dict = {}
 
 
 def _friendly(exc: Exception) -> str:
     """Mensaje corto para la interfaz (los errores de PortAudio traen códigos largos)."""
-    text = str(exc)
+    text = sdk.safe_message(exc)
     if "PortAudio" in type(exc).__name__ or "host error" in text:
         return "Ese dispositivo no se pudo abrir (puede estar en uso, desconectado o no admitir el formato). Prueba otro de la lista o de otra interfaz."
-    return text or type(exc).__name__
+    return text
 
 
 def create_app(
     *, library_dir: str | None = None, db_path: str = ":memory:",
     addon_dirs: list[Path] | None = None, ui_dir: Path | None = None, tick: bool = True,
     audio: str = "null", device: str | int | None = None, autoplay: bool | None = None,
+    require_auth: bool = False, strict_host: bool = False,
 ) -> FastAPI:
+    """`require_auth` (modo red): hace falta la clave, salvo para el propio PC. `strict_host` (modo local): solo `Host` loopback."""
+    if require_auth and not auth.current_hash():
+        raise RuntimeError("falta la clave de acceso: ejecuta «leonradio clave»")
+    paths.protect(db_path)                        # la base elegida con --db/LEONRADIO_DB tampoco se puede navegar
     host = sdk.Host(db_path=db_path)
     host.library_dir = library_dir
     scan_result = None
@@ -77,6 +90,8 @@ def create_app(
     monitor = MonitorHub()
     playout.engine.taps.append(monitor.feed)
     clients: set[WebSocket] = set()
+    limits = {"/ws": security.ConnectionLimit(security.MAX_WS_EVENTS),
+              "/ws/monitor": security.ConnectionLimit(security.MAX_WS_MONITOR)}
     queue: asyncio.Queue = asyncio.Queue()
 
     @asynccontextmanager
@@ -108,18 +123,28 @@ def create_app(
         with host.db_lock:
             db.close(host.db)
 
-    app = FastAPI(title="LeonRadio", version="0.1.0", lifespan=lifespan)
+    app = FastAPI(title="LeonRadio", version="0.1.0", lifespan=lifespan,
+                  docs_url=None, redoc_url=None, openapi_url=None)    # nadie los usa: menos superficie
+    app.add_middleware(security.SecurityMiddleware, strict_host=strict_host)
+    app.state.auth = auth.AuthState(require_auth=require_auth)
+    app.include_router(auth.build_router(lambda: host.station))
+
+    @app.exception_handler(Exception)
+    async def unexpected(request: Request, exc: Exception) -> JSONResponse:
+        log.error("error inesperado en %s %s", request.method, request.url.path, exc_info=exc)
+        return JSONResponse({"detail": "Error interno"}, status_code=500)
+
     app.state.host = host
     app.state.scan = scan_result
     app.state.playout = playout
 
-    @app.get("/api/info")
+    @app.get("/api/info", dependencies=[Depends(auth.current_principal)])
     def info() -> dict:
         return {"station": host.station, "config": host.config, "api_version": sdk.API_VERSION,
                 "addons": [{"id": m.id, "name": m.name, "version": m.version,
                             "permissions": sorted(m.permissions)} for m in loaded]}
 
-    @app.get("/api/audio")
+    @app.get("/api/audio", dependencies=[Depends(auth.current_principal)])
     def audio_prefs() -> dict:
         """Para las preferencias: dispositivos disponibles, destinos y su elección actual."""
         from .engine import output as out
@@ -133,7 +158,7 @@ def create_app(
                 "selected_inputs": host.state.get("audio.inputs") or {}, "simulated": info.get("simulated", True),
                 "warnings": info.get("warnings", []), "active": info.get("device", "")}
 
-    @app.get("/api/cover/{asset_id}")
+    @app.get("/api/cover/{asset_id}", dependencies=[Depends(auth.current_principal)])
     def cover(asset_id: int) -> Response:
         """Carátula incrustada del audio (solo por id de la biblioteca, nunca por ruta)."""
         try:
@@ -145,18 +170,18 @@ def create_app(
             raise HTTPException(404, "sin carátula")
         return Response(got[0], media_type=got[1], headers={"Cache-Control": "max-age=3600"})
 
-    @app.get("/api/editors")
+    @app.get("/api/editors", dependencies=[Depends(auth.current_principal)])
     def editors() -> list[dict]:
         return [{"id": e.id, "label": e.label, "icon": e.icon, "owner": owner, "station": e.station}
                 for e, owner, _ in host.editors.values()]
 
-    @app.get("/api/editors/{editor_id}/draw")
+    @app.get("/api/editors/{editor_id}/draw", dependencies=[Depends(auth.current_principal)])
     def draw(editor_id: str) -> dict:
         if editor_id not in host.editors:
             raise HTTPException(404, f"editor desconocido: {editor_id}")
         return host.draw_editor(editor_id)
 
-    @app.post("/api/commands/{name}")
+    @app.post("/api/commands/{name}", dependencies=[Depends(auth.current_principal)])
     def run(name: str, body: CommandBody | None = None) -> dict:
         if name not in host.commands:
             raise HTTPException(404, f"comando desconocido: {name}")
@@ -165,15 +190,18 @@ def create_app(
         except sdk.PermissionDenied as exc:
             raise HTTPException(403, str(exc)) from exc
         except (ValueError, RuntimeError, OSError, TypeError, KeyError) as exc:   # fallo explicable: se le dice al usuario
-            logging.getLogger("leonradio").warning("comando %s falló: %s", name, exc)
+            logging.getLogger("leonradio").warning("comando %s falló: %s", name, _friendly(exc))
             raise HTTPException(400, _friendly(exc)) from exc
         return {"ok": True, "result": result if isinstance(result, (str, int, float, bool, dict, list, type(None))) else None}
 
-    @app.websocket("/ws/monitor")
+    @app.websocket("/ws/monitor", dependencies=[Depends(auth.current_principal)])
     async def ws_monitor(sock: WebSocket) -> None:
         """Escucha remota: manda la mezcla principal en PCM de 16 bits (estéreo, 44,1 kHz) a este navegador."""
         from .engine.sources import SAMPLE_RATE
 
+        if not limits["/ws/monitor"].acquire():
+            await sock.close(code=1013)
+            return
         await sock.accept()
         q: asyncio.Queue = asyncio.Queue()
         monitor.add(q, asyncio.get_running_loop())
@@ -185,16 +213,25 @@ def create_app(
             pass
         finally:
             monitor.remove(q)
+            limits["/ws/monitor"].release()
 
-    @app.websocket("/ws")
+    @app.websocket("/ws", dependencies=[Depends(auth.current_principal)])
     async def ws(sock: WebSocket) -> None:
+        if not limits["/ws"].acquire():
+            await sock.close(code=1013)
+            return
         await sock.accept()
         clients.add(sock)
         try:
             while True:
-                await sock.receive_text()
+                if len(await sock.receive_text()) > security.MAX_WS_MESSAGE:
+                    await sock.close(code=1009)
+                    break
         except WebSocketDisconnect:
+            pass
+        finally:
             clients.discard(sock)
+            limits["/ws"].release()
 
     ui = ui_dir or Path(os.environ.get("LEONRADIO_UI", REPO / "ui" / "src"))
     if ui.is_dir():
@@ -244,11 +281,20 @@ def serve(library_dir: str | None, port: int = 8765, audio: str = "device", devi
               "       Arranco con la biblioteca vacía (verás datos de muestra).\n")
         library_dir = None
     logging.basicConfig(level=logging.INFO)
+    net = not paths.is_loopback(host)
+    if net:                                       # modo red: sin clave no se arranca
+        key = auth.ensure_key()
+        if key:
+            print("\n" + "=" * 56)
+            print(f"  CLAVE DE ACCESO (se muestra una sola vez):  {key}")
+            print("=" * 56)
+            print(LOST_KEY_HELP)
     db_file = str(settings.db_path(db_file))
     print(f"\nBase de datos: {db_file}")
     backup.make_backup(db_file)                  # antes de abrir/migrar: así también queda copia previa a una migración
     try:
-        app = create_app(library_dir=library_dir, db_path=db_file, audio=audio, device=device, autoplay=autoplay)
+        app = create_app(library_dir=library_dir, db_path=db_file, audio=audio, device=device, autoplay=autoplay,
+                         require_auth=net, strict_host=not net)
     except RuntimeError as exc:                   # p. ej. base creada por una versión más nueva
         print(f"\nERROR: {exc}\n")
         raise SystemExit(1)
@@ -268,9 +314,13 @@ def serve(library_dir: str | None, port: int = 8765, audio: str = "device", devi
     if not out.simulated and not app.state.playout.autoplay:
         print("La emisión empieza en PAUSA: pulsa ▶ Reproducir en el panel Aire (o inicia con --autoplay).")
     print(f"\nLeonRadio listo en  http://127.0.0.1:{port}/   (Ctrl+C para detener)")
-    if host not in ("127.0.0.1", "localhost", "::1"):
+    roots = ", ".join(n for n, _p in app.state.host.places())
+    print(f"Carpetas permitidas para el Explorador: {roots or '(ninguna)'}  (más con: leonradio carpetas --agregar RUTA)")
+    if net:
         for ip in _lan_addresses():
-            print(f"  · Desde otro equipo de tu red:  http://{ip}:{port}/")
-        print("  AVISO: cualquiera en tu red podrá controlar la emisión y ver tus carpetas. Úsalo solo en una red de confianza.")
+            print(f"  · Desde otro equipo de tu red:  http://{ip}:{port}/   (pide la clave de acceso)")
+        print("  Acceso protegido con clave; el tráfico va sin cifrar: úsalo solo en una red de confianza.")
+        print("  Este PC entra sin clave por http://127.0.0.1.")
     print()
-    uvicorn.run(app, host=host, port=port, log_level="info")
+    # proxy_headers=False: la IP del cliente es siempre la del socket (no se confía en X-Forwarded-For)
+    uvicorn.run(app, host=host, port=port, log_level="info", ws_max_size=security.MAX_WS_MESSAGE, proxy_headers=False)

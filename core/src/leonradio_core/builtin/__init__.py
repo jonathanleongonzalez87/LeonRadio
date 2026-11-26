@@ -3,12 +3,11 @@
 from __future__ import annotations
 
 import os
-import string
 from datetime import datetime, timedelta
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
-from .. import library, sdk
+from .. import library, paths, sdk
 from ..engine import files as F
 from ..engine.output import NullOutput
 from ..engine.playout import Playout
@@ -263,36 +262,21 @@ class BotoneraEditor(sdk.Editor):
                     ui.button("＋", "list.add", {"asset_id": it["id"]}, size="sm")
 
 
-def _start_dir() -> Path:
-    music = Path.home() / "Music"
-    return music if music.is_dir() else Path.home()
-
-
-def _drives() -> list[str]:
-    if os.name != "nt":
-        return ["/"]
-    import ctypes
-
-    mask = ctypes.windll.kernel32.GetLogicalDrives()      # no toca las unidades: no se cuelga con discos de red
-    return [f"{c}:\\" for i, c in enumerate(string.ascii_uppercase) if mask >> i & 1]
-
-
 def _disk(ui: UI, ctx: sdk.Context) -> None:
-    """Navegador del disco duro dentro del panel: unidades, carpetas y audios con «＋»."""
-    path = Path(ctx.state.get("explorer.path") or _start_dir())
-    if not path.is_dir():
-        path = _start_dir()
+    """Navegador del disco dentro del panel: solo los lugares permitidos, con sus carpetas y audios con «＋»."""
+    places = ctx._host.places()
+    if not places:
+        ui.label("No hay carpetas permitidas. Agrega una con  leonradio carpetas --agregar RUTA", "warn")
+        return
+    try:                                                   # estado viejo o fuera de la lista: vuelve a la primera
+        path = ctx.safe_path(ctx.state.get("explorer.path") or "", "dir")
+    except ValueError:
+        path = places[0][1]
     with ui.row():
-        for d in _drives():
-            ui.button(d.rstrip("\\/") or "/", "explorer.cd", {"path": d}, size="sm",
-                      selected=path.drive.upper() == d[:2].upper() if os.name == "nt" else False)
-        home = Path.home()
-        for name, p in (("Inicio", home), ("Música", home / "Music"), ("Descargas", home / "Downloads"),
-                        ("Escritorio", home / "Desktop")):
-            if p.is_dir():
-                ui.button(name, "explorer.cd", {"path": str(p)}, size="sm")
+        for name, p in places:
+            ui.button(name, "explorer.cd", {"path": str(p)}, size="sm", selected=p == path)
     with ui.row():
-        if path.parent != path:
+        if path not in [p for _n, p in places]:
             ui.button("⬆ Subir", "explorer.cd", {"path": str(path.parent)}, size="sm")
         ui.label(str(path), "mono")
     try:
@@ -475,6 +459,19 @@ def _aux_editor(n: int) -> type[sdk.Editor]:
     return AuxEditor
 
 
+# Nivel de cada comando incluido (S7 asigna permisos por nivel). Un comando nuevo sin nivel aquí hace fallar una prueba.
+RISK = {
+    "emision": ("playout.next", "playout.pause", "playout.play", "playout.pause_only", "playout.stop", "playout.stop_after",
+                "playout.clear", "playout.seek", "aux.seek", "aux.play", "aux.pause", "aux.stop", "aux.next",
+                "aux.stop_after", "aux.clear", "cart.fire", "stream.connect", "stream.disconnect", "stream.record",
+                "list.add", "list.remove", "list.move", "list.move_to"),
+    "config": ("stream.set", "audio.set_route", "audio.set_input", "audio.test"),
+    "archivos": ("explorer.cd", "list.add_path", "explorer.add_folder", "list.load_m3u"),
+    "normal": ("list.select", "explorer.group", "explorer.target", "explorer.mode", "varios.add", "varios.remove"),
+}
+RISK = {name: level for level, names in RISK.items() for name in names}
+
+
 def register(host: sdk.Host, output=None, autoplay: bool | None = None) -> Playout:
     """Registra los editores y comandos incluidos y arranca el Playout.
 
@@ -501,7 +498,17 @@ def register(host: sdk.Host, output=None, autoplay: bool | None = None) -> Playo
         return {"device": test_tone(device or None)}
 
     host.register_command("audio.test", _test)
-    host.register_command("stream.set", lambda ctx, **fields: playout.stream_set(**fields))
+    def _stream_set(ctx: sdk.Context, **fields) -> dict:
+        folder = str(fields.get("record_dir") or "").strip()
+        if folder:                                             # se guarda ya resuelta; la carpeta puede no existir aún
+            p = ctx.safe_path(folder, create_ok=True)
+            if p.exists() and not p.is_dir():
+                raise ValueError("no es una carpeta")
+            fields["record_dir"] = str(p)
+        return playout.stream_set(**fields)
+
+    playout.stream.record_check = lambda folder: sdk.Context(host, "builtin", frozenset()).safe_path(folder, create_ok=True)
+    host.register_command("stream.set", _stream_set)
     for verb in ("connect", "disconnect", "record"):
         host.register_command(f"stream.{verb}", lambda ctx, _v=verb: playout.stream_do(_v))
     host.register_command("playout.next", lambda ctx: playout.transport("emision", "next"))
@@ -523,15 +530,9 @@ def register(host: sdk.Host, output=None, autoplay: bool | None = None) -> Playo
     host.register_command("aux.seek", lambda ctx, n, ms: playout.seek(f"aux{int(n)}", float(ms)))
     host.register_command("explorer.mode", lambda ctx, mode: ctx.set_state("explorer.mode", "disk" if mode == "disk" else "lib"))
 
-    def _cd(ctx: sdk.Context, path: str) -> None:
-        p = Path(str(path)).resolve()
-        if not p.is_dir():
-            raise ValueError("no es una carpeta")
-        ctx.set_state("explorer.path", str(p))
-
-    host.register_command("explorer.cd", _cd)
-    host.register_command("list.add_path", lambda ctx, path: playout.add_path(target(ctx), str(path)))
-    host.register_command("explorer.add_folder", lambda ctx, path: playout.add_folder(target(ctx), str(path)))
+    host.register_command("explorer.cd", lambda ctx, path: ctx.set_state("explorer.path", str(ctx.safe_path(path, "dir"))))
+    host.register_command("list.add_path", lambda ctx, path: playout.add_path(target(ctx), str(ctx.safe_path(path, "file"))))
+    host.register_command("explorer.add_folder", lambda ctx, path: playout.add_folder(target(ctx), str(ctx.safe_path(path, "dir"))))
 
     def _varios(ctx: sdk.Context, editor: str, add: bool) -> None:
         tabs = list(ctx.state.get("varios.tabs") or VARIOS_DEFAULT)
@@ -543,12 +544,23 @@ def register(host: sdk.Host, output=None, autoplay: bool | None = None) -> Playo
 
     host.register_command("varios.add", lambda ctx, editor: _varios(ctx, str(editor), True))
     host.register_command("varios.remove", lambda ctx, editor: _varios(ctx, str(editor), False))
-    host.register_command("list.load_m3u", lambda ctx, path: playout.load_m3u(target(ctx), str(path)))
+    def _load_m3u(ctx: sdk.Context, path: str) -> dict:
+        if not host.library_dir:
+            raise ValueError("la lista debe estar dentro de la carpeta de la emisora")
+        p = paths.check(str(path), [Path(host.library_dir)], must="file")     # solo la biblioteca, como antes
+        if p.suffix.lower() not in (".m3u", ".m3u8"):
+            raise ValueError("no es una lista .m3u")
+        return playout.load_m3u(target(ctx), str(p))
+
+    host.register_command("list.load_m3u", _load_m3u)
     for verb in ("play", "pause", "stop", "next"):
         host.register_command(f"aux.{verb}", lambda ctx, n, _v=verb: playout.transport(f"aux{int(n)}", _v))
     host.register_command("list.remove", lambda ctx, target, uid: playout.remove(str(target), str(uid)))
     host.register_command("list.move", lambda ctx, target, uid, delta: playout.move(str(target), str(uid), int(delta)))
     host.register_command("aux.stop_after", lambda ctx, n: playout.transport(f"aux{int(n)}", "stop_after"))
     host.register_command("aux.clear", lambda ctx, n: playout.clear(f"aux{int(n)}"))
+    for name, (_fn, owner, _perms) in host.commands.items():
+        if owner == "builtin":
+            host.command_risk[name] = RISK.get(name, "normal")
     playout.start()
     return playout

@@ -259,6 +259,7 @@ def test_seek_jumps_inside_the_current_file_and_local_files_can_be_added(tmp_pat
 
 def test_disk_explorer_navigates_and_loads_local_files(tmp_path):
     host, playout = plain_host()
+    host.extra_roots = [tmp_path]                                  # S6: el explorador solo entra en carpetas permitidas
     sub = tmp_path / "Mis cosas"
     sub.mkdir()
     wav(tmp_path / "Uno - Autor.wav", 1.0); wav(tmp_path / "Dos - Autor.wav", 1.3)
@@ -421,8 +422,9 @@ def test_streaming_records_to_a_file_without_a_server(tmp_path, monkeypatch):
     import time
 
     pytest.importorskip("lameenc")
-    monkeypatch.setenv("LEONRADIO_CONFIG", str(tmp_path / "cfg.json"))
+    monkeypatch.setenv("LEONRADIO_CONFIG", str(tmp_path / "ajustes" / "cfg.json"))   # la carpeta de ajustes está prohibida
     host, playout = plain_host()
+    host.extra_roots = [tmp_path]                                  # S6: la grabación se revalida contra las carpetas permitidas
     playout.stream_set(record_dir=str(tmp_path / "rec"))
     playout.add_to("emision", insert(host, "music", "Tema", 30))
     playout.transport("emision", "play")

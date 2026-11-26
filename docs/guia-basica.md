@@ -80,7 +80,7 @@ def register(host):
 | Lecciones aprendidas | [aprendizajes.md](aprendizajes.md) y `CLAUDE.md` › Reglas aprendidas | Al cerrar una tarea grande |
 
 ## 7. Reglas que no se negocian
-- **Seguridad**: nada de claves en el repo ni en el chat; rutas del navegador validadas; la app no se expone a la red sin autenticación (tarea S6).
+- **Seguridad** (S6, ver [arquitectura](arquitectura.md#seguridad-s6)): nada de claves en el repo ni en el chat; en modo red hay clave de acceso (`leonradio clave`); toda ruta que llegue del navegador se valida con `ctx.safe_path` contra las carpetas permitidas (`leonradio carpetas --agregar`); y cada comando nuevo lleva su `risk` (`normal`, `emision`, `config`, `archivos`) al registrarlo (`host.register_command(..., risk=)` o `@lr.command(nombre, risk=)`); los comandos incluidos se anotan en la tabla `RISK` de `builtin/__init__.py` y una prueba falla si falta uno.
 - **Marca**: [marca.md](marca.md). El nombre «Jonathan León» no aparece en la interfaz.
 - **Audio**: nunca dejar sonando sin avisar; pruebas con `--audio null`. La emisión arranca en pausa.
 - **Reencuadrar, no rediseñar**: no cambies el contenido de un panel ajeno; propón el cambio en un issue.
