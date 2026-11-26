@@ -9,7 +9,7 @@ Fuente: «Arquitectura Leon Radio» (Referentes). Hasta que se asignen usuarios 
 | **Al Aire** | Mi programa, escaleta, guiones, invitados, controles de emisión, comunicación interna, participación de la audiencia | 1 · en desarrollo | Emisión, listas, botonera, streaming, monitores y preferencias de audio hechos | Dueño del proyecto | S2–S4, A8, B6, C3, C4 |
 | **Programación** | Parrilla, librería musical, artistas, álbumes, géneros, categorías, fórmulas, rotaciones, automatización y continuidad | 2 · alta | Biblioteca y escaneo básicos | Dueño del proyecto | A1–A5, A7 |
 | **Producción** | Presupuestos, inventario, mantenimiento, contratos, patrocinios, pauta, facturación, cronogramas, informes y administración | 3 · media | Por iniciar | @contactocergroup-art | A6, B1, B2 |
-| **Dirección** | Identidad de programas, línea artística, formatos, proyectos creativos, guías de estilo, dirección de talento, estrategia transmedia | 4 · media | Por iniciar | Quien tenga tiempo | B3 |
+| **Dirección** | Identidad de programas, línea artística, formatos, proyectos creativos, guías de estilo, dirección de talento, estrategia transmedia | 4 · media | Por iniciar | @contactocergroup-art | B3 |
 
 Orden de desarrollo acordado: **primero el núcleo común (S5–S9: datos, seguridad, entidades, usuarios y permisos), luego Programación**; Producción avanza en paralelo apoyándose en el núcleo, y Dirección entra cuando haya manos.
 
