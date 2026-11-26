@@ -1,3 +1,5 @@
 server.log
 *.log
 dist/
+__pycache__/
+*.pyc

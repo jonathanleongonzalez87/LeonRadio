@@ -67,6 +67,7 @@ Necesita Python 3.12 o superior (python.org, marcando «Add python.exe to PATH»
 `iniciar-leonradio.bat` abre tu dispositivo de salida de Windows (WASAPI) y la emisión **empieza en pausa**: pulsa
 **▶ Play** en los Controles. El panel Aire muestra el dispositivo en uso (si dice «SIMULADO», no hay audio real).
 
+- **Monitores** (pestaña *Monitores* de Varios): escucha la emisión desde el teléfono, la tableta u otra PC de la red (ver *Usarlo en tu red local*), con dos monitores vintage, interruptor y perilla de volumen estilo consola. El volumen es de cada dispositivo. Ábrelo en un dispositivo distinto al que emite.
 - **Streaming** (pestaña *Streaming* de Varios, como BUTT): transmite la mezcla principal a un servidor **Icecast 2** en MP3 (64–320 kbps), con reconexión automática, título y artista de cada canción, y grabación a archivo. Configura servidor, usuario, contraseña y punto de montaje en la pestaña *Servidor*; la contraseña se guarda solo en tu archivo de configuración local.
 - **Preferencias** (menú *Archivo ▸ Preferencias…* o Ctrl+,): elige la tarjeta de sonido de la salida principal, las 4 Auxiliares y la Botonera, agrupadas por interfaz de Windows; cada una puede salir por una tarjeta distinta. Se aplica al momento y se recuerda en `%LOCALAPPDATA%\LeonRadio\config.json`. La escucha previa y las entradas de línea se guardan, pero aún no se usan.
 
@@ -74,6 +75,18 @@ Necesita Python 3.12 o superior (python.org, marcando «Add python.exe to PATH»
 - Ver los dispositivos: `leonradio devices`. Elegir uno: variable `LEONRADIO_DEVICE` (número o parte del nombre).
 - Empezar a sonar al arrancar: variable `LEONRADIO_AUTOPLAY=1`. Sin sonido (solo simulado): `leonradio serve --audio null`.
 - Las listas (Emisión y 4 Auxiliares) reproducen **ficheros**: audios, eventos y otros ([docs/ficheros.md](docs/ficheros.md)).
+
+## Usarlo en tu red local
+Para abrirlo también desde el teléfono, la tableta u otra PC: haz doble clic en **`iniciar-leonradio-red.bat`** (o
+`leonradio serve --host 0.0.0.0`). La ventana muestra la dirección, por ejemplo `http://192.168.1.20:8765/`; ábrela
+desde un dispositivo de la misma red. Todos ven y controlan la misma emisión; cada navegador guarda su propio diseño de
+paneles. El audio sale solo por la tarjeta de sonido del PC que ejecuta LeonRadio; los demás dispositivos pueden
+escucharlo con el panel **Monitores**.
+
+- Windows pedirá permiso en el Firewall: permite las **redes privadas** (si tu red está marcada como pública, cámbiala a
+  privada o crea una regla para el puerto 8765).
+- **No hay contraseña**: cualquiera en esa red puede controlar la emisión y ver las carpetas del PC. Úsalo solo en una
+  red de confianza y no abras el puerto 8765 hacia internet.
 
 ## Probar la interfaz sin servidor
 Para iterar rápido en la interfaz no hace falta servidor: haz doble clic en **`probar-ui.bat`**. Genera

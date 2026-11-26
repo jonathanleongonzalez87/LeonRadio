@@ -435,3 +435,23 @@ def test_streaming_records_to_a_file_without_a_server(tmp_path, monkeypatch):
     time.sleep(0.5)
     assert playout.stream.status()["recording"] is False
     playout.stream.shutdown()
+
+
+def test_monitor_websocket_streams_the_main_mix_as_pcm(tmp_path, monkeypatch):
+    from fastapi.testclient import TestClient
+
+    from leonradio_core import server
+
+    monkeypatch.setenv("LEONRADIO_CONFIG", str(tmp_path / "cfg.json"))
+    app = server.create_app(audio="null", tick=True)
+    with TestClient(app) as client:                                          # arranca el reloj del Playout
+        pl = app.state.playout
+        pl.add_to("emision", insert(app.state.host, "music", "Tema", 30))
+        pl.transport("emision", "play")
+        with client.websocket_connect("/ws/monitor") as ws:
+            head = ws.receive_json()
+            assert head == {"rate": 44100, "channels": 2}
+            blocks = [ws.receive_bytes() for _ in range(3)]
+    assert all(len(b) % 4 == 0 and len(b) > 0 for b in blocks)                # int16 estéreo: 4 bytes por fotograma
+    assert any(max(abs(int.from_bytes(b[i:i + 2], "little", signed=True)) for i in range(0, len(b), 2)) > 100
+               for b in blocks)                                              # hay señal, no solo silencio

@@ -406,7 +406,16 @@ class StreamingEditor(sdk.Editor):
                 ])
 
 
-VARIOS_DEFAULT = ["botonera", "eventos", "explorador", "navegador", "streaming"]
+class MonitoresEditor(sdk.Editor):
+    """Escuchar la emisión desde este dispositivo (teléfono, tableta…) con monitores y perilla de volumen."""
+
+    id, label, icon = "monitores", "Monitores", "🔊"
+
+    def draw(self, ui: UI, ctx: sdk.Context) -> None:
+        ui.custom("monitors")
+
+
+VARIOS_DEFAULT = ["botonera", "eventos", "explorador", "navegador", "streaming", "monitores"]
 
 
 class VariosEditor(sdk.Editor):
@@ -474,7 +483,7 @@ def register(host: sdk.Host, output=None, autoplay: bool | None = None) -> Playo
     """
     sdk.bind(host)  # dueño «builtin», todos los permisos
     for cls in (AireEditor, ControlesEditor, MetadatosEditor, ProximaEditor, EmisionEditor, HistorialEditor, VuEditor, RelojEditor,
-                DialEditor, BotoneraEditor, EventosEditor, ExploradorEditor, NavegadorEditor, StreamingEditor, VariosEditor, *[_aux_editor(n) for n in range(1, N_AUX + 1)]):
+                DialEditor, BotoneraEditor, EventosEditor, ExploradorEditor, NavegadorEditor, StreamingEditor, MonitoresEditor, VariosEditor, *[_aux_editor(n) for n in range(1, N_AUX + 1)]):
         sdk.register_editor(cls)
 
     output = output or NullOutput()

@@ -18,6 +18,8 @@ def main(argv: list[str] | None = None) -> None:
     sv = sub.add_parser("serve", help="iniciar servidor + UI (http://127.0.0.1:8765)")
     sv.add_argument("--library", help="carpeta de la emisora (música, jingles…)")
     sv.add_argument("--port", type=int, default=8765)
+    sv.add_argument("--host", default=None,
+                    help="127.0.0.1 = solo este equipo (por defecto); 0.0.0.0 = también otros equipos de la red local")
     sv.add_argument("--audio", choices=["device", "null"], default="device",
                     help="device = salida real (WASAPI); null = simulado, sin sonido")
     sv.add_argument("--device", help="número o parte del nombre del dispositivo de salida (ver `leonradio devices`)")
@@ -36,7 +38,7 @@ def main(argv: list[str] | None = None) -> None:
         from .server import serve
         autoplay = args.autoplay or os.environ.get("LEONRADIO_AUTOPLAY") == "1"
         serve(args.library, args.port, args.audio, args.device or os.environ.get("LEONRADIO_DEVICE"),
-              True if autoplay else None)
+              True if autoplay else None, args.host or os.environ.get("LEONRADIO_HOST") or "127.0.0.1")
     elif args.cmd == "devices":
         from .engine.output import list_devices
         for d in list_devices():

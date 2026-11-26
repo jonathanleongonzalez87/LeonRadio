@@ -4,6 +4,7 @@ import { analogClock } from "./analog-clock.js";
 import { cartwall } from "./cartwall.js";
 import { eventList } from "./event-list.js";
 import { fmDial } from "./fm-dial.js";
+import { monitors } from "./monitors.js";
 import { tagCard } from "./tag-card.js";
 import { transportDeck } from "./transport-deck.js";
 import { webBrowser } from "./web-browser.js";
@@ -16,6 +17,7 @@ export const COMPONENTS = {
   cartwall,
   "event-list": eventList,
   "tag-card": tagCard,
+  monitors,
   "web-browser": webBrowser,
   "transport-deck": transportDeck,
 };

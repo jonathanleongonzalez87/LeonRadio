@@ -166,7 +166,7 @@ def test_varios_has_tabs_events_and_explorer(tmp_path):
     library.scan(host.db, tmp_path / "Radio")
     builtin.register(host)
     tabs = next(n for n in _walk(host.draw_editor("varios")) if n["t"] == "tabs")
-    assert [t["label"] for t in tabs["tabs"]] == ["Botonera", "Eventos", "Explorador", "Navegador", "Streaming", "＋"]
+    assert [t["label"] for t in tabs["tabs"]] == ["Botonera", "Eventos", "Explorador", "Navegador", "Streaming", "Monitores", "＋"]
     events = next(n for n in _walk(tabs["tabs"][1]) if n["t"] == "custom")
     assert events["component"] == "event-list" and len(events["props"]["events"]) >= 3
     explorer = tabs["tabs"][2]

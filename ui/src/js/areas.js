@@ -10,7 +10,7 @@ export const newId = () => `a${Date.now().toString(36)}${(seq++).toString(36)}`;
 const EDITOR_CATEGORIES = [
   { title: "Al aire", ids: ["aire", "proxima", "controles", "reloj"] },
   { title: "Listas", ids: ["emision", "aux1", "aux2", "aux3", "aux4", "historial"] },
-  { title: "Material", ids: ["varios", "botonera", "eventos", "explorador", "navegador", "streaming", "metadatos"] },
+  { title: "Material", ids: ["varios", "botonera", "eventos", "explorador", "navegador", "streaming", "monitores", "metadatos"] },
   { title: "Monitoreo", ids: ["vu", "dial"] },
 ];
 

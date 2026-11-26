@@ -18,6 +18,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from . import addons, builtin, library, meta, sdk, settings
+from .engine.monitor import MonitorHub
 from .engine.output import make_output
 
 log = logging.getLogger("leonradio.server")
@@ -62,6 +63,8 @@ def create_app(
         roots += [Path(p) for p in env.split(os.pathsep) if p]
     loaded = addons.discover(host, *roots)
 
+    monitor = MonitorHub()
+    playout.engine.taps.append(monitor.feed)
     clients: set[WebSocket] = set()
     queue: asyncio.Queue = asyncio.Queue()
 
@@ -152,6 +155,23 @@ def create_app(
             raise HTTPException(400, _friendly(exc)) from exc
         return {"ok": True, "result": result if isinstance(result, (str, int, float, bool, dict, list, type(None))) else None}
 
+    @app.websocket("/ws/monitor")
+    async def ws_monitor(sock: WebSocket) -> None:
+        """Escucha remota: manda la mezcla principal en PCM de 16 bits (estéreo, 44,1 kHz) a este navegador."""
+        from .engine.sources import SAMPLE_RATE
+
+        await sock.accept()
+        q: asyncio.Queue = asyncio.Queue()
+        monitor.add(q, asyncio.get_running_loop())
+        try:
+            await sock.send_json({"rate": SAMPLE_RATE, "channels": 2})
+            while True:
+                await sock.send_bytes(await q.get())
+        except Exception:  # noqa: BLE001 - el oyente se fue
+            pass
+        finally:
+            monitor.remove(q)
+
     @app.websocket("/ws")
     async def ws(sock: WebSocket) -> None:
         await sock.accept()
@@ -178,8 +198,23 @@ def create_app(
     return app
 
 
+def _lan_addresses() -> list[str]:
+    """Direcciones IPv4 de este equipo en la red local (para decirle al usuario qué abrir desde otro dispositivo)."""
+    import socket
+
+    found: list[str] = []
+    try:
+        for info in socket.getaddrinfo(socket.gethostname(), None, socket.AF_INET):
+            ip = info[4][0]
+            if not ip.startswith("127.") and ip not in found:
+                found.append(ip)
+    except OSError:
+        pass
+    return found
+
+
 def serve(library_dir: str | None, port: int = 8765, audio: str = "device", device: str | int | None = None,
-          autoplay: bool | None = None) -> None:
+          autoplay: bool | None = None, host: str = "127.0.0.1") -> None:
     import socket
 
     import uvicorn
@@ -200,5 +235,10 @@ def serve(library_dir: str | None, port: int = 8765, audio: str = "device", devi
     print(f"\nAudio: {out.name}" + ("  (SIN dispositivo: todo es simulado)" if out.simulated else ""))
     if not out.simulated and not app.state.playout.autoplay:
         print("La emisión empieza en PAUSA: pulsa ▶ Reproducir en el panel Aire (o inicia con --autoplay).")
-    print(f"\nLeonRadio listo en  http://127.0.0.1:{port}/   (Ctrl+C para detener)\n")
-    uvicorn.run(app, host="127.0.0.1", port=port, log_level="info")
+    print(f"\nLeonRadio listo en  http://127.0.0.1:{port}/   (Ctrl+C para detener)")
+    if host not in ("127.0.0.1", "localhost", "::1"):
+        for ip in _lan_addresses():
+            print(f"  · Desde otro equipo de tu red:  http://{ip}:{port}/")
+        print("  AVISO: cualquiera en tu red podrá controlar la emisión y ver tus carpetas. Úsalo solo en una red de confianza.")
+    print()
+    uvicorn.run(app, host=host, port=port, log_level="info")

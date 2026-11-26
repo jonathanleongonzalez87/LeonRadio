@@ -4,6 +4,8 @@ title LeonRadio
 cd /d "%~dp0"
 
 rem ===== Configuracion (puedes cambiarla) =====
+set "HOST=127.0.0.1"
+if defined LEONRADIO_HOST set "HOST=%LEONRADIO_HOST%"
 set "PORT=8765"
 if defined LEONRADIO_PORT set "PORT=%LEONRADIO_PORT%"
 set "VENV=%LOCALAPPDATA%\LeonRadio\venv"
@@ -53,7 +55,7 @@ echo  Biblioteca: %LIB%
 echo  La emision empieza en PAUSA: pulsa Reproducir en el panel Aire.
 echo  Para detener LeonRadio cierra esta ventana o pulsa Ctrl+C.
 echo.
-"%VENV%\Scripts\leonradio.exe" serve --library "%LIB%" --port %PORT%
+"%VENV%\Scripts\leonradio.exe" serve --library "%LIB%" --port %PORT% --host %HOST%
 echo.
 echo  LeonRadio se detuvo.
 pause
