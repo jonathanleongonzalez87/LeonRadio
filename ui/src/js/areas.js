@@ -14,6 +14,9 @@ const EDITOR_CATEGORIES = [
   { title: "Monitoreo", ids: ["vu", "dial"] },
 ];
 
+// Estaciones de trabajo: los editores que declaran `station` van en su propia columna.
+const STATION_TITLES = { programacion: "Programación", direccion: "Dirección", produccion: "Producción" };
+
 export const area = (editor, slim = false) => ({ type: "area", id: newId(), editor, ...(slim ? { slim: true } : {}) });
 export const split = (dir, a, b, ratio = 0.5) => ({ type: "split", dir, ratio, a, b });
 
@@ -143,11 +146,13 @@ export class AreaManager {
     menu.className = "emenu";
     menu.setAttribute("role", "menu");
     const groups = new Map(EDITOR_CATEGORIES.map((c) => [c.title, []]));
+    Object.values(STATION_TITLES).forEach((t) => groups.set(t, []));     // una columna por estación de trabajo
     const other = "Addons";
     groups.set(other, []);
     this.host.editors.forEach((e) => {
       const c = EDITOR_CATEGORIES.find((k) => k.ids.includes(e.id));
-      groups.get(c ? c.title : other).push(e);
+      const st = STATION_TITLES[e.station];
+      groups.get(c ? c.title : st || other).push(e);
     });
     groups.forEach((list, title) => {
       if (!list.length) return;

@@ -1,0 +1,9 @@
+# Quién revisa qué. Reemplazar @por-asignar por el usuario de GitHub de cada responsable.
+# Núcleo común y estaciones del dueño del proyecto
+*                                         @jonathanleongonzalez87
+/core/src/leonradio_core/estaciones/al_aire/       @jonathanleongonzalez87
+/core/src/leonradio_core/estaciones/programacion/  @jonathanleongonzalez87
+# Producción (colaborador): cuando exista su usuario, añadirlo aquí
+# /core/src/leonradio_core/estaciones/produccion/  @por-asignar @jonathanleongonzalez87
+# Dirección: quien la tome
+# /core/src/leonradio_core/estaciones/direccion/   @por-asignar @jonathanleongonzalez87

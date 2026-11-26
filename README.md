@@ -110,7 +110,8 @@ python -m venv .venv
 La UI tiene áreas (◫ ⬓ ✕, menú de editores en columnas), workspaces (pestañas; doble clic = renombrar/eliminar) y un addon de ejemplo en `addons/`.
 
 ## Documentos
-- [ROADMAP.md](ROADMAP.md)
+- [docs/guia-basica.md](docs/guia-basica.md) — **empieza aquí si vas a colaborar** · [docs/estaciones.md](docs/estaciones.md) · [docs/entidades.md](docs/entidades.md) · [docs/marca.md](docs/marca.md)
+- [docs/ROADMAP.md](docs/ROADMAP.md) (seguimiento) · [ROADMAP.md](ROADMAP.md) (visión y fases)
 - [docs/arquitectura.md](docs/arquitectura.md)
 - [docs/historial-de-emision.md](docs/historial-de-emision.md)
 - [docs/editores-y-addons.md](docs/editores-y-addons.md) — editores, workspaces y addons

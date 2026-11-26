@@ -17,7 +17,7 @@ from fastapi.responses import RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
-from . import addons, builtin, library, meta, sdk, settings
+from . import addons, builtin, estaciones, library, meta, sdk, settings
 from .engine.monitor import MonitorHub
 from .engine.output import make_output
 
@@ -57,6 +57,7 @@ def create_app(
         library.scan(host.db, library_dir)
     saved_routes = settings.load().get("audio", {}).get("routes", {})
     playout = builtin.register(host, output=make_output(audio, device, saved_routes), autoplay=autoplay)
+    estaciones.register_all(host)
     roots = addon_dirs if addon_dirs is not None else [REPO / "addons"]
     env = os.environ.get("LEONRADIO_ADDONS")
     if env and addon_dirs is None:
@@ -133,7 +134,7 @@ def create_app(
 
     @app.get("/api/editors")
     def editors() -> list[dict]:
-        return [{"id": e.id, "label": e.label, "icon": e.icon, "owner": owner}
+        return [{"id": e.id, "label": e.label, "icon": e.icon, "owner": owner, "station": e.station}
                 for e, owner, _ in host.editors.values()]
 
     @app.get("/api/editors/{editor_id}/draw")

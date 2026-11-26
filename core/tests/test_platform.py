@@ -258,3 +258,15 @@ def test_header_keeps_the_hexagonal_isotype_and_no_owner_name():
     assert 'id="jl-iso"' in html and '<use href="#jl-iso"' in html        # el hexágono es el símbolo de LeonRadio
     assert "image/svg+xml" in html                                         # y también el favicon
     assert "Jonathan" not in html                                          # el nombre del titular no aparece
+
+
+def test_stations_register_their_panels_with_a_station_tag():
+    from leonradio_core import estaciones
+
+    host = sdk.Host()
+    estaciones.register_all(host)
+    stations = {e.station for e, _o, _p in host.editors.values()}
+    assert {"programacion", "direccion", "produccion"} <= stations
+    tree = host.draw_editor("produccion")
+    labels = [n.get("text", "") for n in _walk(tree) if n["t"] == "label"]
+    assert "PRODUCCIÓN" in labels and any("A6" in t for t in labels)
