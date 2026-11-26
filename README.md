@@ -13,7 +13,7 @@ Automatizador de radio con **audio real** (WASAPI), listas de ficheros, botonera
 
 > Las piezas que se ven son de la emisora de pruebas RRC. Las capturas se hicieron sin salida de audio (VU «SIMULADO»); con `iniciar-leonradio.bat` suena de verdad.
 
-**Workspace «Aire»**: una franja superior delgada con Reloj, VU de agujas, Aire (barra con control deslizante, tiempo restante y hora de fin), Próxima y los **Controles** de reproducción (Play, Pausa, Stop, Siguiente y «parar tras la actual»). Debajo, **Varios** (un panel de pestañas: Botonera, Eventos, Explorador, Navegador y los que acoples con ＋) y el Historial a la izquierda, y la **Emisión** con la ficha de **Metadatos** debajo. Las **4 listas Auxiliares** se activan desde la barra de herramientas (AUX 1–4) y se abren en fila, con los mismos controles que la Emisión.
+**Estación «Al Aire»**: una franja superior delgada con Reloj, VU de agujas, Aire (barra con control deslizante, tiempo restante y hora de fin), Próxima y los **Controles** de reproducción (Play, Pausa, Stop, Siguiente y «parar tras la actual»). Debajo, **Varios** (un panel de pestañas: Botonera, Eventos, Explorador, Navegador y los que acoples con ＋) y el Historial a la izquierda, y la **Emisión** con la ficha de **Metadatos** debajo. Las **4 listas Auxiliares** se activan desde la barra de herramientas (AUX 1–4) y se abren en fila, con los mismos controles que la Emisión.
 
 ![Workspace Aire, tema oscuro](docs/img/aire-oscuro.png)
 
@@ -27,13 +27,11 @@ Automatizador de radio con **audio real** (WASAPI), listas de ficheros, botonera
 
 ![Workspace Aire, tema claro](docs/img/aire-claro.png)
 
-**Workspace «Programación»**: las áreas se dividen, unen y redimensionan, y cada una cambia de editor desde su selector.
+**Las cuatro estaciones**: la barra superior tiene una pestaña por estación de trabajo —**Al Aire**, **Programación**, **Dirección** y **Producción**—, cada una con su diseño de paneles. Comparten la misma información y los paneles comunes (Historial, Metadatos…); Programación, Dirección y Producción tienen su panel de resumen y crecerán por separado (ver [docs/estaciones.md](docs/estaciones.md)). Las áreas se dividen, unen y redimensionan, y cada una cambia de editor desde su menú en columnas.
 
-![Workspace Programación](docs/img/programacion.png)
+![Estación Programación](docs/img/programacion.png)
 
-**Workspace «Producción»**: arriba a la derecha, un editor aportado por un **addon** de ejemplo (`addons/ejemplo_hora_emisora`).
-
-![Workspace Producción con un addon](docs/img/produccion-addon.png)
+![Estación Producción](docs/img/produccion.png)
 
 **En el teléfono**: en pantallas estrechas las áreas se apilan, la página se desplaza, los botones son táctiles y las tablas ocultan columnas secundarias.
 
@@ -60,6 +58,8 @@ Haz doble clic en **`iniciar-leonradio.bat`**. La primera vez crea su entorno de
 `http://127.0.0.1:8765/`. Usa la carpeta de la emisora que esté junto al repo (`..\Rockland Radio`), o pásala como
 argumento: `iniciar-leonradio.bat "D:\Mi Emisora"`. Si ya hay un servidor, solo abre el navegador.
 Para detenerlo, cierra la ventana negra o pulsa Ctrl+C.
+
+**Aviso:** la primera vez con una biblioteca grande el arranque tarda (se lee todo el audio para identificarlo, ~100 MB/s: puede ser de varios minutos) y el progreso sale en la ventana negra. Los arranques siguientes solo comparan tamaño y fecha: ~1,5 s por cada 20.000 archivos.
 
 Necesita Python 3.12 o superior (python.org, marcando «Add python.exe to PATH») y conexión a internet la primera vez.
 

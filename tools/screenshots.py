@@ -59,10 +59,7 @@ with sync_playwright() as p:
     shot(page, "aire-oscuro")
 
     page.get_by_role("tab", name="Producción").click()
-    page.get_by_role("button", name="Pulsar").click()
-    page.wait_for_timeout(500)
-    page.get_by_role("button", name="Pulsar").click()
-    shot(page, "produccion-addon")
+    shot(page, "produccion")
 
     page.get_by_role("tab", name="Programación").click()
     shot(page, "programacion")

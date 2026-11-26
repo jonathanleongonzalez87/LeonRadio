@@ -11,10 +11,13 @@ Detecta duplicados por hash de contenido (p. ej. «Copia de …»).
 from __future__ import annotations
 
 import hashlib
+import logging
 import re
 import sqlite3
+import stat
 from pathlib import Path
 
+log = logging.getLogger("leonradio.library")
 AUDIO_EXT = {".mp3", ".wav", ".flac", ".m4a", ".ogg"}
 _FOLDER_KIND = {"jingles": "jingle", "pisadores": "pisador", "separadores": "separador",
                 "spots": "spot", "música": "music", "musica": "music"}
@@ -66,34 +69,91 @@ def title_artist_from_name(stem: str) -> tuple[str, str | None]:
     return stem.strip(), None
 
 
-def scan(conn: sqlite3.Connection, root: str | Path) -> dict:
+def scan(conn: sqlite3.Connection, root: str | Path, *, lock=None, progress=None, cancel=None) -> dict:
+    """Escaneo incremental: solo lee lo nuevo o cambiado (tamaño/mtime); lo que desapareció pasa a `retired`, nunca se borra."""
+    import contextlib
+    import os
+
     root = Path(root)
-    added = dups = 0
+    out = {"added": 0, "duplicates": 0, "updated": 0, "retired": 0, "reactivated": 0, "unchanged": 0, "cancelled": False}
+    if not root.is_dir():
+        log.warning("La carpeta de la biblioteca no existe o no está disponible: %s (no se retira nada)", root)
+        return out
+    files = []
     for p in sorted(root.rglob("*")):
-        if p.suffix.lower() not in AUDIO_EXT or not p.is_file():
-            continue
-        if conn.execute("SELECT 1 FROM assets WHERE path = ?", (str(p),)).fetchone():
-            continue
-        kind, decade = classify(p.relative_to(root).parts)
-        digest = sha256_of(p)
-        original = conn.execute(
-            "SELECT id FROM assets WHERE sha256 = ? AND status = 'active'", (digest,)
-        ).fetchone()
-        tags = _tags(p)
-        name_title, name_artist = (title_artist_from_name(p.stem) if kind == "music"
-                                   else (re.sub(r"^Copia de\s+", "", p.stem).strip(), None))
-        conn.execute(
-            """INSERT INTO assets (path, sha256, kind, title, artist, album, decade,
-                                   duration_ms, status, duplicate_of)
-               VALUES (?,?,?,?,?,?,?,?,?,?)""",
-            (str(p), digest, kind, tags["title"] or name_title,
-             tags["artist"] or name_artist, tags["album"], decade, tags["duration_ms"],
-             "duplicate" if original else "active", original["id"] if original else None),
-        )
-        dups += bool(original)
-        added += 1
-    conn.commit()
-    return {"added": added, "duplicates": dups}
+        if p.suffix.lower() in AUDIO_EXT:
+            try:
+                st = p.stat()                      # un solo stat por archivo
+            except OSError:
+                continue
+            if stat.S_ISREG(st.st_mode):
+                files.append((p, st))
+    seen: set[str] = set()
+    for i, (p, st) in enumerate(files, 1):
+        if cancel and cancel():
+            out["cancelled"] = True
+            break
+        key = str(p)
+        seen.add(key)
+        with lock or contextlib.nullcontext():
+            row = conn.execute("SELECT id, status, size_bytes, mtime_ns FROM assets WHERE path = ?", (key,)).fetchone()
+        if row and row["size_bytes"] is None:      # fila previa a la migración 2: solo se anotan tamaño y fecha
+            with lock or contextlib.nullcontext():
+                conn.execute("UPDATE assets SET size_bytes = ?, mtime_ns = ? WHERE id = ?", (st.st_size, st.st_mtime_ns, row["id"]))
+        if row and row["size_bytes"] in (None, st.st_size) and row["mtime_ns"] in (None, st.st_mtime_ns):
+            out["unchanged"] += 1
+            if row["status"] == "retired":
+                with lock or contextlib.nullcontext():
+                    conn.execute("UPDATE assets SET status = 'active' WHERE id = ?", (row["id"],))
+                out["reactivated"] += 1
+        else:
+            kind, decade = classify(p.relative_to(root).parts)
+            digest = sha256_of(p)
+            tags = _tags(p)
+            name_title, name_artist = (title_artist_from_name(p.stem) if kind == "music"
+                                       else (re.sub(r"^Copia de\s+", "", p.stem).strip(), None))
+            title, artist = tags["title"] or name_title, tags["artist"] or name_artist
+            with lock or contextlib.nullcontext():
+                if row:
+                    conn.execute(
+                        """UPDATE assets SET sha256 = ?, kind = ?, title = ?, artist = ?, album = ?, decade = ?,
+                                  duration_ms = ?, size_bytes = ?, mtime_ns = ?,
+                                  status = CASE WHEN status = 'retired' THEN 'active' ELSE status END WHERE id = ?""",
+                        (digest, kind, title, artist, tags["album"], decade, tags["duration_ms"],
+                         st.st_size, st.st_mtime_ns, row["id"]))
+                    out["updated"] += 1
+                else:
+                    original = conn.execute(
+                        "SELECT id FROM assets WHERE sha256 = ? AND status = 'active'", (digest,)).fetchone()
+                    conn.execute(
+                        """INSERT INTO assets (path, sha256, kind, title, artist, album, decade,
+                                               duration_ms, status, duplicate_of, size_bytes, mtime_ns)
+                           VALUES (?,?,?,?,?,?,?,?,?,?,?,?)""",
+                        (key, digest, kind, title, artist, tags["album"], decade, tags["duration_ms"],
+                         "duplicate" if original else "active", original["id"] if original else None,
+                         st.st_size, st.st_mtime_ns))
+                    out["duplicates"] += bool(original)
+                    out["added"] += 1
+        if i % 200 == 0:
+            with lock or contextlib.nullcontext():
+                conn.commit()
+        if progress:
+            progress(i, len(files))
+    with lock or contextlib.nullcontext():
+        conn.commit()
+        if not out["cancelled"]:
+            prefix = str(root).rstrip("\\/") + os.sep
+            rows = conn.execute("SELECT id, path FROM assets WHERE status IN ('active','duplicate') AND substr(path, 1, ?) = ?",
+                                (len(prefix), prefix)).fetchall()
+            if not seen and rows:
+                log.warning("No se encontró ningún audio en %s pero la base tenía %d: no se retira nada (¿disco desconectado?)",
+                            root, len(rows))
+            else:
+                gone = [(r["id"],) for r in rows if r["path"] not in seen]
+                conn.executemany("UPDATE assets SET status = 'retired' WHERE id = ?", gone)
+                out["retired"] = len(gone)
+                conn.commit()
+    return out
 
 
 def add_file(conn: sqlite3.Connection, path: str | Path, lock=None, kind: str = "music") -> int:

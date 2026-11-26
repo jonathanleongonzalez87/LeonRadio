@@ -34,3 +34,13 @@ def save(data: dict[str, Any]) -> None:
     tmp = p.with_suffix(".tmp")
     tmp.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
     tmp.replace(p)                       # escritura atómica: un corte de luz no deja el archivo a medias
+
+
+def db_path(explicit: str | os.PathLike | None = None) -> Path:
+    """Base de datos: `--db`, `LEONRADIO_DB`, o `leonradio.db` junto al config (`LEONRADIO_CONFIG` o la carpeta del usuario)."""
+    if explicit:
+        return Path(explicit)
+    env = os.environ.get("LEONRADIO_DB")
+    if env:
+        return Path(env)
+    return path().parent / "leonradio.db"

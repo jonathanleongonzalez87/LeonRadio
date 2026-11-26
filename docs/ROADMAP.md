@@ -44,7 +44,7 @@ Dentro de cada tier pesan los **puntos** (1 = chica, 2 = mediana, 3 = grande).
 | S2 | S | Al Aire: motor de audio real, listas de ficheros, crossfade, ducking, VU, historial (F1) | 3 | verificado | — | Al Aire | @jonathanleongonzalez87 |
 | S3 | S | Al Aire: Controles, Varios (Botonera, Eventos, Explorador, Navegador), Metadatos, Auxiliares, Preferencias de audio | 3 | hecho | S2 | Al Aire | @jonathanleongonzalez87 |
 | S4 | S | Al Aire: Streaming Icecast (MP3, metadatos, grabación) y Monitores remotos | 2 | hecho | S2 | Al Aire | @jonathanleongonzalez87 |
-| S5 | S | Núcleo: base de datos persistente y compartida (SQLite en archivo, migraciones, copia de seguridad) | 3 | pendiente | — | Núcleo | @jonathanleongonzalez87 |
+| S5 | S | Núcleo: base de datos persistente y compartida (SQLite en archivo, migraciones, copia de seguridad) | 3 | hecho | — | Núcleo | @jonathanleongonzalez87 |
 | S6 | S | Núcleo: seguridad de la API (autenticación, validar rutas, origen, límites, modo red seguro) | 3 | pendiente | — | Núcleo | @jonathanleongonzalez87 |
 | S7 | S | Núcleo: usuarios, roles y permisos por estación | 3 | pendiente | S5, S6 | Núcleo | @jonathanleongonzalez87 |
 | S8 | S | Núcleo: entidades compartidas (Programa, Persona, Artista, Álbum, Género, Pieza, Compromiso) con su dueño | 3 | pendiente | S5 | Núcleo | @jonathanleongonzalez87 |
@@ -54,11 +54,11 @@ Dentro de cada tier pesan los **puntos** (1 = chica, 2 = mediana, 3 = grande).
 | A3 | A | Programación: metadatos ISRC, compositor, editorial (#8) | 2 | pendiente | S8 | Programación | @jonathanleongonzalez87 |
 | A4 | A | Programación: parrilla, relojes y dayparts | 3 | pendiente | S8 | Programación | @jonathanleongonzalez87 |
 | A5 | A | Programación: reglas de rotación (separación de artista/título, por década) | 3 | pendiente | A4 | Programación | @jonathanleongonzalez87 |
-| A6 | A | Producción: clientes, contratos, patrocinios y pauta (compromisos comerciales) | 3 | pendiente | S7, S8 | Producción | @por-asignar |
+| A6 | A | Producción: clientes, contratos, patrocinios y pauta (compromisos comerciales) | 3 | pendiente | S7, S8 | Producción | @contactocergroup-art |
 | A7 | A | Programación + Producción: tandas comerciales ligadas a compromisos (#9) | 3 | pendiente | A4, A6 | Programación | @jonathanleongonzalez87 |
 | A8 | A | Al Aire: escaleta, guiones e invitados («Mi programa») | 3 | pendiente | S8 | Al Aire | @jonathanleongonzalez87 |
-| B1 | B | Producción: presupuestos, inventario, mantenimiento y facturación | 3 | pendiente | A6 | Producción | @por-asignar |
-| B2 | B | Reportes de música, pauta y operación (#10, #11) | 3 | pendiente | A3, A6 | Producción | @por-asignar |
+| B1 | B | Producción: presupuestos, inventario, mantenimiento y facturación | 3 | pendiente | A6 | Producción | @contactocergroup-art |
+| B2 | B | Reportes de música, pauta y operación (#10, #11) | 3 | pendiente | A3, A6 | Producción | @contactocergroup-art |
 | B3 | B | Dirección: identidad de programas, formatos, línea artística y talento | 3 | pendiente | S8 | Dirección | @por-asignar |
 | B4 | B | Workspaces en el servidor y exportar/importar (#19) | 1 | pendiente | S5 | Núcleo | @jonathanleongonzalez87 |
 | B5 | B | Marca: firma LeonRadio, wordmark según el manual, retícula de fondo | 2 | pendiente | — | Marca | @jonathanleongonzalez87 |

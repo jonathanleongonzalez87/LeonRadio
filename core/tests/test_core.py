@@ -16,7 +16,7 @@ def make_station(tmp_path):
 def test_scan_classifies_and_detects_duplicates(tmp_path):
     conn = db.connect()
     stats = library.scan(conn, make_station(tmp_path))
-    assert stats == {"added": 3, "duplicates": 1}
+    assert (stats["added"], stats["duplicates"]) == (3, 1)
     row = conn.execute("SELECT * FROM assets WHERE title = 'Brilla' AND status='active'").fetchone()
     assert (row["kind"], row["decade"], row["artist"]) == ("music", "20s", "Providencia")
     assert conn.execute("SELECT kind FROM assets WHERE title LIKE 'RRC%'").fetchone()[0] == "jingle"

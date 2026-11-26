@@ -2,7 +2,7 @@ import { connectEvents, getEditors, getInfo } from "./api.js";
 import { AreaManager, area, hasEditor, split, toggleBeside } from "./areas.js";
 import { initMenus } from "./menus.js";
 
-const KEY = "leonradio.workspaces.v10";
+const KEY = "leonradio.workspaces.v11";
 // Tolerante: si un HTML viejo (en caché) no trae algún elemento, se usa uno suelto en vez de fallar.
 const $ = (s) => document.querySelector(s) ?? document.createElement("div");
 const store = {
@@ -13,7 +13,8 @@ const store = {
 const defaults = () => ({
   active: 0,
   list: [
-    { name: "Aire", tree: split("v",
+    // Las cuatro estaciones de trabajo, en el orden de la arquitectura: Al Aire, Programación, Dirección, Producción.
+    { name: "Al Aire", tree: split("v",
         // franja superior delgada: Reloj | VU | Aire | Próxima | Controles
         split("h", area("reloj", true),
           split("h", area("vu", true),
@@ -23,10 +24,11 @@ const defaults = () => ({
           split("v", area("varios"), area("historial"), 0.6),
           split("v", area("emision"), area("metadatos"), 0.78), 0.34),
         0.22) },
-    { name: "Programación", tree: split("h", area("emision"), area("historial"), 0.45) },
-    { name: "Producción", tree: split("h",
-        split("v", area("aire"), area("emision"), 0.4),
-        split("v", area("ejemplo.hora"), area("varios"), 0.4), 0.55) },
+    { name: "Programación", tree: split("h",
+        split("v", area("programacion"), area("varios"), 0.3),
+        split("v", area("emision"), area("historial"), 0.62), 0.4) },
+    { name: "Dirección", tree: split("h", area("direccion"), area("historial"), 0.5) },
+    { name: "Producción", tree: split("h", area("produccion"), area("historial"), 0.5) },
   ],
 });
 
