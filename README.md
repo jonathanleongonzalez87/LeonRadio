@@ -3,15 +3,23 @@
 Automatizador de radio con experiencia de estación vintage, hecho para 2026.
 Estación de prueba: **RRC – Rockland Radio Colombia** (https://rocklandradio.co/).
 
+## Versión 0.1.0 — primer lanzamiento
+
+Automatizador de radio con **audio real** (WASAPI), listas de ficheros, botonera y paneles intercambiables.
+
+![Pantalla de carga](docs/img/splash.png)
+
 ## Capturas
 
-> Estado actual (F0 + F0.5). El audio, los niveles del VU, la emisión y las listas auxiliares son **simulados** hasta F1. Las piezas que se ven son de la emisora de pruebas RRC.
+> Las piezas que se ven son de la emisora de pruebas RRC. Las capturas se hicieron sin salida de audio (VU «SIMULADO»); con `iniciar-leonradio.bat` suena de verdad.
 
-**Workspace «Aire»**: una franja superior delgada con Reloj, VU de agujas, Aire (con su transporte), Próxima y Dial/RDS; debajo, la **Botonera** (con las pestañas Botonera, Eventos y Explorador) y el Historial a la izquierda, y la **Emisión** como protagonista. Las **4 listas Auxiliares** se activan desde la barra de herramientas (AUX 1–4) y aparecen junto a la Emisión. Los encabezados de la franja se muestran al pasar el cursor (⇕ los alterna).
+**Workspace «Aire»**: una franja superior delgada con Reloj, VU de agujas, Aire (barra con control deslizante, tiempo restante y hora de fin), Próxima y los **Controles** de reproducción (Play, Pausa, Stop, Siguiente y «parar tras la actual»). Debajo, **Varios** (un panel de pestañas: Botonera, Eventos, Explorador, Navegador y los que acoples con ＋) y el Historial a la izquierda, y la **Emisión** con la ficha de **Metadatos** debajo. Las **4 listas Auxiliares** se activan desde la barra de herramientas (AUX 1–4) y se abren en fila, con los mismos controles que la Emisión.
 
 ![Workspace Aire, tema oscuro](docs/img/aire-oscuro.png)
 
-**Botonera ▸ Explorador**: navega la biblioteca por tipo y década, elige el destino (Emisión o una de las 4 Auxiliares) y agrega piezas con ＋.
+**Listas de ficheros**: elige una fila con un clic, **arrástrala** para reordenar y pulsa **Supr** para quitarla. La Botonera tiene 10 pads (1–9 y 0) que se activan con el **teclado numérico**: quedan encendidos mientras suenan y, al pulsarlos otra vez, se detienen.
+
+**Varios ▸ Explorador**: navega la **biblioteca** por tipo y década o tu **disco duro** («Mi equipo»), elige el destino (Emisión o una de las 4 Auxiliares) y agrega piezas con ＋.
 
 ![Botonera, pestaña Explorador](docs/img/botonera-explorador.png)
 
@@ -57,7 +65,9 @@ Necesita Python 3.12 o superior (python.org, marcando «Add python.exe to PATH»
 
 ## Audio real
 `iniciar-leonradio.bat` abre tu dispositivo de salida de Windows (WASAPI) y la emisión **empieza en pausa**: pulsa
-**▶ Reproducir** en el panel Aire. El panel muestra el dispositivo en uso (si el VU dice «SIMULADO», no hay audio real).
+**▶ Play** en los Controles. El panel Aire muestra el dispositivo en uso (si dice «SIMULADO», no hay audio real).
+
+- **Preferencias** (menú *Archivo ▸ Preferencias…* o Ctrl+,): elige la tarjeta de sonido de la salida principal, las 4 Auxiliares y la Botonera, agrupadas por interfaz de Windows; cada una puede salir por una tarjeta distinta. Se aplica al momento y se recuerda en `%LOCALAPPDATA%\LeonRadio\config.json`. La escucha previa y las entradas de línea se guardan, pero aún no se usan.
 
 - Probar la salida sin música: `%LOCALAPPDATA%\LeonRadio\venv\Scripts\leonradio.exe beep` (tono por el izquierdo y luego el derecho).
 - Ver los dispositivos: `leonradio devices`. Elegir uno: variable `LEONRADIO_DEVICE` (número o parte del nombre).
@@ -83,7 +93,7 @@ python -m venv .venv
 .venv\Scripts\leonradio serve --library "C:\ruta\a\Rockland Radio"
 # abre http://127.0.0.1:8765
 ```
-La UI tiene áreas (◫ ⬓ ✕, selector de editor), workspaces (pestañas; doble clic = renombrar/eliminar) y un addon de ejemplo en `addons/`.
+La UI tiene áreas (◫ ⬓ ✕, menú de editores en columnas), workspaces (pestañas; doble clic = renombrar/eliminar) y un addon de ejemplo en `addons/`.
 
 ## Documentos
 - [ROADMAP.md](ROADMAP.md)

@@ -2,7 +2,13 @@
 
 from __future__ import annotations
 
-from .. import sdk
+import os
+import string
+from datetime import datetime, timedelta
+from pathlib import Path
+from zoneinfo import ZoneInfo
+
+from .. import library, sdk
 from ..engine import files as F
 from ..engine.output import NullOutput
 from ..engine.playout import Playout
@@ -10,6 +16,14 @@ from ..uischema import UI
 
 N_AUX = 4
 FILE_LABEL = F.FILE_TYPES
+
+
+def _station_now(ctx: sdk.Context) -> datetime:
+    """Hora de la emisora; si el sistema no trae la base de zonas horarias (Windows sin `tzdata`), la del equipo."""
+    try:
+        return datetime.now(ZoneInfo(ctx.config["timezone"]))
+    except Exception:  # noqa: BLE001
+        return datetime.now().astimezone()
 
 
 def _mmss(ms: int | float | None) -> str:
@@ -27,6 +41,12 @@ def _dur(item: dict) -> str:
 _STATUS = {"completed": "ok", "skipped": "saltada", "interrupted": "cortada", "failed": "falla"}
 _KIND_LABEL = {"music": "Música", "jingle": "Jingles", "pisador": "Pisadores", "separador": "Separadores",
                "spot": "Cuñas", "voice": "Voces", "effect": "Efectos", "other": "Otros"}
+
+
+def _file_list(ctx: sdk.Context, target: str, queue: list[dict]) -> dict:
+    sel = ctx.state.get("list.selected") or {}
+    return {"target": target, "uids": [q["uid"] for q in queue],
+            "selected": sel.get("uid") if sel.get("target") == target else None}
 
 
 def _file_row(i: int, q: dict) -> list:
@@ -51,12 +71,43 @@ class AireEditor(sdk.Editor):
         else:
             ui.label("Nada al aire", "muted")
         dur = max((now or {}).get("duration_ms") or 1, 1)
-        with ui.row():
-            if now:
-                ui.progress(now["elapsed_ms"] / dur, f"{_mmss(now['elapsed_ms'])} / {_mmss(now['duration_ms'])}"
-                            + ("" if playing else "  · EN PAUSA"))
-            ui.button("⏭ Siguiente", "playout.next")
-            ui.button("⏸ Pausa" if playing else "▶ Reproducir", "playout.pause")
+        if now:
+            ui.slider(now["elapsed_ms"], dur, "playout.seek", {}, suffix="" if playing else "  · EN PAUSA")
+            left = max(0, dur - now["elapsed_ms"])
+            ends = "—"
+            if playing:
+                ends = (_station_now(ctx) + timedelta(milliseconds=left)).strftime("%H:%M:%S")
+            with ui.row(cls="right"):                      # debajo de la barra, alineado a la derecha
+                ui.label("Tiempo restante", "muted")
+                ui.label(_mmss(left) if left else "00:00", "mono")
+                ui.label("·  Acaba a las", "muted")
+                ui.label(ends, "mono")
+
+
+class ControlesEditor(sdk.Editor):
+    """Mandos de la Emisión: Play, Pausa, Stop y «parar después de la actual»."""
+
+    id, label, icon = "controles", "Controles", "⏯"
+
+    def draw(self, ui: UI, ctx: sdk.Context) -> None:
+        playing = ctx.state.get("playout.playing", False)
+        paused = not playing and ctx.state.get("playout.now") is not None
+        ui.custom("transport-deck", playing=playing, paused=paused, stop_after=ctx.state.get("playout.stop_after", False),
+                  cmds={"play": "playout.play", "pause": "playout.pause_only", "stop": "playout.stop",
+                        "next": "playout.next", "stop_after": "playout.stop_after"})
+
+
+class MetadatosEditor(sdk.Editor):
+    """Etiquetas del fichero elegido en la Emisión (o del que suena): carátula, intérprete, álbum…"""
+
+    id, label, icon = "metadatos", "Metadatos", "🏷"
+
+    def draw(self, ui: UI, ctx: sdk.Context) -> None:
+        info = ctx.state.get("meta.info")
+        if not info:
+            ui.label("Elige un fichero de la lista para ver sus metadatos", "muted")
+            return
+        ui.custom("tag-card", **info)
 
 
 class ProximaEditor(sdk.Editor):
@@ -65,6 +116,10 @@ class ProximaEditor(sdk.Editor):
     def draw(self, ui: UI, ctx: sdk.Context) -> None:
         queue = ctx.state.get("playout.queue", [])
         ui.label("PRÓXIMA", "accent")
+        if ctx.state.get("playout.stop_after"):          # «parar tras la actual»: no habrá siguiente
+            ui.label("—", "title")
+            ui.label("Parará al terminar la actual", "warn")
+            return
         if not queue:
             ui.label("—", "title")
             return
@@ -88,7 +143,8 @@ class EmisionEditor(sdk.Editor):
         with ui.row():
             ui.button("Vaciar", "playout.clear", size="sm")
         ui.table(["#", "Fichero", "Tipo", "Título", "Artista", "Dur."],
-                 [_file_row(i, q) for i, q in enumerate(queue[:60])], narrow_hide=[2, 4])
+                 [_file_row(i, q) for i, q in enumerate(queue[:60])], narrow_hide=[2, 4],
+                 file_list=_file_list(ctx, "emision", queue[:60]))
 
 
 class HistorialEditor(sdk.Editor):
@@ -127,18 +183,12 @@ class DialEditor(sdk.Editor):
 
 
 class BotoneraEditor(sdk.Editor):
-    """Botonera (pads F1–F12) con las pestañas Eventos y Explorador."""
+    """Botonera (pads 1–0 del teclado numérico) con las pestañas Eventos y Explorador."""
 
     id, label, icon = "botonera", "Botonera", "▦"
 
     def draw(self, ui: UI, ctx: sdk.Context) -> None:
-        with ui.tabs("botonera") as tabs:
-            with tabs.tab("Botonera"):
-                self._pads(ui, ctx)
-            with tabs.tab("Eventos"):
-                self._events(ui)
-            with tabs.tab("Explorador"):
-                self._explorer(ui, ctx)
+        self._pads(ui, ctx)
 
     # -- pestaña Botonera --------------------------------------------------
     def _pads(self, ui: UI, ctx: sdk.Context) -> None:
@@ -146,12 +196,12 @@ class BotoneraEditor(sdk.Editor):
         pieces: list[dict] = []
         for kind in cfg["kinds"]:
             pieces += ctx.library(kind, limit=cfg["pads"])
-        pads = [{"key": f"F{i + 1}", "asset_id": p["id"], "title": p["title"],
+        pads = [{"key": str((i + 1) % 10), "asset_id": p["id"], "title": p["title"],
                  "sub": p["kind"], "style": cfg["styles"].get(p["kind"], "graphite")}
                 for i, p in enumerate(pieces[: cfg["pads"]])]
         last = ctx.state.get("cart.last")
-        ui.label(f"Último: {last['title']}" if last else "F1–F12 o clic · suena sobre la emisión", "muted")
-        ui.custom("cartwall", pads=pads, command="cart.fire")
+        ui.label(f"Último: {last['title']}" if last else "teclado numérico 1–0 o clic · suena sobre la emisión", "muted")
+        ui.custom("cartwall", pads=pads, command="cart.fire", active=ctx.state.get("cart.active", []))
 
     # -- pestaña Eventos (programados) -------------------------------------------
     def _events(self, ui: UI) -> None:
@@ -160,6 +210,17 @@ class BotoneraEditor(sdk.Editor):
 
     # -- pestaña Explorador --------------------------------------------------------
     def _explorer(self, ui: UI, ctx: sdk.Context) -> None:
+        mode = ctx.state.get("explorer.mode", "lib")
+        with ui.row():
+            ui.button("Biblioteca", "explorer.mode", {"mode": "lib"}, size="sm", selected=mode == "lib")
+            ui.button("Mi equipo", "explorer.mode", {"mode": "disk"}, size="sm", selected=mode == "disk")
+            ui.label("Enviar a:", "muted")
+            target = ctx.state.get("explorer.target", "emision")
+            for t, name in [("emision", "Emisión")] + [(f"aux{n}", f"Aux {n}") for n in range(1, N_AUX + 1)]:
+                ui.button(name, "explorer.target", {"target": t}, size="sm", selected=t == target)
+        if mode == "disk":
+            _disk(ui, ctx)
+            return
         groups = ctx.library_groups()
         keyed: list[tuple[str, str]] = [
             (f"{g['kind']}|{g['decade'] or ''}",
@@ -177,11 +238,6 @@ class BotoneraEditor(sdk.Editor):
         with ui.row():
             for key, label in keyed:
                 ui.button(label, "explorer.group", {"key": key}, size="sm", selected=key == selected)
-        target = ctx.state.get("explorer.target", "emision")
-        with ui.row():
-            ui.label("Enviar a:", "muted")
-            for t, name in [("emision", "Emisión")] + [(f"aux{n}", f"Aux {n}") for n in range(1, N_AUX + 1)]:
-                ui.button(name, "explorer.target", {"target": t}, size="sm", selected=t == target)
 
         kind, decade = selected.split("|")
         if kind in (F.EVENT, F.OTHER):                       # plantillas de ficheros que no son audio
@@ -207,6 +263,107 @@ class BotoneraEditor(sdk.Editor):
                     ui.button("＋", "list.add", {"asset_id": it["id"]}, size="sm")
 
 
+def _start_dir() -> Path:
+    music = Path.home() / "Music"
+    return music if music.is_dir() else Path.home()
+
+
+def _drives() -> list[str]:
+    if os.name != "nt":
+        return ["/"]
+    import ctypes
+
+    mask = ctypes.windll.kernel32.GetLogicalDrives()      # no toca las unidades: no se cuelga con discos de red
+    return [f"{c}:\\" for i, c in enumerate(string.ascii_uppercase) if mask >> i & 1]
+
+
+def _disk(ui: UI, ctx: sdk.Context) -> None:
+    """Navegador del disco duro dentro del panel: unidades, carpetas y audios con «＋»."""
+    path = Path(ctx.state.get("explorer.path") or _start_dir())
+    if not path.is_dir():
+        path = _start_dir()
+    with ui.row():
+        for d in _drives():
+            ui.button(d.rstrip("\\/") or "/", "explorer.cd", {"path": d}, size="sm",
+                      selected=path.drive.upper() == d[:2].upper() if os.name == "nt" else False)
+        home = Path.home()
+        for name, p in (("Inicio", home), ("Música", home / "Music"), ("Descargas", home / "Downloads"),
+                        ("Escritorio", home / "Desktop")):
+            if p.is_dir():
+                ui.button(name, "explorer.cd", {"path": str(p)}, size="sm")
+    with ui.row():
+        if path.parent != path:
+            ui.button("⬆ Subir", "explorer.cd", {"path": str(path.parent)}, size="sm")
+        ui.label(str(path), "mono")
+    try:
+        entries = sorted(os.scandir(path), key=lambda e: e.name.lower())
+    except OSError as exc:
+        ui.label(f"No se puede abrir esta carpeta: {exc.strerror or exc}", "warn")
+        return
+    dirs = [e for e in entries if e.is_dir() and not e.name.startswith((".", "$"))]
+    audio = [e for e in entries if e.is_file() and Path(e.name).suffix.lower() in library.AUDIO_EXT]
+    if audio:
+        ui.button(f"＋ Agregar los {len(audio)} audios de esta carpeta", "explorer.add_folder", {"path": str(path)}, size="sm")
+    for e in dirs[:150]:
+        with ui.row(cls="item"):
+            ui.button(f"📁 {e.name}", "explorer.cd", {"path": e.path}, size="sm")
+    for e in audio[:200]:
+        with ui.row(cls="item"):
+            ui.label(Path(e.name).stem)
+            ui.button("＋", "list.add_path", {"path": e.path}, size="sm")
+    if not dirs and not audio:
+        ui.label("Carpeta sin subcarpetas ni audios compatibles", "muted")
+    elif len(dirs) > 150 or len(audio) > 200:
+        ui.label("Se muestran las primeras entradas de la carpeta", "muted")
+
+
+class EventosEditor(sdk.Editor):
+    id, label, icon = "eventos", "Eventos", "⏱"
+
+    def draw(self, ui: UI, ctx: sdk.Context) -> None:
+        BotoneraEditor._events(None, ui)
+
+
+class ExploradorEditor(sdk.Editor):
+    id, label, icon = "explorador", "Explorador", "🗂"
+
+    def draw(self, ui: UI, ctx: sdk.Context) -> None:
+        BotoneraEditor._explorer(None, ui, ctx)
+
+
+class NavegadorEditor(sdk.Editor):
+    """Navegador web propio: sitios dentro del automatizador (también suenan: streams, radios en línea…)."""
+
+    id, label, icon = "navegador", "Navegador", "🌐"
+
+    def draw(self, ui: UI, ctx: sdk.Context) -> None:
+        ui.custom("web-browser", id="nav", home=ctx.config.get("website") or "")
+
+
+VARIOS_DEFAULT = ["botonera", "eventos", "explorador", "navegador"]
+
+
+class VariosEditor(sdk.Editor):
+    """Panel que acopla otros paneles por pestañas (Botonera, Eventos, Explorador, Metadatos, Historial…)."""
+
+    id, label, icon = "varios", "Varios", "🗃"
+
+    def draw(self, ui: UI, ctx: sdk.Context) -> None:
+        names = {e.id: e for e, _o, _p in ctx._host.editors.values()}
+        tabs = [t for t in (ctx.state.get("varios.tabs") or VARIOS_DEFAULT) if t in names and t != "varios"]
+        with ui.tabs("varios") as t:
+            for eid in tabs:
+                with t.tab(names[eid].label):
+                    ui._add(ctx.draw_editor(eid))
+                    ui.separator()
+                    ui.button("✕ Quitar esta pestaña", "varios.remove", {"editor": eid}, size="sm")
+            with t.tab("＋"):
+                ui.label("Acoplar otro panel a este", "muted")
+                for eid, e in names.items():
+                    if eid != "varios" and eid not in tabs:
+                        ui.button(f"{e.icon} {e.label}", "varios.add", {"editor": eid}, size="sm")
+
+
 def _aux_editor(n: int) -> type[sdk.Editor]:
     class AuxEditor(sdk.Editor):
         id, label, icon = f"aux{n}", f"Auxiliar {n}", "♫"
@@ -219,20 +376,25 @@ def _aux_editor(n: int) -> type[sdk.Editor]:
             if now:
                 dur = max(now["duration_ms"], 1)
                 ui.label(f"{FILE_LABEL.get(now['file'], '')} · {now['kind']}", "muted")
-                ui.progress(now["elapsed_ms"] / dur, f"{_mmss(now['elapsed_ms'])} / {_mmss(dur)}")
+                ui.slider(now["elapsed_ms"], dur, "aux.seek", {"n": n})
             else:
                 ui.progress(0, "00:00 / 00:00")
+            ui.custom("transport-deck", playing=st["playing"], paused=not st["playing"] and now is not None,
+                      stop_after=st.get("stop_after", False), args={"n": n},
+                      cmds={"play": "aux.play", "pause": "aux.pause", "stop": "aux.stop", "next": "aux.next",
+                            "stop_after": "aux.stop_after"})
+            nxt = None if st.get("stop_after") else (st["queue"][0] if st["queue"] else None)
+            ui.label("Próxima: " + (nxt["title"] if nxt else ("— (parará al terminar)" if st.get("stop_after") else "—")), "muted")
             with ui.row():
-                for txt, cmd in (("▶", "aux.play"), ("⏸", "aux.pause"), ("⏹", "aux.stop"),
-                                 ("⏭", "aux.next"), ("Vaciar", "aux.clear")):
-                    ui.button(txt, cmd, {"n": n}, size="sm")
+                ui.button("Vaciar", "aux.clear", {"n": n}, size="sm")
             q = st["queue"]
             if not q:
                 ui.label("Lista vacía · agrega ficheros desde Botonera ▸ Explorador (＋)", "muted")
             else:
                 ui.table(["#", "Fichero", "Título", "Dur."],
                          [[i + 1, FILE_LABEL.get(x["file"], x["file"]), x["title"], _dur(x)]
-                          for i, x in enumerate(q[:40])], narrow_hide=[1])
+                          for i, x in enumerate(q[:40])], narrow_hide=[1],
+                         file_list=_file_list(ctx, f"aux{n}", q[:40]))
 
     AuxEditor.__name__ = f"Aux{n}Editor"
     return AuxEditor
@@ -245,8 +407,8 @@ def register(host: sdk.Host, output=None, autoplay: bool | None = None) -> Playo
     al arrancar (por defecto sí con salida nula; con salida real hay que pedirlo, para que no suene de golpe).
     """
     sdk.bind(host)  # dueño «builtin», todos los permisos
-    for cls in (AireEditor, ProximaEditor, EmisionEditor, HistorialEditor, VuEditor, RelojEditor,
-                DialEditor, BotoneraEditor, *[_aux_editor(n) for n in range(1, N_AUX + 1)]):
+    for cls in (AireEditor, ControlesEditor, MetadatosEditor, ProximaEditor, EmisionEditor, HistorialEditor, VuEditor, RelojEditor,
+                DialEditor, BotoneraEditor, EventosEditor, ExploradorEditor, NavegadorEditor, VariosEditor, *[_aux_editor(n) for n in range(1, N_AUX + 1)]):
         sdk.register_editor(cls)
 
     output = output or NullOutput()
@@ -255,18 +417,60 @@ def register(host: sdk.Host, output=None, autoplay: bool | None = None) -> Playo
     def target(ctx: sdk.Context) -> str:
         return ctx.state.get("explorer.target", "emision")
 
+    host.register_command("audio.set_route", lambda ctx, dest, device=None: playout.set_route(str(dest), device))
+    host.register_command("audio.set_input", lambda ctx, line, device=None: playout.set_input(str(line), device))
+
+    def _test(ctx: sdk.Context, device: str | None = None) -> dict:
+        from ..engine.output import test_tone
+
+        return {"device": test_tone(device or None)}
+
+    host.register_command("audio.test", _test)
     host.register_command("playout.next", lambda ctx: playout.transport("emision", "next"))
     host.register_command("playout.pause", lambda ctx: playout.transport("emision", "toggle"))
     host.register_command("playout.play", lambda ctx: playout.transport("emision", "play"))
+    host.register_command("playout.pause_only", lambda ctx: playout.transport("emision", "pause"))
+    host.register_command("playout.stop", lambda ctx: playout.transport("emision", "stop"))
+    host.register_command("playout.stop_after", lambda ctx: playout.transport("emision", "stop_after"))
+    host.register_command("list.select", lambda ctx, target, uid: playout.select(str(target), str(uid)))
+    host.register_command("list.move_to", lambda ctx, target, uid, index: playout.move_to(
+        str(target), str(uid), int(index)))
     host.register_command("playout.clear", lambda ctx: playout.clear("emision"))
     host.register_command("cart.fire", lambda ctx, asset_id: playout.fire_cart(int(asset_id)))
     host.register_command("explorer.group", lambda ctx, key: ctx.set_state("explorer.group", str(key)))
     host.register_command("explorer.target", lambda ctx, target: ctx.set_state("explorer.target", str(target)))
     host.register_command("list.add", lambda ctx, asset_id=None, template=None: playout.add_to(
         target(ctx), template if template else int(asset_id)))
+    host.register_command("playout.seek", lambda ctx, ms: playout.seek("emision", float(ms)))
+    host.register_command("aux.seek", lambda ctx, n, ms: playout.seek(f"aux{int(n)}", float(ms)))
+    host.register_command("explorer.mode", lambda ctx, mode: ctx.set_state("explorer.mode", "disk" if mode == "disk" else "lib"))
+
+    def _cd(ctx: sdk.Context, path: str) -> None:
+        p = Path(str(path)).resolve()
+        if not p.is_dir():
+            raise ValueError("no es una carpeta")
+        ctx.set_state("explorer.path", str(p))
+
+    host.register_command("explorer.cd", _cd)
+    host.register_command("list.add_path", lambda ctx, path: playout.add_path(target(ctx), str(path)))
+    host.register_command("explorer.add_folder", lambda ctx, path: playout.add_folder(target(ctx), str(path)))
+
+    def _varios(ctx: sdk.Context, editor: str, add: bool) -> None:
+        tabs = list(ctx.state.get("varios.tabs") or VARIOS_DEFAULT)
+        if add and editor not in tabs:
+            tabs.append(editor)
+        if not add and editor in tabs:
+            tabs.remove(editor)
+        ctx.set_state("varios.tabs", tabs)
+
+    host.register_command("varios.add", lambda ctx, editor: _varios(ctx, str(editor), True))
+    host.register_command("varios.remove", lambda ctx, editor: _varios(ctx, str(editor), False))
     host.register_command("list.load_m3u", lambda ctx, path: playout.load_m3u(target(ctx), str(path)))
     for verb in ("play", "pause", "stop", "next"):
         host.register_command(f"aux.{verb}", lambda ctx, n, _v=verb: playout.transport(f"aux{int(n)}", _v))
+    host.register_command("list.remove", lambda ctx, target, uid: playout.remove(str(target), str(uid)))
+    host.register_command("list.move", lambda ctx, target, uid, delta: playout.move(str(target), str(uid), int(delta)))
+    host.register_command("aux.stop_after", lambda ctx, n: playout.transport(f"aux{int(n)}", "stop_after"))
     host.register_command("aux.clear", lambda ctx, n: playout.clear(f"aux{int(n)}"))
     playout.start()
     return playout

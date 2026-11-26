@@ -64,6 +64,10 @@ class Context:
     def state(self) -> Mapping[str, Any]:
         return MappingProxyType(dict(self._host.state))
 
+    def draw_editor(self, editor_id: str) -> dict:
+        """Árbol de UI de otro editor (lo usa «Varios» para acoplar paneles por pestañas)."""
+        return self._host.draw_editor(editor_id)
+
     def set_state(self, key: str, value: Any) -> None:
         self._need("state.write")
         self._host.set_state(f"{self.owner}.{key}" if self.owner != "builtin" else key, value)

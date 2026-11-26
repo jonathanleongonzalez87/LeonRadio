@@ -96,6 +96,33 @@ def scan(conn: sqlite3.Connection, root: str | Path) -> dict:
     return {"added": added, "duplicates": dups}
 
 
+def add_file(conn: sqlite3.Connection, path: str | Path, lock=None, kind: str = "music") -> int:
+    """Agrega un archivo suelto (de cualquier carpeta) a la biblioteca y devuelve su id. Si ya estaba, devuelve el existente."""
+    import contextlib
+
+    p = Path(path)
+    if p.suffix.lower() not in AUDIO_EXT or not p.is_file():
+        raise ValueError("no es un archivo de audio compatible")
+    with lock or contextlib.nullcontext():
+        row = conn.execute("SELECT id FROM assets WHERE path = ? AND status = 'active'", (str(p),)).fetchone()
+        if row:
+            return row["id"]
+    digest = sha256_of(p)
+    tags = _tags(p)
+    name_title, name_artist = title_artist_from_name(p.stem)
+    with lock or contextlib.nullcontext():
+        row = conn.execute("SELECT id FROM assets WHERE sha256 = ? AND status = 'active'", (digest,)).fetchone()
+        if row:
+            return row["id"]
+        cur = conn.execute(
+            """INSERT INTO assets (path, sha256, kind, title, artist, album, decade, duration_ms, status)
+               VALUES (?,?,?,?,?,?,?,?,?)""",
+            (str(p), digest, kind, tags["title"] or name_title, tags["artist"] or name_artist, tags["album"],
+             None, tags["duration_ms"], "active"))
+        conn.commit()
+        return int(cur.lastrowid)
+
+
 def import_m3u(conn: sqlite3.Connection, m3u: str | Path) -> list[int]:
     """Importa un .m3u cuyas rutas vienen de OTRA máquina: resuelve por nombre de archivo."""
     ids: list[int] = []

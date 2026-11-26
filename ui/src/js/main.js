@@ -1,7 +1,8 @@
 import { connectEvents, getEditors, getInfo } from "./api.js";
 import { AreaManager, area, hasEditor, split, toggleBeside } from "./areas.js";
+import { initMenus } from "./menus.js";
 
-const KEY = "leonradio.workspaces.v7";
+const KEY = "leonradio.workspaces.v10";
 // Tolerante: si un HTML viejo (en caché) no trae algún elemento, se usa uno suelto en vez de fallar.
 const $ = (s) => document.querySelector(s) ?? document.createElement("div");
 const store = {
@@ -13,19 +14,19 @@ const defaults = () => ({
   active: 0,
   list: [
     { name: "Aire", tree: split("v",
-        // franja superior delgada: Reloj | VU | Aire | Próxima | Dial/RDS
+        // franja superior delgada: Reloj | VU | Aire | Próxima | Controles
         split("h", area("reloj", true),
           split("h", area("vu", true),
-            split("h", area("aire", true), split("h", area("proxima", true), area("dial", true), 0.5), 0.515), 0.25), 0.12),
-        // cuerpo: Botonera (Botonera/Eventos/Explorador) + Historial | Emisión (con las Auxiliares a su lado)
+            split("h", area("aire", true), split("h", area("proxima", true), area("controles"), 0.4), 0.46), 0.25), 0.12),
+        // cuerpo: Varios (Botonera/Eventos/Explorador por pestañas) + Historial | Emisión con Metadatos debajo
         split("h",
-          split("v", area("botonera"), area("historial"), 0.6),
-          area("emision"), 0.34),
+          split("v", area("varios"), area("historial"), 0.6),
+          split("v", area("emision"), area("metadatos"), 0.78), 0.34),
         0.22) },
     { name: "Programación", tree: split("h", area("emision"), area("historial"), 0.45) },
     { name: "Producción", tree: split("h",
         split("v", area("aire"), area("emision"), 0.4),
-        split("v", area("ejemplo.hora"), area("botonera"), 0.4), 0.55) },
+        split("v", area("ejemplo.hora"), area("varios"), 0.4), 0.55) },
   ],
 });
 
@@ -95,22 +96,49 @@ function initTheme() {
   });
 }
 
+// Pantalla de carga: se queda hasta que el usuario hace clic (o pulsa Enter/Espacio/Esc).
+function splash(msg, pct) {
+  const m = document.getElementById("splash-msg");
+  if (m) m.textContent = msg;
+  const bar = document.querySelector("#splash .splash-bar i");
+  if (bar && pct != null) bar.style.width = `${pct}%`;
+}
+function hideSplash() {
+  const s = document.getElementById("splash");
+  if (!s) return;
+  s.classList.add("ready");
+  const bye = () => {
+    document.removeEventListener("keydown", key, true);
+    s.classList.add("out");
+    setTimeout(() => s.remove(), 600);
+  };
+  const key = (e) => { if (["Enter", " ", "Escape"].includes(e.key)) { e.preventDefault(); bye(); } };
+  s.addEventListener("click", bye, { once: true });
+  document.addEventListener("keydown", key, true);
+}
+
 async function boot() {
+  splash("Conectando con el motor…", 25);
   initTheme();
   tickClock(); setInterval(tickClock, 1000);
   const [info, editors] = await Promise.all([getInfo(), getEditors()]);
   $("#station").textContent = info.station;
+  splash("Armando los paneles…", 65);
   mgr = new AreaManager($("#screen"), {
     editors,
     onChange: (tree) => { ws.list[ws.active].tree = tree; store.set(ws); },
     onPaint: syncAux,
   });
   buildAuxToggles(editors);
-  $("#reset").addEventListener("click", () => {
+  const resetLayout = () => {
     if (confirm("¿Restablecer todos los workspaces?")) { ws = defaults(); store.set(ws); renderTabs(); mgr.setTree(ws.list[0].tree); }
-  });
+  };
+  $("#reset").addEventListener("click", resetLayout);
+  initMenus({ toggleTheme: () => $("#theme").click(), resetLayout });
   renderTabs();
   mgr.setTree(ws.list[ws.active].tree);
+  splash("Listo · haz clic para entrar", 100);
+  hideSplash();
 
   let pending = false;
   connectEvents(
@@ -118,4 +146,9 @@ async function boot() {
     (on) => $("#lamp").classList.toggle("on", on),
   );
 }
-boot().catch((e) => { console.error(e); $("#screen").textContent = "No se pudo conectar con leonradio-core: " + e.message; });
+boot().catch((e) => {
+  console.error(e);
+  $("#screen").textContent = "No se pudo conectar con leonradio-core: " + e.message;
+  splash("No se pudo conectar con el motor · haz clic para cerrar", 100);
+  hideSplash();
+});

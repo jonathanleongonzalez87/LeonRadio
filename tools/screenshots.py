@@ -30,14 +30,19 @@ with sync_playwright() as p:
     browser = p.chromium.launch(channel="msedge")
     page = browser.new_page(viewport={"width": 1600, "height": 900})
     page.goto(URL)
+    page.wait_for_selector("#splash.ready")                 # pantalla de carga: se queda hasta que se hace clic
+    page.wait_for_timeout(600)
+    page.screenshot(path=str(OUT / "splash.png"))
+    print("guardado", OUT / "splash.png")
+    page.click("#splash")
     page.wait_for_selector(".area .body .u-col, .area .body .cmp")
     page.wait_for_timeout(2500)
 
     # algo de actividad para que Historial y Cartuchera tengan contenido
     for _ in range(2):
-        page.get_by_role("button", name="Siguiente").first.click()
+        page.locator('button[title="Siguiente"]').first.dispatch_event('click')
         page.wait_for_timeout(700)
-    for key in ("F1", "F3", "F6"):
+    for key in ("Numpad1", "Numpad3", "Numpad6"):           # botonera: teclado numérico
         page.keyboard.press(key)
         page.wait_for_timeout(500)
     # listas auxiliares desde la barra de herramientas + Explorador de la Botonera
@@ -48,7 +53,7 @@ with sync_playwright() as p:
     for i in range(3):
         page.get_by_role("button", name="＋").nth(i).click()
         page.wait_for_timeout(300)
-    page.get_by_role("button", name="▶", exact=True).first.click()
+    page.locator('button[title="Reproducir"]').last.dispatch_event('click')
     shot(page, "botonera-explorador")
     page.get_by_role("tab", name="Botonera", exact=True).click()
     shot(page, "aire-oscuro")
@@ -71,6 +76,8 @@ with sync_playwright() as p:
                                 is_mobile=True, has_touch=True)
     mp = phone.new_page()
     mp.goto(URL)
+    mp.wait_for_selector("#splash.ready")
+    mp.click("#splash")
     mp.wait_for_selector(".area .body")
     mp.wait_for_timeout(3000)
     mp.screenshot(path=str(OUT / "telefono-aire.png"))

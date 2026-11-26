@@ -1,6 +1,6 @@
 # Estado de LeonRadio (para retomar en una sesión nueva)
 
-Última actualización: 2026-11-25. Lee esto primero; después `README.md`, `ROADMAP.md` y `docs/`.
+Última actualización: 2026-11-25 (v0.1.0). Lee esto primero; después `README.md`, `ROADMAP.md` y `docs/`.
 
 ## Qué es
 Automatizador de radio con estética de cabina vintage: motor **Python** (`core/`) + interfaz **HTML** (`ui/`),
@@ -10,7 +10,7 @@ Repo: https://github.com/jonathanleongonzalez87/LeonRadio · Proyecto «LeonRadi
 ## Dónde está todo
 - Código: `C:\Users\leont\OneDrive\Documents\LeonRadio\LeonRadio` · audio de la emisora: `..\Rockland Radio` (no se versiona).
 - Entorno de desarrollo: `C:\Users\leont\.venvs\leonradio` (fuera de OneDrive). Entorno del lanzador: `%LOCALAPPDATA%\LeonRadio\venv`.
-- Pruebas: `cd core` y `C:\Users\leont\.venvs\leonradio\Scripts\python -m pytest -q` → **38 pasan**.
+- Pruebas: `cd core` y `C:\Users\leont\.venvs\leonradio\Scripts\python -m pytest -q` → **46 pasan**.
 
 ## Cómo ejecutarlo
 - **Con audio real:** doble clic en `iniciar-leonradio.bat` (arranca en **pausa**; pulsa ▶ Reproducir). → http://127.0.0.1:8765/
@@ -18,20 +18,21 @@ Repo: https://github.com/jonathanleongonzalez87/LeonRadio · Proyecto «LeonRadi
 - Sin sonido: `leonradio serve --audio null`. Dispositivos: `leonradio devices`. Tono de prueba: `leonradio beep`.
 - Capturas del README: `tools\screenshots.py` contra un servidor **sin audio** (si no, dispara sonido).
 
-## Hecho
-- **F0 / F0.5:** gestor de áreas y workspaces, editores y addons con permisos, UI declarativa en Python, componentes vintage (VU de agujas, reloj, dial/RDS, botonera).
-- **F1 (el usuario confirmó que el audio suena bien):** motor NumPy + miniaudio + WASAPI; listas de **ficheros** (audio, evento, otro) en la Emisión y 4 Auxiliares; crossfade, segue por marcas, ducking, VU real, historial con `file_type`.
-- Paneles: Aire, Próxima, Emisión, Historial, VU, Reloj, Dial/RDS, Botonera (pestañas Botonera/Eventos/Explorador), Auxiliar 1–4 (se activan con AUX 1–4).
-
-## Sin subir a git (el usuario pidió subir SOLO cuando lo pida)
-Isotipo hexagonal restituido en la cabecera y como favicon (`ui/src/index.html`, `app.css`), `NOTICE.md`/READMEs
-actualizados, 1 prueba nueva y capturas regeneradas. Está probado y funciona; falta que el usuario pida el commit.
+## Hecho (versión 0.1.0)
+- **F0 / F0.5:** gestor de áreas y workspaces, editores y addons con permisos, UI declarativa en Python, componentes vintage.
+- **F1 (el usuario confirmó que el audio suena bien):** motor NumPy + miniaudio + WASAPI; listas de **ficheros** (audio, evento, otro) en la Emisión y 4 Auxiliares; crossfade, segue, ducking, VU real, historial.
+- **Listas:** elegir fila, arrastrar para reordenar, Supr para quitar; deslizador de posición; «parar tras la actual»; Próxima se vacía al armarlo.
+- **Paneles:** Aire (tiempo restante y hora de fin), Controles (teclas de pletina), Próxima, Emisión, Metadatos (carátula y etiquetas), Historial, VU, Reloj, Dial/RDS, Auxiliar 1–4 (en fila), y **Varios** (pestañas: Botonera, Eventos, Explorador, Navegador, y los que se acoplen con ＋). Menú de editores en columnas.
+- **Botonera:** 10 pads (1–9, 0) con el teclado numérico, pisadores → separadores → jingles; encendidos mientras suenan y se detienen al repulsar.
+- **Explorador:** biblioteca o disco duro («Mi equipo»); **Navegador** web incrustado (los sitios que prohíben incrustarse se abren aparte).
+- **Preferencias** (menú Archivo, Ctrl+,): tarjeta de sonido por salida (principal, Aux 1–4, Botonera; la escucha previa y las entradas solo se guardan). Ajustes en `%LOCALAPPDATA%\LeonRadio\config.json`.
+- Barra de menú, pantalla de carga (se cierra con un clic) y diseños guardados v10 (cambiar `KEY` en `main.js` los restablece).
 
 ## Pendiente (issues abiertos)
-- F1: #3 se cierra cuando el usuario confirme el audio (ya dijo que funciona → cerrar al subir).
-- Mejoras del motor/UI: #21 editar la Emisión (quitar/mover), #22 selector de dispositivo en la UI, #23 pisadores automáticos sobre la intro, #24 detectar marcas intro/outro y loudness.
+- Mejoras del motor/UI: #23 pisadores automáticos sobre la intro, #24 detectar marcas intro/outro y loudness.
 - F2–F5: #8 metadatos ISRC, #9 compromisos y tandas, #10 reportes, #17 gestor de addons.
 - F0.5: #14/#18 aislar addons en proceso aparte, #19 workspaces en el servidor, #20 pruebas de la UI.
+- Ideas anotadas: escucha previa con su propia salida; entradas de línea (Live Assist); las Auxiliares abiertas en fila reparten el ancho a la mitad cada una; el audio del Navegador no pasa por el motor (sin VU ni ducking).
 - **Preguntas sin responder (las necesita F3/F4):** #11 a qué sociedad de gestión reporta RRC y en qué formato · si las cuñas son por cantidad o también por franja · manual de marca de RRC.
 
 ## Reglas del usuario (importantes)

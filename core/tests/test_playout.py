@@ -168,3 +168,160 @@ def test_device_failure_falls_back_to_simulated_and_says_so():
     playout.start()
     assert playout.output.simulated and host.state["audio.info"]["simulated"] is True
     assert "dispositivo ocupado" in host.state["playout.message"]
+
+
+def test_remove_and_move_files_in_a_list():
+    host, playout = plain_host()
+    ids = [insert(host, "music", t, 5) for t in ("A", "B", "C")]
+    for i in ids:
+        playout.add_to("aux2", i)
+    titles = lambda: [x["title"] for x in host.state["aux.2"]["queue"]]
+    uid = lambda n: host.state["aux.2"]["queue"][n]["uid"]
+    assert playout.move("aux2", uid(2), -1) and titles() == ["A", "C", "B"]
+    assert not playout.move("aux2", uid(0), -1)                            # ya está arriba
+    assert playout.move("aux2", uid(0), 5) and titles() == ["C", "B", "A"]  # se limita al final
+    assert playout.remove("aux2", uid(1)) and titles() == ["C", "A"]
+    assert not playout.remove("aux2", "no-existe")
+
+
+def test_drag_move_to_stop_after_and_cart_toggle():
+    host, playout = plain_host()
+    ids = [insert(host, "music", t, 3) for t in ("A", "B", "C")]
+    for i in ids:
+        playout.add_to("emision", i)
+    q = lambda: [x["title"] for x in host.state["playout.queue"]]
+    uid = lambda n: host.state["playout.queue"][n]["uid"]
+    assert playout.move_to("emision", uid(0), 2) and q() == ["B", "C", "A"]      # arrastrar el primero al final
+    assert playout.move_to("emision", uid(2), 0) and q() == ["A", "B", "C"]
+    playout.transport("emision", "play")
+    playout.transport("emision", "stop_after")
+    assert host.state["playout.stop_after"] is True
+    run(playout, 4)                                                              # la actual (3 s) termina
+    assert host.state["playout.playing"] is False and host.state["playout.now"] is None
+    assert q() == ["B", "C"] and host.state["playout.stop_after"] is False
+    jingle = insert(host, "jingle", "Jingle", 5)                                 # botonera: pulsar dos veces detiene
+    playout.fire_cart(jingle); playout.tick(0.05)
+    assert host.state["cart.active"] == [jingle]
+    assert playout.fire_cart(jingle) == {"stopped": True}
+    assert host.state["cart.active"] == []
+
+
+def test_metadata_card_follows_the_selected_file():
+    host, playout = plain_host()
+    playout.add_to("emision", insert(host, "music", "Tema", 3))
+    playout.tick(0.05)
+    assert host.state["meta.info"]["title"] == "Tema"                            # sin elegir: el primero de la Emisión
+    other = insert(host, "music", "Otro", 3)
+    playout.add_to("aux1", other)
+    playout.select("aux1", host.state["aux.1"]["queue"][0]["uid"])
+    assert host.state["meta.info"]["title"] == "Otro"
+
+
+def _texts(node):
+    out = [node.get("text", "")]
+    for c in node.get("children", []):
+        out += _texts(c)
+    return out
+
+
+def test_aux_list_has_stop_after_and_proxima_empties_when_armed():
+    host, playout = plain_host()
+    for t in ("A", "B"):
+        playout.add_to("aux1", insert(host, "music", t, 3))
+    playout.transport("aux1", "play")
+    host.run_command("aux.stop_after", {"n": 1})
+    assert host.state["aux.1"]["stop_after"] is True
+    run(playout, 4)
+    assert host.state["aux.1"]["playing"] is False and host.state["aux.1"]["stop_after"] is False
+    assert [x["title"] for x in host.state["aux.1"]["queue"]] == ["B"]           # la siguiente queda cargada, sin sonar
+    playout.add_to("emision", insert(host, "music", "Tema", 30))
+    playout.transport("emision", "play")
+    playout.transport("emision", "stop_after")
+    assert "Tema" not in " ".join(_texts(host.draw_editor("proxima")))
+    assert "Parará" in " ".join(_texts(host.draw_editor("proxima")))
+
+
+def test_seek_jumps_inside_the_current_file_and_local_files_can_be_added(tmp_path):
+    host, playout = plain_host()
+    playout.add_to("emision", insert(host, "music", "Larga", 60))
+    playout.transport("emision", "play")
+    run(playout, 1)
+    assert playout.seek("emision", 30_000)
+    playout.tick(0.05)
+    assert 30_000 <= host.state["playout.now"]["elapsed_ms"] <= 31_000
+    assert not playout.seek("aux1", 5_000)                                   # nada sonando ahí
+    wav(tmp_path / "Suelto - Alguien.wav", 1.0)
+    aid = library.add_file(host.db, tmp_path / "Suelto - Alguien.wav", host.db_lock)
+    assert library.add_file(host.db, tmp_path / "Suelto - Alguien.wav", host.db_lock) == aid    # no duplica
+    playout.add_to("aux1", aid)
+    assert host.state["aux.1"]["queue"][0]["title"] == "Suelto" and host.state["aux.1"]["queue"][0]["artist"] == "Alguien"
+
+
+def test_disk_explorer_navigates_and_loads_local_files(tmp_path):
+    host, playout = plain_host()
+    sub = tmp_path / "Mis cosas"
+    sub.mkdir()
+    wav(tmp_path / "Uno - Autor.wav", 1.0); wav(tmp_path / "Dos - Autor.wav", 1.3)
+    host.run_command("explorer.mode", {"mode": "disk"})
+    host.run_command("explorer.cd", {"path": str(tmp_path)})
+    tree = host.draw_editor("explorador")
+    labels = [n.get("label", "") for n in _all(tree) if n["t"] == "button"]
+    assert "📁 Mis cosas" in labels and any("Agregar los 2 audios" in l for l in labels)
+    host.run_command("list.add_path", {"path": str(tmp_path / "Uno - Autor.wav")})
+    assert host.state["playout.queue"][-1]["title"] == "Uno"
+    host.run_command("explorer.add_folder", {"path": str(tmp_path)})
+    assert [x["title"] for x in host.state["playout.queue"]][-2:] == ["Dos", "Uno"]
+    host.run_command("varios.add", {"editor": "metadatos"})
+    tabs = next(n for n in _all(host.draw_editor("varios")) if n["t"] == "tabs")
+    assert "Metadatos" in [t["label"] for t in tabs["tabs"]]
+    host.run_command("varios.remove", {"editor": "botonera"})
+    tabs = next(n for n in _all(host.draw_editor("varios")) if n["t"] == "tabs")
+    assert "Botonera" not in [t["label"] for t in tabs["tabs"]]
+
+
+def _all(node):
+    yield node
+    for c in node.get("children", []):
+        yield from _all(c)
+    for t in node.get("tabs", []):
+        yield from _all(t)
+
+
+def test_navegador_is_a_tab_of_varios_and_aire_shows_remaining_time():
+    host, playout = plain_host()
+    playout.add_to("emision", insert(host, "music", "Tema", 60))
+    playout.transport("emision", "play")
+    run(playout, 1)
+    tree = host.draw_editor("varios")
+    tabs = next(n for n in _all(tree) if n["t"] == "tabs")
+    assert "Navegador" in [t["label"] for t in tabs["tabs"]]
+    assert any(n["t"] == "custom" and n["component"] == "web-browser" for n in _all({"children": tabs["tabs"][3]["children"]}) if "t" in n)
+    texts = [n.get("text") for n in _all(host.draw_editor("aire")) if n["t"] == "label"]
+    assert "Tiempo restante" in texts and any(t and t.endswith("·  Acaba a las") or t == "·  Acaba a las" for t in texts)
+
+
+def test_audio_routing_plan_buses_and_saved_settings(tmp_path, monkeypatch):
+    from leonradio_core import settings
+    from leonradio_core.engine.output import plan_groups
+
+    # sin dispositivos propios: todo sale por el principal
+    assert plan_groups({}) == {None: frozenset({"main", "aux1", "aux2", "aux3", "aux4", "cart"})}
+    g = plan_groups({"main": "A|WASAPI", "aux2": "B|WASAPI", "cart": "A|WASAPI"})
+    assert g["A|WASAPI"] == frozenset({"main", "aux1", "aux3", "aux4", "cart"}) and g["B|WASAPI"] == frozenset({"aux2"})
+    # cada salida mezcla solo sus buses
+    host, playout = plain_host()
+    playout.add_to("emision", insert(host, "music", "Principal", 5))
+    playout.add_to("aux2", insert(host, "music", "Dos", 5))
+    playout.transport("emision", "play"); playout.transport("aux2", "play")
+    only_aux2 = playout.engine.render(4410, frozenset({"aux2"}))
+    only_main = playout.engine.render(4410, frozenset({"main"}))
+    assert abs(only_aux2).max() > 0.01 and abs(only_main).max() > 0.01
+    assert playout.engine.decks["emision"].current.pos == 2 * 4410 or playout.engine.decks["emision"].current.pos == 4410
+    # ajustes guardados
+    monkeypatch.setenv("LEONRADIO_CONFIG", str(tmp_path / "cfg.json"))
+    settings.save({"audio": {"routes": {"main": "X|WASAPI"}}})
+    assert settings.load()["audio"]["routes"]["main"] == "X|WASAPI"
+    playout.set_input("line1", "Mic|MME")
+    assert settings.load()["audio"]["inputs"] == {"line1": "Mic|MME"} and host.state["audio.inputs"] == {"line1": "Mic|MME"}
+    with pytest.raises(ValueError):
+        playout.set_route("main", "X|WASAPI")                                # modo simulado: sin tarjeta real

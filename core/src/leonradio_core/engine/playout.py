@@ -17,7 +17,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from .. import sdk
+from .. import library, meta, sdk, settings
 from . import files
 from .engine import Engine
 from .files import AUDIO, EVENT
@@ -46,6 +46,8 @@ class Playout:
         self._last: dict[str, Any] = {}
         self._frac = 0.0
         self._prefetch_at = 0.0
+        self._selected: tuple[str, str] | None = None
+        self._meta_key: tuple | None = None
 
     # ------------------------------------------------------------------ ciclo de vida
     def start(self) -> None:
@@ -58,9 +60,8 @@ class Playout:
             self.engine.threaded = False
             self.output.start(self.engine)
             self._set("playout.message", f"No se pudo abrir el audio ({exc}). Sigo en modo simulado.")
-        self._set("audio.info", {"backend": "null" if self.output.simulated else "device", "device": self.output.name,
-                                 "simulated": self.output.simulated, "sample_rate": SR,
-                                 "latency_ms": getattr(self.output, "latency_ms", 0.0)})
+        self._audio_info()
+        self._set("audio.inputs", settings.load().get("audio", {}).get("inputs", {}))
         with self.engine.lock:
             for item in self._initial_queue():
                 self.engine.deck("emision").add(item)
@@ -70,6 +71,48 @@ class Playout:
                 self.engine.deck("emision").play(False)
         self._prefetch(force=True)
         self._publish()
+
+    def _audio_info(self) -> None:
+        o = self.output
+        self._set("audio.info", {"backend": "null" if o.simulated else "device", "device": o.name,
+                                 "simulated": o.simulated, "sample_rate": SR,
+                                 "latency_ms": getattr(o, "latency_ms", 0.0),
+                                 "routes": dict(getattr(o, "routes", {})),
+                                 "warnings": list(getattr(o, "warnings", []))})
+
+    def set_route(self, dest: str, device: str | None) -> dict:
+        """Cambia la tarjeta de sonido de un destino (principal, aux 1–4, botonera…) sin reiniciar, y la recuerda."""
+        from .output import DESTINATIONS
+
+        if dest not in DESTINATIONS:
+            raise ValueError(f"destino desconocido: {dest}")
+        if not hasattr(self.output, "reconfigure"):
+            raise ValueError("No hay salida de audio real (modo simulado): arranca sin --audio null")
+        routes = dict(self.output.routes)
+        if device:
+            routes[dest] = str(device)
+        else:
+            routes.pop(dest, None)
+        self.output.reconfigure(routes)
+        cfg = settings.load()
+        cfg.setdefault("audio", {})["routes"] = routes
+        settings.save(cfg)
+        self._audio_info()
+        return {"dest": dest, "device": device}
+
+    def set_input(self, line: str, device: str | None) -> dict:
+        """Entrada de línea (micrófono, consola…): por ahora solo se guarda la elección."""
+        if line not in ("line1", "line2"):
+            raise ValueError(f"entrada desconocida: {line}")
+        cfg = settings.load()
+        inputs = cfg.setdefault("audio", {}).setdefault("inputs", {})
+        if device:
+            inputs[line] = str(device)
+        else:
+            inputs.pop(line, None)
+        settings.save(cfg)
+        self._set("audio.inputs", dict(inputs))
+        return {"line": line, "device": device}
 
     def stop(self) -> None:
         self.output.stop()
@@ -123,8 +166,55 @@ class Playout:
     def remove(self, target: str, uid: str) -> bool:
         with self.engine.lock:
             ok = self.deck(target).remove(uid)
+        self._prefetch(force=True)
         self._publish()
         return ok
+
+    def move(self, target: str, uid: str, delta: int) -> bool:
+        with self.engine.lock:
+            ok = self.deck(target).move(uid, int(delta))
+        if ok:
+            self._prefetch(force=True)
+        self._publish()
+        return ok
+
+    def move_to(self, target: str, uid: str, index: int) -> bool:
+        with self.engine.lock:
+            ok = self.deck(target).move_to(uid, int(index))
+        if ok:
+            self._prefetch(force=True)
+        self._publish()
+        return ok
+
+    def seek(self, target: str, ms: float) -> bool:
+        with self.engine.lock:
+            ok = self.deck(target).seek(ms)
+        self._publish()
+        return ok
+
+    def add_path(self, target: str, path: str) -> dict:
+        """Carga un archivo de audio de cualquier carpeta del disco: lo registra en la biblioteca y lo agrega a la lista."""
+        aid = library.add_file(self.host.db, path, self.host.db_lock)
+        return self.add_to(target, aid)
+
+    def add_folder(self, target: str, folder: str) -> dict:
+        """Agrega a la lista todos los audios de una carpeta (sin entrar en subcarpetas), por orden de nombre."""
+        added = 0
+        for p in sorted(Path(folder).iterdir(), key=lambda q: q.name.lower()):
+            if p.is_file() and p.suffix.lower() in library.AUDIO_EXT:
+                try:
+                    self.add_path(target, str(p))
+                    added += 1
+                except (OSError, ValueError) as exc:
+                    self._set("playout.message", f"No se pudo leer «{p.name}»: {exc}")
+        self._set("playout.message", f"{added} audio(s) de «{Path(folder).name or folder}» agregados a la lista")
+        return {"added": added}
+
+    def select(self, target: str, uid: str) -> None:
+        """Fichero elegido en una lista: sus metadatos se muestran en el panel Metadatos."""
+        self._selected = (target, uid)
+        self._set("list.selected", {"target": target, "uid": uid})
+        self._publish()
 
     def clear(self, target: str) -> None:
         with self.engine.lock:
@@ -153,6 +243,8 @@ class Playout:
                 d.stop()
             elif verb == "next":
                 d.skip(False)
+            elif verb == "stop_after":
+                d.stop_after = not d.stop_after and d.current is not None
             else:
                 raise ValueError(f"orden desconocida: {verb}")
         self._drain()
@@ -160,9 +252,14 @@ class Playout:
 
     def fire_cart(self, asset_id: int) -> dict:
         """Dispara una pieza de la botonera: suena encima de la mezcla y baja la música según su tipo."""
+        if self.engine.stop_voice(asset_id):              # pulsar de nuevo una pieza que suena la detiene
+            self._drain()
+            self._publish()
+            return {"stopped": True}
         item = files.audio_file(self._asset(asset_id))
         self.engine.fire(item, DUCK_DB.get(item["kind"]))
         self._set("cart.last", {"title": item["title"], "at": iso(time.time())})
+        self._publish()
         return {"title": item["title"]}
 
     def load_m3u(self, target: str, path: str) -> dict:
@@ -236,7 +333,7 @@ class Playout:
         if deck == "voice":                            # botonera / pisadores superpuestos
             if kind == "end":
                 v = data["voice"]
-                self._log(v.item, v.started, data["at"], int(v.pos * 1000 / SR), "completed", "cart")
+                self._log(v.item, v.started, data["at"], int(v.pos * 1000 / SR), data.get("status", "completed"), "cart")
             return
         source = SOURCE_OF.get(deck, "live")
         if kind == "end":
@@ -285,7 +382,48 @@ class Playout:
             self._set("playout.queue", [brief(i) for i in main.queue[:MAX_STATE_ITEMS]])
             self._set("playout.queue_total", len(main.queue))
             self._set("playout.playing", main.playing)
+            self._set("playout.stop_after", main.stop_after)
+            self._set("cart.active", self.engine.active_voice_ids())
+            self._publish_meta()
             for n in range(1, 5):
                 d = self.engine.decks[f"aux{n}"]
                 self._set(f"aux.{n}", {"now": self._now(d), "queue": [brief(i) for i in d.queue[:MAX_STATE_ITEMS]],
-                                       "playing": d.playing})
+                                       "playing": d.playing, "stop_after": d.stop_after})
+
+    def _publish_meta(self) -> None:
+        """Metadatos del fichero elegido en una lista; si no hay, del que suena o del primero de la Emisión."""
+        item = None
+        if self._selected:
+            tgt, uid = self._selected
+            d = self.engine.decks.get(tgt)
+            if d is not None:
+                item = next((i for i in d.queue if i["uid"] == uid), None)
+                if item is None and d.current is not None and d.current.item["uid"] == uid:
+                    item = d.current.item
+        if item is None:
+            main = self.engine.decks["emision"]
+            item = main.current.item if main.current else (main.queue[0] if main.queue else None)
+        key = (item["uid"],) if item else None
+        if key == self._meta_key:
+            return
+        self._meta_key = key
+        if item is None:
+            self._set("meta.info", None)
+            return
+        info: dict[str, Any] = {"uid": item["uid"], "file": item["file"], "kind": item["kind"], "title": item["title"],
+                                "artist": item.get("artist") or "", "album": "", "year": "", "genre": "",
+                                "comment": "", "path": "", "cover": None}
+        if item.get("id") is not None:
+            try:
+                path = self._asset(item["id"])["path"]
+            except ValueError:
+                path = ""
+            if path and not path.startswith("demo://"):
+                info["path"] = path
+                tags = meta.read_tags(path)
+                for k in ("album", "year", "genre", "comment"):
+                    info[k] = tags[k]
+                info["title"] = tags["title"] or info["title"]
+                info["artist"] = tags["artist"] or info["artist"]
+                info["cover"] = f"/api/cover/{item['id']}"
+        self._set("meta.info", info)

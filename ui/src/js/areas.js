@@ -6,6 +6,14 @@ import { render } from "./renderer.js";
 
 let seq = 0;
 export const newId = () => `a${Date.now().toString(36)}${(seq++).toString(36)}`;
+// Categorías del menú de editores (los que no estén aquí, p. ej. los de addons, van en «Addons»).
+const EDITOR_CATEGORIES = [
+  { title: "Al aire", ids: ["aire", "proxima", "controles", "reloj"] },
+  { title: "Listas", ids: ["emision", "aux1", "aux2", "aux3", "aux4", "historial"] },
+  { title: "Material", ids: ["varios", "botonera", "eventos", "explorador", "navegador", "metadatos"] },
+  { title: "Monitoreo", ids: ["vu", "dial"] },
+];
+
 export const area = (editor, slim = false) => ({ type: "area", id: newId(), editor, ...(slim ? { slim: true } : {}) });
 export const split = (dir, a, b, ratio = 0.5) => ({ type: "split", dir, ratio, a, b });
 
@@ -128,22 +136,68 @@ export class AreaManager {
     gutter.addEventListener("pointerup", up);
   }
 
+  /** Menú de editores en columnas por categoría (como el de Blender). */
+  openMenu(anchor, node) {
+    document.querySelectorAll(".emenu").forEach((m) => m.remove());
+    const menu = document.createElement("div");
+    menu.className = "emenu";
+    menu.setAttribute("role", "menu");
+    const groups = new Map(EDITOR_CATEGORIES.map((c) => [c.title, []]));
+    const other = "Addons";
+    groups.set(other, []);
+    this.host.editors.forEach((e) => {
+      const c = EDITOR_CATEGORIES.find((k) => k.ids.includes(e.id));
+      groups.get(c ? c.title : other).push(e);
+    });
+    groups.forEach((list, title) => {
+      if (!list.length) return;
+      const col = document.createElement("div");
+      col.className = "emenu-col";
+      const h = document.createElement("div");
+      h.className = "emenu-h";
+      h.textContent = title;
+      col.append(h);
+      list.forEach((e) => {
+        const b = document.createElement("button");
+        b.type = "button";
+        b.className = "emenu-it" + (e.id === node.editor ? " on" : "");
+        b.setAttribute("role", "menuitem");
+        b.textContent = `${e.icon} ${e.label}`;
+        b.addEventListener("click", () => { close(); this.commit(setEditor(this.tree, node.id, e.id)); });
+        col.append(b);
+      });
+      menu.append(col);
+    });
+    const close = () => {
+      menu.remove();
+      document.removeEventListener("pointerdown", away, true);
+      document.removeEventListener("keydown", esc, true);
+    };
+    const away = (ev) => { if (!menu.contains(ev.target) && ev.target !== anchor) close(); };
+    const esc = (ev) => { if (ev.key === "Escape") close(); };
+    document.body.append(menu);
+    const r = anchor.getBoundingClientRect();
+    const w = menu.offsetWidth;
+    menu.style.left = `${Math.max(4, Math.min(r.left, window.innerWidth - w - 4))}px`;
+    menu.style.top = `${Math.min(r.bottom + 2, window.innerHeight - menu.offsetHeight - 4)}px`;
+    document.addEventListener("pointerdown", away, true);
+    document.addEventListener("keydown", esc, true);
+    menu.querySelector(".emenu-it.on, .emenu-it")?.focus();
+  }
+
   buildArea(node) {
     const sec = document.createElement("section");
     sec.className = node.slim ? "area slim" : "area";
     const head = document.createElement("header");
 
-    const sel = document.createElement("select");
+    const cur = this.host.editors.find((e) => e.id === node.editor);
+    const sel = document.createElement("button");
+    sel.type = "button";
+    sel.className = "emenu-btn";
     sel.setAttribute("aria-label", "Tipo de editor");
-    const known = this.host.editors.some((e) => e.id === node.editor);
-    if (!known) {
-      const o = new Option(`${node.editor} (no disponible)`, node.editor);
-      o.disabled = true;
-      sel.append(o);
-    }
-    this.host.editors.forEach((e) => sel.append(new Option(`${e.icon} ${e.label}`, e.id)));
-    sel.value = node.editor;
-    sel.addEventListener("change", () => this.commit(setEditor(this.tree, node.id, sel.value)));
+    sel.setAttribute("aria-haspopup", "true");
+    sel.textContent = (cur ? `${cur.icon} ${cur.label}` : `${node.editor} (no disponible)`) + "  ▾";
+    sel.addEventListener("click", () => this.openMenu(sel, node));
 
     const mk = (txt, title, fn, disabled = false) => {
       const b = document.createElement("button");
@@ -179,6 +233,7 @@ export class AreaManager {
       const tree = await drawEditor(view.editor);
       const sig = JSON.stringify(tree);
       if (sig === view.last) return; // sin cambios: no tocar el DOM (evita parpadeo)
+      if (document.body.classList.contains("lr-dragging")) return; // arrastrando: se redibuja al soltar
       view.last = sig;
       if (!this.stores.has(view.id)) this.stores.set(view.id, {});
       const top = view.body.scrollTop;                       // conservar el desplazamiento al redibujar
@@ -210,8 +265,17 @@ export const hasEditor = (tree, editor) => !!findArea(tree, (n) => n.editor === 
 export function toggleBeside(tree, editor, anchor, group = "aux") {
   const existing = findArea(tree, (n) => n.editor === editor);
   if (existing) return countAreas(tree) > 1 ? closeArea(tree, existing.id) : tree;
-  const sibling = findArea(tree, (n) => n.editor.startsWith(group));
-  if (sibling) return mapTree(tree, (n) => (n.id === sibling.id ? split("v", n, area(editor), 0.5) : n));
+  // las listas auxiliares se abren en fila horizontal, por orden de número
+  const num = (e) => Number(e.slice(group.length)) || 0;
+  const sibs = [];
+  const collect = (n) => { if (n.type === "area") { if (n.editor.startsWith(group)) sibs.push(n); } else { collect(n.a); collect(n.b); } };
+  collect(tree);
+  if (sibs.length) {
+    const before = sibs.filter((s) => num(s.editor) < num(editor)).sort((x, y) => num(y.editor) - num(x.editor))[0];
+    if (before) return mapTree(tree, (n) => (n.id === before.id ? split("h", n, area(editor), 0.5) : n));
+    const after = sibs.sort((x, y) => num(x.editor) - num(y.editor))[0];
+    return mapTree(tree, (n) => (n.id === after.id ? split("h", area(editor), n, 0.5) : n));
+  }
   const target = findArea(tree, (n) => n.editor === anchor) || findArea(tree, () => true);
   return mapTree(tree, (n) => (n.id === target.id ? split("h", n, area(editor), 0.7) : n));
 }

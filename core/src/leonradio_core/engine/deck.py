@@ -64,6 +64,7 @@ class Deck:
         self.current: Play | None = None
         self.fading: list[Play] = []
         self.playing = False
+        self.stop_after = False          # parar al terminar el fichero actual (sin empezar el siguiente)
         self._gate = 0.0
 
     # ---------------------------------------------------------------- lista
@@ -77,6 +78,28 @@ class Deck:
         for i, it in enumerate(self.queue):
             if it["uid"] == uid:
                 del self.queue[i]
+                return True
+        return False
+
+    def move(self, uid: str, delta: int) -> bool:
+        """Mueve un fichero de la lista `delta` puestos (negativo = hacia arriba). Devuelve si cambió."""
+        for i, it in enumerate(self.queue):
+            if it["uid"] == uid:
+                j = max(0, min(len(self.queue) - 1, i + delta))
+                if j == i:
+                    return False
+                self.queue.insert(j, self.queue.pop(i))
+                return True
+        return False
+
+    def move_to(self, uid: str, index: int) -> bool:
+        """Lleva un fichero a la posición `index` de la lista (arrastrar y soltar)."""
+        for i, it in enumerate(self.queue):
+            if it["uid"] == uid:
+                j = max(0, min(len(self.queue) - 1, int(index)))
+                if j == i:
+                    return False
+                self.queue.insert(j, self.queue.pop(i))
                 return True
         return False
 
@@ -98,6 +121,7 @@ class Deck:
     def stop(self) -> None:
         """Detiene y deja el fichero actual al inicio de la lista."""
         self.playing = False
+        self.stop_after = False
         if self.current is not None:
             item = self.current.item
             self._end(self.current, "interrupted")
@@ -106,6 +130,15 @@ class Deck:
         for p in self.fading:
             self._end(p, p.status)
         self.fading.clear()
+
+    def seek(self, ms: float) -> bool:
+        """Salta a `ms` dentro del fichero actual (control deslizante de la barra de reproducción)."""
+        cur = self.current
+        if cur is None or cur.source.duration_frames is None or cur.out_start is not None:
+            return False
+        cur.source.seek(int(float(ms) * SR / 1000))
+        cur.pos = cur.source.pos
+        return True
 
     def skip(self, block: bool = True, fade_ms: int = 300) -> None:
         """Pasa al siguiente con un fundido corto (sin cortes secos)."""
@@ -210,9 +243,13 @@ class Deck:
         if cur.pos >= dur:
             self._end(cur, cur.status)
             self.current = None
+            if self.stop_after:                       # «parar después de la actual»: queda en pausa
+                self.stop_after = False
+                self.playing = False
+                return
             self._start_next(0, block)
             return
-        if self.queue:
+        if self.queue and not self.stop_after:
             ov = self._overlap(cur, self.queue[0])
             if ov > 0 and dur - cur.pos <= ov:
                 self._start_next(ov, block)
@@ -227,7 +264,7 @@ class Deck:
         limit = dur - cur.pos
         if self.queue:
             ov = self._overlap(cur, self.queue[0])
-            if ov > 0 and limit > ov:
+            if ov > 0 and limit > ov and not self.stop_after:
                 limit -= ov
         return min(n, max(1, limit))
 

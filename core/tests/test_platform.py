@@ -42,7 +42,7 @@ def test_builtin_editors_draw_with_demo_playout():
         yield n["t"]
         for c in n.get("children", []):
             yield from walk(c)
-    assert "progress" in set(walk(tree))      # el progreso está (ahora junto a los botones, en una fila)
+    assert "slider" in set(walk(tree))      # el progreso está (ahora junto a los botones, en una fila)
     host.run_command("playout.next")  # salta con un fundido de 300 ms; al terminar queda registrado como 'skipped'
     playout.tick(0.5)
     plays = host.db.execute("SELECT status FROM playlog").fetchall()
@@ -134,7 +134,7 @@ def test_vintage_editors_use_custom_components_and_cartwall_fires(tmp_path):
     assert comps["dial"][0]["props"]["name"] == "RRC"
     cart = next(c for c in comps["botonera"] if c["component"] == "cartwall")
     pad = cart["props"]["pads"][0]
-    assert pad["key"] == "F1" and pad["style"] == "orange"
+    assert pad["key"] == "1" and pad["style"] == "orange"
     host.run_command("cart.fire", {"asset_id": pad["asset_id"]})
     playout.tick(1.5)                                   # el jingle dura 1 s: al terminar queda en el historial
     row = host.db.execute("SELECT source, title FROM playlog WHERE source = 'cart'").fetchone()
@@ -157,7 +157,7 @@ def test_demo_playout_emits_levels_and_ticks_once_per_second():
 
 
 
-def test_botonera_has_tabs_events_and_explorer(tmp_path):
+def test_varios_has_tabs_events_and_explorer(tmp_path):
     lib = tmp_path / "Radio" / "Música" / "20s"
     lib.mkdir(parents=True)
     (lib / "Brilla - Providencia.mp3").write_bytes(b"A")
@@ -165,8 +165,8 @@ def test_botonera_has_tabs_events_and_explorer(tmp_path):
     host = sdk.Host()
     library.scan(host.db, tmp_path / "Radio")
     builtin.register(host)
-    tabs = next(n for n in _walk(host.draw_editor("botonera")) if n["t"] == "tabs")
-    assert [t["label"] for t in tabs["tabs"]] == ["Botonera", "Eventos", "Explorador"]
+    tabs = next(n for n in _walk(host.draw_editor("varios")) if n["t"] == "tabs")
+    assert [t["label"] for t in tabs["tabs"]] == ["Botonera", "Eventos", "Explorador", "Navegador", "＋"]
     events = next(n for n in _walk(tabs["tabs"][1]) if n["t"] == "custom")
     assert events["component"] == "event-list" and len(events["props"]["events"]) >= 3
     explorer = tabs["tabs"][2]
@@ -196,7 +196,7 @@ def test_explorer_sends_to_emision_and_auxiliares(tmp_path):
     host.run_command("aux.pause", {"n": 3})
     assert not host.state["aux.3"]["playing"]
     tree = host.draw_editor("aux3")
-    assert any(n["t"] == "progress" for n in _walk(tree))
+    assert any(n["t"] == "slider" for n in _walk(tree))
     assert {"aux1", "aux2", "aux3", "aux4"} <= set(host.editors)
 
 

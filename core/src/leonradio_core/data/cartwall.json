@@ -1,6 +1,6 @@
 {
-  "_comment": "Cartuchera: 12 pads (F1–F12). Estilos por tipo de pieza; los pads se asignan a las piezas de la biblioteca (jingles, pisadores, separadores).",
-  "pads": 12,
-  "kinds": ["jingle", "pisador", "separador"],
+  "_comment": "Cartuchera: 10 pads (teclado numérico 1–9 y 0). Se llenan en este orden: primero los pisadores, luego separadores y al final jingles.",
+  "pads": 10,
+  "kinds": ["pisador", "separador", "jingle"],
   "styles": {"jingle": "orange", "pisador": "bronze", "separador": "graphite", "spot": "cream", "effect": "graphite"}
 }

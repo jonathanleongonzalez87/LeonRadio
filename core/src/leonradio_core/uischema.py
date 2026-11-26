@@ -38,6 +38,11 @@ class UI:
     def progress(self, value: float, text: str | None = None) -> None:
         self._add({"t": "progress", "value": max(0.0, min(1.0, float(value))), "text": text})
 
+    def slider(self, value_ms: float, total_ms: float, command: str, args: dict | None = None, suffix: str = "") -> None:
+        """Barra de reproducción con control deslizante: al soltarla se ejecuta `command` con args + {"ms": posición}."""
+        self._add({"t": "slider", "value": max(0.0, float(value_ms)), "max": max(1.0, float(total_ms)),
+                   "command": command, "args": args or {}, "suffix": suffix})
+
     def custom(self, component: str, **props: Any) -> None:
         """Componente JS incluido en la UI (vu-meter, analog-clock, fm-dial, cartwall…).
         Las props deben ser JSON; el componente se dibuja en el navegador."""
@@ -46,10 +51,17 @@ class UI:
     def separator(self) -> None:
         self._add({"t": "separator"})
 
-    def table(self, columns: list[str], rows: list[list[object]], narrow_hide: list[int] | None = None) -> None:
-        """`narrow_hide`: índices de columnas que se ocultan cuando el área es angosta (p. ej. en el teléfono)."""
-        self._add({"t": "table", "columns": columns, "nh": narrow_hide or [],
-                   "rows": [[str(c) if c is not None else "" for c in r] for r in rows]})
+    def table(self, columns: list[str], rows: list[list[object]], narrow_hide: list[int] | None = None,
+              file_list: dict | None = None) -> None:
+        """`narrow_hide`: índices de columnas que se ocultan cuando el área es angosta (p. ej. en el teléfono).
+        `file_list`: {"target", "uids", "selected"} hace las filas elegibles (clic), arrastrables y borrables (Supr)."""
+        self._add({"t": "table", "columns": columns, "nh": narrow_hide or [], "list": file_list,
+                   "rows": [[c if isinstance(c, dict) else (str(c) if c is not None else "") for c in r] for r in rows]})
+
+    @staticmethod
+    def actions(*buttons: tuple[str, str, dict]) -> dict:
+        """Celda de tabla con botones pequeños: cada uno es (texto, comando, args)."""
+        return {"actions": [{"label": l, "command": c, "args": a} for l, c, a in buttons]}
 
     @contextmanager
     def row(self, cls: str | None = None) -> Iterator[None]:

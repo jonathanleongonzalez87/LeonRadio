@@ -53,6 +53,14 @@ def frames_of(item: dict) -> int:
     return int(float(item.get("duration_ms") or 0) * SR / 1000)
 
 
+BUSES = ("main", "aux1", "aux2", "aux3", "aux4", "cart")
+
+
+def bus_of(deck_name: str) -> str:
+    """Destino de audio de una lista: la Emisión sale por «main»; cada Auxiliar por su propio bus."""
+    return "main" if deck_name == "emision" else deck_name
+
+
 class Engine:
     def __init__(self, crossfade_ms: int = 3000, master: float = 0.9, threaded: bool = False) -> None:
         self.lock = threading.RLock()
@@ -145,28 +153,48 @@ class Engine:
         self.notes.append(("voice", "start", {"voice": voice}))
         return voice
 
-    # ---------------------------------------------------------------- mezcla
-    def render(self, frames: int) -> np.ndarray:
+    def stop_voice(self, asset_id: int) -> bool:
+        """Corta las voces de la botonera que suenan de ese audio. Devuelve si había alguna."""
         with self.lock:
+            hit = [v for v in self.voices if v.item.get("id") == asset_id]
+            for v in hit:
+                self.voices.remove(v)
+                v.source.close()
+                self.notes.append(("voice", "end", {"voice": v, "status": "interrupted", "at": time.time()}))
+        return bool(hit)
+
+    def active_voice_ids(self) -> list[int]:
+        with self.lock:
+            return sorted({v.item["id"] for v in self.voices if v.item.get("id") is not None})
+
+    # ---------------------------------------------------------------- mezcla
+    def render(self, frames: int, buses: "set[str] | frozenset[str] | None" = None) -> np.ndarray:
+        """Mezcla un bloque. `buses`: qué destinos suenan en ESTA salida ("main" = Emisión, "aux1".."aux4", "cart" =
+        Botonera); None = todos. Cada tarjeta de sonido pide solo sus buses, así cada lista sigue el reloj de su salida."""
+        with self.lock:
+            every = buses is None
             mix = np.zeros((frames, 2), np.float32)
-            for d in self.decks.values():
-                mix += d.render(frames)
-            # ducking: la música baja mientras suena una voz que lo pide (ataque rápido, liberación lenta)
-            want = min((10 ** (v.duck_db / 20) for v in self.voices if v.duck_db), default=1.0)
-            tau = 0.12 if want < self._duck else 0.5
-            new = want + (self._duck - want) * float(np.exp(-(frames / SR) / tau))
-            mix *= np.linspace(self._duck, new, frames, endpoint=False, dtype=np.float32)[:, None]
-            self._duck = new
-            for v in list(self.voices):
-                blk = v.source.read(frames)
-                mix[:len(blk)] += blk
-                v.pos += len(blk)
-                if len(blk) < frames:
-                    self.voices.remove(v)
-                    self.notes.append(("voice", "end", {"voice": v, "status": "completed", "at": time.time()}))
+            for name, d in self.decks.items():
+                if every or bus_of(name) in buses:
+                    mix += d.render(frames)
+            if every or "cart" in buses:
+                # ducking: la música baja mientras suena una voz que lo pide (ataque rápido, liberación lenta)
+                want = min((10 ** (v.duck_db / 20) for v in self.voices if v.duck_db), default=1.0)
+                tau = 0.12 if want < self._duck else 0.5
+                new = want + (self._duck - want) * float(np.exp(-(frames / SR) / tau))
+                mix *= np.linspace(self._duck, new, frames, endpoint=False, dtype=np.float32)[:, None]
+                self._duck = new
+                for v in list(self.voices):
+                    blk = v.source.read(frames)
+                    mix[:len(blk)] += blk
+                    v.pos += len(blk)
+                    if len(blk) < frames:
+                        self.voices.remove(v)
+                        self.notes.append(("voice", "end", {"voice": v, "status": "completed", "at": time.time()}))
             mix *= self.master
             np.clip(mix, -1.0, 1.0, out=mix)
-            self.meter.update(mix)
+            if every or "main" in buses:
+                self.meter.update(mix)                    # el VU mide la salida principal
             return mix
 
     @property

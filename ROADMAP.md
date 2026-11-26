@@ -19,7 +19,7 @@ modo **automático + Live Assist** · monorepo público · código GPL-3.0, docs
 - [x] 3 editores incluidos (Aire, Emisión, Historial) usando la misma API + addon de ejemplo (`addons/ejemplo_hora_emisora`)
 - [ ] **Addons en proceso aparte** del motor de audio (hoy se cargan en el mismo proceso)
 - [ ] Guardar workspaces en el servidor (hoy: `localStorage`); exportar/importar workspace
-- [ ] Reproductor de Aire es **simulado** hasta F1
+- [x] Reproductor de Aire real desde F1
 
 ## F1 — Audio real (hito 1)
 - [x] Motor de audio en Python: mezclador estéreo (NumPy), decodificación con miniaudio, salida WASAPI (sounddevice)
@@ -31,8 +31,9 @@ modo **automático + Live Assist** · monorepo público · código GPL-3.0, docs
 - [x] **Registro en historial de cada fichero** (tipo, inicio, fin, ms reales, estado, fuente)
 - [x] Salida nula (pruebas y demo en el navegador) y respaldo automático si el dispositivo no abre
 - [x] Probado: 37 pruebas sin dispositivo + prueba en silencio del dispositivo real (hilo de audio ≈ 0,3 ms por bloque de 23 ms)
-- [ ] **Confirmación auditiva** (la hace el usuario): sonido correcto, crossfade y ducking agradables
-- [ ] Selector de dispositivo de audio en la UI; editar la Emisión (quitar, mover); pisadores automáticos sobre la intro
+- [x] **Confirmación auditiva** (la hizo el usuario): suena bien
+- [x] Selector de dispositivo de audio en la UI (Preferencias, una tarjeta por salida); editar la Emisión (mover, quitar); controles, deslizador, metadatos, Varios, Explorador de disco, Navegador
+- [ ] Pisadores automáticos sobre la intro
 
 ## F2 — Biblioteca
 - [ ] Marcadores automáticos (intro/outro), loudness EBU R128

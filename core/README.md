@@ -4,7 +4,7 @@ Motor de **LeonRadio**, automatizador de radio (Python). Parte de [LeonRadio](..
 
 Estación de prueba: **RRC – Rockland Radio Colombia**.
 
-## Estado (v0.0.1)
+## Estado (v0.1.0)
 - [x] Esquema SQLite: `assets`, `commitments`, `playlog`
 - [x] Escáner de biblioteca (clasifica por carpeta, lee etiquetas, detecta duplicados por hash)
 - [x] Importador `.m3u` con rutas de otra máquina

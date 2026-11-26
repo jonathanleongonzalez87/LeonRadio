@@ -13,11 +13,11 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
-from fastapi.responses import RedirectResponse
+from fastapi.responses import RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
-from . import addons, builtin, library, sdk
+from . import addons, builtin, library, meta, sdk, settings
 from .engine.output import make_output
 
 log = logging.getLogger("leonradio.server")
@@ -37,6 +37,14 @@ class CommandBody(BaseModel):
     args: dict = {}
 
 
+def _friendly(exc: Exception) -> str:
+    """Mensaje corto para la interfaz (los errores de PortAudio traen códigos largos)."""
+    text = str(exc)
+    if "PortAudio" in type(exc).__name__ or "host error" in text:
+        return "Ese dispositivo no se pudo abrir (puede estar en uso, desconectado o no admitir el formato). Prueba otro de la lista o de otra interfaz."
+    return text or type(exc).__name__
+
+
 def create_app(
     *, library_dir: str | None = None, db_path: str = ":memory:",
     addon_dirs: list[Path] | None = None, ui_dir: Path | None = None, tick: bool = True,
@@ -46,7 +54,8 @@ def create_app(
     host.library_dir = library_dir
     if library_dir:
         library.scan(host.db, library_dir)
-    playout = builtin.register(host, output=make_output(audio, device), autoplay=autoplay)
+    saved_routes = settings.load().get("audio", {}).get("routes", {})
+    playout = builtin.register(host, output=make_output(audio, device, saved_routes), autoplay=autoplay)
     roots = addon_dirs if addon_dirs is not None else [REPO / "addons"]
     env = os.environ.get("LEONRADIO_ADDONS")
     if env and addon_dirs is None:
@@ -83,7 +92,7 @@ def create_app(
             t.cancel()
         playout.stop()
 
-    app = FastAPI(title="LeonRadio", version="0.0.1", lifespan=lifespan)
+    app = FastAPI(title="LeonRadio", version="0.1.0", lifespan=lifespan)
     app.state.host = host
     app.state.playout = playout
 
@@ -92,6 +101,32 @@ def create_app(
         return {"station": host.station, "config": host.config, "api_version": sdk.API_VERSION,
                 "addons": [{"id": m.id, "name": m.name, "version": m.version,
                             "permissions": sorted(m.permissions)} for m in loaded]}
+
+    @app.get("/api/audio")
+    def audio_prefs() -> dict:
+        """Para las preferencias: dispositivos disponibles, destinos y su elección actual."""
+        from .engine import output as out
+
+        try:
+            devices, inputs = out.list_devices(), out.list_inputs()
+        except Exception:  # noqa: BLE001 - sin PortAudio (p. ej. demostración): lista vacía
+            devices, inputs = [], []
+        info = host.state.get("audio.info") or {}
+        return {"devices": devices, "inputs": inputs, "routes": info.get("routes", {}),
+                "selected_inputs": host.state.get("audio.inputs") or {}, "simulated": info.get("simulated", True),
+                "warnings": info.get("warnings", []), "active": info.get("device", "")}
+
+    @app.get("/api/cover/{asset_id}")
+    def cover(asset_id: int) -> Response:
+        """Carátula incrustada del audio (solo por id de la biblioteca, nunca por ruta)."""
+        try:
+            path = playout._asset(asset_id)["path"]
+        except ValueError as exc:
+            raise HTTPException(404, "audio desconocido") from exc
+        got = meta.read_cover(path) if path and not path.startswith("demo://") else None
+        if got is None:
+            raise HTTPException(404, "sin carátula")
+        return Response(got[0], media_type=got[1], headers={"Cache-Control": "max-age=3600"})
 
     @app.get("/api/editors")
     def editors() -> list[dict]:
@@ -112,6 +147,9 @@ def create_app(
             result = host.run_command(name, (body.args if body else {}))
         except sdk.PermissionDenied as exc:
             raise HTTPException(403, str(exc)) from exc
+        except (ValueError, RuntimeError, OSError, TypeError, KeyError) as exc:   # fallo explicable: se le dice al usuario
+            logging.getLogger("leonradio").warning("comando %s falló: %s", name, exc)
+            raise HTTPException(400, _friendly(exc)) from exc
         return {"ok": True, "result": result if isinstance(result, (str, int, float, bool, dict, list, type(None))) else None}
 
     @app.websocket("/ws")

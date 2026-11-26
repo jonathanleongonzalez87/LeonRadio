@@ -32,7 +32,11 @@ export async function runCommand(name, args = {}) {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ args }),
   });
-  if (!r.ok) throw new Error(`${name}: ${r.status}`);
+  if (!r.ok) {
+    let detail = "";
+    try { detail = (await r.json()).detail || ""; } catch { /* sin cuerpo */ }
+    throw new Error(typeof detail === "string" && detail ? detail : `${name}: ${r.status}`);
+  }
   return r.json();
 }
 

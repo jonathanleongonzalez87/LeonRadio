@@ -23,6 +23,11 @@ class Source:
     def close(self) -> None:
         pass
 
+    def seek(self, frame: int) -> None:
+        """Salta a un fotograma (todas las fuentes avanzan con `pos`)."""
+        top = self.duration_frames if self.duration_frames is not None else frame
+        self.pos = max(0, min(int(frame), max(0, top - 1)))
+
 
 class FileSource(Source):
     """Archivo decodificado en memoria (int16). El decodificador es miniaudio (mp3, wav, flac, ogg…)."""
