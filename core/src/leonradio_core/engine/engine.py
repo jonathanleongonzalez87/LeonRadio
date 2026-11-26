@@ -68,6 +68,7 @@ class Engine:
         self.voices: list[Voice] = []
         self.notes: collections.deque = collections.deque()      # avisos hacia el Playout (hilo seguro)
         self.meter = Meter()
+        self.taps: list = []                                     # escuchan la mezcla principal (streaming)
         self.crossfade_ms, self.master, self.threaded = crossfade_ms, master, threaded
         self._duck = 1.0
         self._cache: dict[str, Source] = {}
@@ -195,6 +196,8 @@ class Engine:
             np.clip(mix, -1.0, 1.0, out=mix)
             if every or "main" in buses:
                 self.meter.update(mix)                    # el VU mide la salida principal
+                for tap in self.taps:
+                    tap(mix)                              # el streaming recibe lo mismo que sale al aire
             return mix
 
     @property

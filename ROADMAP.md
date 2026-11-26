@@ -47,7 +47,7 @@ modo **automático + Live Assist** · monorepo público · código GPL-3.0, docs
 - [ ] Voice tracks y Live Assist
 
 ## F4 — Salida, historial y control
-- [ ] Streaming Icecast + metadatos (y RDS cuando haya hardware)
+- [x] Streaming Icecast 2 en MP3 + metadatos + grabación (panel Streaming de Varios) · [ ] RDS cuando haya hardware · [ ] Opus/Ogg y Shoutcast
 - [ ] Reportes: música (derechos), pauta (anunciantes), operación (auditoría)
 - [ ] Alertas de incumplimiento de compromisos antes de que venzan
 - [ ] Detector de silencio, failover

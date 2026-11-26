@@ -39,6 +39,39 @@ const NODES = {
     if (n.text) w.append(el("div", "u-prog-t", n.text));
     return w;
   },
+  form: (n, ctx) => {
+    const grid = el("div", "u-form");
+    n.fields.forEach((f) => {
+      const id = `f-${Math.random().toString(36).slice(2, 8)}`;
+      const lab = el("label", "u-flab", f.label);
+      lab.htmlFor = id;
+      let inp;
+      if (f.kind === "select") {
+        inp = document.createElement("select");
+        (f.options || []).forEach((o) => inp.append(new Option(o, o)));
+        inp.value = String(f.value ?? "");
+      } else {
+        inp = document.createElement("input");
+        inp.type = f.kind === "check" ? "checkbox" : f.kind === "password" ? "password" : f.kind === "number" ? "number" : "text";
+        if (f.kind === "check") inp.checked = !!f.value; else inp.value = f.value ?? "";
+        if (f.placeholder) inp.placeholder = f.placeholder;
+        if (f.kind !== "check") inp.spellcheck = false;
+        if (f.kind === "password") inp.autocomplete = "new-password";
+      }
+      inp.id = id;
+      inp.className = f.kind === "check" ? "u-fchk" : "u-fin";
+      inp.addEventListener("change", async () => {
+        const v = f.kind === "check" ? inp.checked : f.kind === "number" ? Number(inp.value) : inp.value;
+        inp.classList.remove("bad", "saved");
+        try { await runCommand(n.command, { [f.key]: v }); inp.classList.add("saved"); setTimeout(() => inp.classList.remove("saved"), 900); }
+        catch (e) { inp.classList.add("bad"); inp.title = e.message; }
+        if (f.kind === "password") inp.value = "";
+        ctx.refresh?.();
+      });
+      grid.append(lab, inp);
+    });
+    return grid;
+  },
   slider: (n, ctx) => {
     const w = el("div", "u-col");
     const r = document.createElement("input");

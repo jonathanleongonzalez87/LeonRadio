@@ -340,7 +340,73 @@ class NavegadorEditor(sdk.Editor):
         ui.custom("web-browser", id="nav", home=ctx.config.get("website") or "")
 
 
-VARIOS_DEFAULT = ["botonera", "eventos", "explorador", "navegador"]
+def _hms(s: int) -> str:
+    return f"{s // 3600:02d}:{s % 3600 // 60:02d}:{s % 60:02d}"
+
+
+_STREAM_STATE = {"stopped": ("FUERA DEL AIRE", "muted"), "connecting": ("CONECTANDO…", "warn"),
+                 "live": ("● EN EL AIRE", "ok"), "reconnecting": ("RECONECTANDO…", "warn"), "error": ("ERROR", "warn")}
+
+
+class StreamingEditor(sdk.Editor):
+    """Transmisión a un servidor Icecast (como BUTT): envía la mezcla principal en MP3 y puede grabarla."""
+
+    id, label, icon = "streaming", "Streaming", "📡"
+
+    def draw(self, ui: UI, ctx: sdk.Context) -> None:
+        st = ctx.state.get("stream.status") or {"state": "stopped", "message": "", "seconds": 0, "kb": 0,
+                                                "recording": False, "record_path": "", "song": ""}
+        cfg = ctx.state.get("stream.config") or {}
+        with ui.tabs("stream") as t:
+            with t.tab("Transmisión"):
+                text, tone = _STREAM_STATE.get(st["state"], ("—", "muted"))
+                ui.label(text, tone if tone != "ok" else "ok")
+                if st["message"]:
+                    ui.label(st["message"], "warn" if st["state"] in ("error", "reconnecting") else "muted")
+                live = st["state"] in ("live", "connecting", "reconnecting")
+                with ui.row():
+                    if live:
+                        ui.button("■ Desconectar", "stream.disconnect", selected=True)
+                    else:
+                        ui.button("● Conectar", "stream.connect")
+                    ui.button("⏹ Detener grabación" if st["recording"] else "⏺ Grabar a archivo", "stream.record",
+                              selected=st["recording"])
+                ui.kv("Tiempo al aire", _hms(st["seconds"]))
+                ui.kv("Enviado", f"{st['kb'] / 1024:.2f} MB")
+                ui.kv("Formato", f"MP3 · {cfg.get('bitrate', 128)} kbps · 44,1 kHz · estéreo")
+                ui.kv("Sonando", st["song"] or "—")
+                if st["recording"]:
+                    ui.label(f"Grabando en: {st['record_path']}", "muted")
+                ui.label("Transmite lo mismo que sale por la salida principal (con pisadores y todo).", "muted")
+            with t.tab("Servidor"):
+                ui.label("Icecast 2 (servidor de streaming). Los cambios se guardan al salir de cada campo.", "muted")
+                ui.form("stream.set", [
+                    {"key": "host", "label": "Dirección", "kind": "text", "value": cfg.get("host", ""),
+                     "placeholder": "stream.miemisora.com"},
+                    {"key": "port", "label": "Puerto", "kind": "number", "value": cfg.get("port", 8000)},
+                    {"key": "mount", "label": "Punto de montaje", "kind": "text", "value": cfg.get("mount", "/stream")},
+                    {"key": "user", "label": "Usuario", "kind": "text", "value": cfg.get("user", "source")},
+                    {"key": "password", "label": "Contraseña", "kind": "password", "value": "",
+                     "placeholder": "guardada (escribe para cambiarla)" if cfg.get("has_password") else "contraseña de la fuente"},
+                    {"key": "tls", "label": "Conexión segura (TLS)", "kind": "check", "value": bool(cfg.get("tls"))},
+                    {"key": "reconnect", "label": "Reconectar automáticamente", "kind": "check",
+                     "value": bool(cfg.get("reconnect", True))},
+                ])
+            with t.tab("Emisora"):
+                ui.form("stream.set", [
+                    {"key": "name", "label": "Nombre", "kind": "text", "value": cfg.get("name", "")},
+                    {"key": "description", "label": "Descripción", "kind": "text", "value": cfg.get("description", "")},
+                    {"key": "genre", "label": "Género", "kind": "text", "value": cfg.get("genre", "")},
+                    {"key": "url", "label": "Sitio web", "kind": "text", "value": cfg.get("url", "")},
+                    {"key": "public", "label": "Listar en directorios públicos", "kind": "check", "value": bool(cfg.get("public"))},
+                    {"key": "bitrate", "label": "Calidad (kbps)", "kind": "select", "value": str(cfg.get("bitrate", 128)),
+                     "options": ["64", "96", "128", "160", "192", "256", "320"]},
+                    {"key": "record_dir", "label": "Carpeta de grabaciones", "kind": "text", "value": cfg.get("record_dir", ""),
+                     "placeholder": "Música\\LeonRadio grabaciones (por defecto)"},
+                ])
+
+
+VARIOS_DEFAULT = ["botonera", "eventos", "explorador", "navegador", "streaming"]
 
 
 class VariosEditor(sdk.Editor):
@@ -408,7 +474,7 @@ def register(host: sdk.Host, output=None, autoplay: bool | None = None) -> Playo
     """
     sdk.bind(host)  # dueño «builtin», todos los permisos
     for cls in (AireEditor, ControlesEditor, MetadatosEditor, ProximaEditor, EmisionEditor, HistorialEditor, VuEditor, RelojEditor,
-                DialEditor, BotoneraEditor, EventosEditor, ExploradorEditor, NavegadorEditor, VariosEditor, *[_aux_editor(n) for n in range(1, N_AUX + 1)]):
+                DialEditor, BotoneraEditor, EventosEditor, ExploradorEditor, NavegadorEditor, StreamingEditor, VariosEditor, *[_aux_editor(n) for n in range(1, N_AUX + 1)]):
         sdk.register_editor(cls)
 
     output = output or NullOutput()
@@ -426,6 +492,9 @@ def register(host: sdk.Host, output=None, autoplay: bool | None = None) -> Playo
         return {"device": test_tone(device or None)}
 
     host.register_command("audio.test", _test)
+    host.register_command("stream.set", lambda ctx, **fields: playout.stream_set(**fields))
+    for verb in ("connect", "disconnect", "record"):
+        host.register_command(f"stream.{verb}", lambda ctx, _v=verb: playout.stream_do(_v))
     host.register_command("playout.next", lambda ctx: playout.transport("emision", "next"))
     host.register_command("playout.pause", lambda ctx: playout.transport("emision", "toggle"))
     host.register_command("playout.play", lambda ctx: playout.transport("emision", "play"))

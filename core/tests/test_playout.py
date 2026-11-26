@@ -325,3 +325,113 @@ def test_audio_routing_plan_buses_and_saved_settings(tmp_path, monkeypatch):
     assert settings.load()["audio"]["inputs"] == {"line1": "Mic|MME"} and host.state["audio.inputs"] == {"line1": "Mic|MME"}
     with pytest.raises(ValueError):
         playout.set_route("main", "X|WASAPI")                                # modo simulado: sin tarjeta real
+
+
+class FakeIcecast:
+    """Servidor Icecast mínimo: acepta PUT con contraseña y cuenta los bytes; anota las peticiones de metadatos."""
+
+    def __init__(self, password="hackme"):
+        import socket
+        import threading
+
+        self.password, self.received, self.heads, self.meta = password, 0, [], []
+        self.srv = socket.socket()
+        self.srv.bind(("127.0.0.1", 0))
+        self.srv.listen(5)
+        self.port = self.srv.getsockname()[1]
+        threading.Thread(target=self._loop, daemon=True).start()
+
+    def _loop(self):
+        import base64
+        import threading
+
+        while True:
+            try:
+                conn, _ = self.srv.accept()
+            except OSError:
+                return
+
+            def handle(c=conn):
+                buf = b""
+                while b"\r\n\r\n" not in buf:
+                    d = c.recv(4096)
+                    if not d:
+                        return
+                    buf += d
+                head, _, rest = buf.partition(b"\r\n\r\n")
+                text = head.decode("latin-1")
+                ok = base64.b64encode(f"source:{self.password}".encode()).decode() in text
+                if text.startswith("GET /admin/metadata"):
+                    self.meta.append(text.split("\r\n")[0])
+                    c.sendall(b"HTTP/1.0 200 OK\r\n\r\n")
+                    return
+                if not ok:
+                    c.sendall(b"HTTP/1.0 401 Unauthorized\r\n\r\n")
+                    return
+                self.heads.append(text)
+                c.sendall(b"HTTP/1.1 100 Continue\r\n\r\n")
+                self.received += len(rest)
+                while True:
+                    d = c.recv(65536)
+                    if not d:
+                        return
+                    self.received += len(d)
+
+            threading.Thread(target=handle, daemon=True).start()
+
+
+def test_streaming_to_icecast_sends_mp3_metadata_and_never_exposes_the_password(tmp_path, monkeypatch):
+    import time
+
+    pytest.importorskip("lameenc")
+    monkeypatch.setenv("LEONRADIO_CONFIG", str(tmp_path / "cfg.json"))
+    host, playout = plain_host()
+    ice = FakeIcecast()
+    playout.stream_set(host="127.0.0.1", port=ice.port, mount="radio", password="hackme", name="RRC", bitrate=96)
+    assert "password" not in host.state["stream.config"] and host.state["stream.config"]["has_password"] is True
+    assert host.state["stream.config"]["mount"] == "/radio"
+    playout.add_to("emision", insert(host, "music", "Tema", 30))
+    playout.transport("emision", "play")
+    playout.stream_do("connect")
+    run(playout, 3)
+    for _ in range(40):                                                   # el hilo de envío trabaja aparte
+        if ice.received > 2000 and ice.meta:
+            break
+        time.sleep(0.05)
+    assert host.state["stream.status"]["state"] == "live"
+    assert ice.received > 2000
+    head = ice.heads[0]
+    assert head.startswith("PUT /radio HTTP/1.1") and "ice-name: RRC" in head and "ice-bitrate: 96" in head
+    assert ice.meta and "song=Tema" in ice.meta[0]
+    playout.stream_do("disconnect")
+    time.sleep(0.5)
+    assert playout.stream.status()["state"] == "stopped"
+    # contraseña incorrecta: error claro y no reintenta
+    playout.stream_set(password="otra")
+    playout.stream_do("connect")
+    for _ in range(40):
+        if playout.stream.status()["state"] == "error":
+            break
+        time.sleep(0.05)
+    assert playout.stream.status()["state"] == "error" and "contraseña" in playout.stream.status()["message"]
+    playout.stream.shutdown()
+
+
+def test_streaming_records_to_a_file_without_a_server(tmp_path, monkeypatch):
+    import time
+
+    pytest.importorskip("lameenc")
+    monkeypatch.setenv("LEONRADIO_CONFIG", str(tmp_path / "cfg.json"))
+    host, playout = plain_host()
+    playout.stream_set(record_dir=str(tmp_path / "rec"))
+    playout.add_to("emision", insert(host, "music", "Tema", 30))
+    playout.transport("emision", "play")
+    playout.stream_do("record")
+    run(playout, 2)
+    time.sleep(0.6)
+    files = list((tmp_path / "rec").glob("*.mp3"))
+    assert len(files) == 1 and files[0].stat().st_size > 1000
+    playout.stream_do("record")
+    time.sleep(0.5)
+    assert playout.stream.status()["recording"] is False
+    playout.stream.shutdown()

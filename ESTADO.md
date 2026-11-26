@@ -25,6 +25,7 @@ Repo: https://github.com/jonathanleongonzalez87/LeonRadio · Proyecto «LeonRadi
 - **Paneles:** Aire (tiempo restante y hora de fin), Controles (teclas de pletina), Próxima, Emisión, Metadatos (carátula y etiquetas), Historial, VU, Reloj, Dial/RDS, Auxiliar 1–4 (en fila), y **Varios** (pestañas: Botonera, Eventos, Explorador, Navegador, y los que se acoplen con ＋). Menú de editores en columnas.
 - **Botonera:** 10 pads (1–9, 0) con el teclado numérico, pisadores → separadores → jingles; encendidos mientras suenan y se detienen al repulsar.
 - **Explorador:** biblioteca o disco duro («Mi equipo»); **Navegador** web incrustado (los sitios que prohíben incrustarse se abren aparte).
+- **Streaming** (panel de Varios): Icecast 2 en MP3 con `lameenc`, reconexión, metadatos y grabación; probado contra un Icecast falso en las pruebas, **falta probar contra un servidor real**. Contraseña solo en `config.json`.
 - **Preferencias** (menú Archivo, Ctrl+,): tarjeta de sonido por salida (principal, Aux 1–4, Botonera; la escucha previa y las entradas solo se guardan). Ajustes en `%LOCALAPPDATA%\LeonRadio\config.json`.
 - Barra de menú, pantalla de carga (se cierra con un clic) y diseños guardados v10 (cambiar `KEY` en `main.js` los restablece).
 

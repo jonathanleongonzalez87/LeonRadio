@@ -43,6 +43,10 @@ class UI:
         self._add({"t": "slider", "value": max(0.0, float(value_ms)), "max": max(1.0, float(total_ms)),
                    "command": command, "args": args or {}, "suffix": suffix})
 
+    def form(self, command: str, fields: list[dict]) -> None:
+        """Campos editables. Cada cambio ejecuta `command` con {clave: valor} (se guarda al salir del campo)."""
+        self._add({"t": "form", "command": command, "fields": fields})
+
     def custom(self, component: str, **props: Any) -> None:
         """Componente JS incluido en la UI (vu-meter, analog-clock, fm-dial, cartwall…).
         Las props deben ser JSON; el componente se dibuja en el navegador."""

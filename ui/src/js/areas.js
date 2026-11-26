@@ -10,7 +10,7 @@ export const newId = () => `a${Date.now().toString(36)}${(seq++).toString(36)}`;
 const EDITOR_CATEGORIES = [
   { title: "Al aire", ids: ["aire", "proxima", "controles", "reloj"] },
   { title: "Listas", ids: ["emision", "aux1", "aux2", "aux3", "aux4", "historial"] },
-  { title: "Material", ids: ["varios", "botonera", "eventos", "explorador", "navegador", "metadatos"] },
+  { title: "Material", ids: ["varios", "botonera", "eventos", "explorador", "navegador", "streaming", "metadatos"] },
   { title: "Monitoreo", ids: ["vu", "dial"] },
 ];
 
@@ -234,6 +234,8 @@ export class AreaManager {
       const sig = JSON.stringify(tree);
       if (sig === view.last) return; // sin cambios: no tocar el DOM (evita parpadeo)
       if (document.body.classList.contains("lr-dragging")) return; // arrastrando: se redibuja al soltar
+      const ae = document.activeElement;                             // escribiendo en un campo: no se redibuja debajo
+      if (ae && view.body.contains(ae) && /^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName)) return;
       view.last = sig;
       if (!this.stores.has(view.id)) this.stores.set(view.id, {});
       const top = view.body.scrollTop;                       // conservar el desplazamiento al redibujar

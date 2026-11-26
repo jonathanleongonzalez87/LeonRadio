@@ -20,6 +20,7 @@ from typing import Any
 from .. import library, meta, sdk, settings
 from . import files
 from .engine import Engine
+from .stream import StreamService
 from .files import AUDIO, EVENT
 from .sources import SAMPLE_RATE as SR
 
@@ -46,6 +47,9 @@ class Playout:
         self._last: dict[str, Any] = {}
         self._frac = 0.0
         self._prefetch_at = 0.0
+        self.stream = StreamService(lambda: settings.load().get("stream", {}), self._save_stream)
+        self.engine.taps.append(self.stream.feed)
+        self._stream_at = 0.0
         self._selected: tuple[str, str] | None = None
         self._meta_key: tuple | None = None
 
@@ -61,6 +65,8 @@ class Playout:
             self.output.start(self.engine)
             self._set("playout.message", f"No se pudo abrir el audio ({exc}). Sigo en modo simulado.")
         self._audio_info()
+        self._set("stream.config", self.stream.public_config())
+        self._set("stream.status", self.stream.status())
         self._set("audio.inputs", settings.load().get("audio", {}).get("inputs", {}))
         with self.engine.lock:
             for item in self._initial_queue():
@@ -71,6 +77,37 @@ class Playout:
                 self.engine.deck("emision").play(False)
         self._prefetch(force=True)
         self._publish()
+
+    @staticmethod
+    def _save_stream(cfg: dict) -> None:
+        allc = settings.load()
+        allc["stream"] = cfg
+        settings.save(allc)
+
+    def stream_set(self, **fields: Any) -> dict:
+        self.stream.set_config(**fields)
+        self._set("stream.config", self.stream.public_config())
+        return {"ok": True}
+
+    def stream_do(self, verb: str) -> dict:
+        if verb == "connect":
+            self.stream.connect()
+        elif verb == "disconnect":
+            self.stream.disconnect()
+        elif verb == "record":
+            self.stream.record(not self.stream._want_record)
+        else:
+            raise ValueError(f"orden desconocida: {verb}")
+        time.sleep(0.05)
+        self._publish_stream(force=True)
+        return self.stream.status()
+
+    def _publish_stream(self, force: bool = False) -> None:
+        now = time.time()
+        if not force and now < self._stream_at:
+            return
+        self._stream_at = now + 1.0                      # una vez por segundo: el estado cambia sin parar
+        self._set("stream.status", self.stream.status())
 
     def _audio_info(self) -> None:
         o = self.output
@@ -115,6 +152,7 @@ class Playout:
         return {"line": line, "device": device}
 
     def stop(self) -> None:
+        self.stream.shutdown()
         self.output.stop()
 
     def _initial_queue(self) -> list[dict]:
@@ -305,6 +343,7 @@ class Playout:
         self.host.events.emit("audio.levels", {**lv, "simulated": self.output.simulated})
         self._prefetch()
         self._publish()
+        self._publish_stream()
 
     def _prefetch(self, force: bool = False) -> None:
         now = time.time()
@@ -336,6 +375,10 @@ class Playout:
                 self._log(v.item, v.started, data["at"], int(v.pos * 1000 / SR), data.get("status", "completed"), "cart")
             return
         source = SOURCE_OF.get(deck, "live")
+        if deck == "emision" and kind == "start":          # título y artista para los oyentes del streaming
+            it = data["play"].item
+            if it.get("file") == "audio":
+                self.stream.set_song(it.get("artist"), it.get("title"))
         if kind == "end":
             play = data["play"]
             self._log(play.item, play.started, data["at"], play.played_ms, data["status"], source)

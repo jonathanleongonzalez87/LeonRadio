@@ -67,6 +67,7 @@ Necesita Python 3.12 o superior (python.org, marcando «Add python.exe to PATH»
 `iniciar-leonradio.bat` abre tu dispositivo de salida de Windows (WASAPI) y la emisión **empieza en pausa**: pulsa
 **▶ Play** en los Controles. El panel Aire muestra el dispositivo en uso (si dice «SIMULADO», no hay audio real).
 
+- **Streaming** (pestaña *Streaming* de Varios, como BUTT): transmite la mezcla principal a un servidor **Icecast 2** en MP3 (64–320 kbps), con reconexión automática, título y artista de cada canción, y grabación a archivo. Configura servidor, usuario, contraseña y punto de montaje en la pestaña *Servidor*; la contraseña se guarda solo en tu archivo de configuración local.
 - **Preferencias** (menú *Archivo ▸ Preferencias…* o Ctrl+,): elige la tarjeta de sonido de la salida principal, las 4 Auxiliares y la Botonera, agrupadas por interfaz de Windows; cada una puede salir por una tarjeta distinta. Se aplica al momento y se recuerda en `%LOCALAPPDATA%\LeonRadio\config.json`. La escucha previa y las entradas de línea se guardan, pero aún no se usan.
 
 - Probar la salida sin música: `%LOCALAPPDATA%\LeonRadio\venv\Scripts\leonradio.exe beep` (tono por el izquierdo y luego el derecho).

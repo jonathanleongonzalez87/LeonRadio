@@ -387,3 +387,13 @@ tr.next td{color:var(--c-orange);font-weight:600}
 #splash.ready{cursor:pointer}
 #splash.ready .splash-text small{animation:splashpulse 1.6s ease-in-out infinite}
 @keyframes splashpulse{50%{opacity:.45}}
+
+/* ---- formularios de los paneles ---- */
+.u-form{display:grid;grid-template-columns:minmax(130px,max-content) minmax(0,1fr);gap:6px 12px;align-items:center;margin-top:6px}
+.u-flab{font:500 12px var(--display);color:var(--ink-2)}
+.u-fin{min-width:0;background:#14110f;color:var(--c-cream);border:1px solid rgba(197,143,94,.4);border-radius:5px;padding:4px 8px;font:12px var(--display)}
+.u-fin:focus{outline:1px solid var(--c-orange)}
+.u-fin.saved{border-color:#7fb069}
+.u-fin.bad{border-color:var(--c-orange);box-shadow:0 0 0 1px var(--c-orange)}
+.u-fchk{justify-self:start;width:16px;height:16px;accent-color:var(--c-orange)}
+@media (max-width:520px){.u-form{grid-template-columns:1fr}}
