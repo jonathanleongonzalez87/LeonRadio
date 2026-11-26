@@ -26,7 +26,7 @@ Tres conceptos que **no se mezclan**: la *estación* decide qué espacio ve el u
    ```
 3. Arranca sin sonido para desarrollar: `leonradio serve --audio null --library "<carpeta de la emisora>"` y abre http://127.0.0.1:8765/.
 4. El audio de la emisora **no se versiona**: pide la carpeta de pruebas (RRC) al dueño del proyecto.
-5. Kit de desarrollo (reglas, guardas, agentes): está en `Referentes/kit-claude-dev` (fuera del repo). `node kit.mjs instalar` y abre una sesión nueva de Claude Code.
+5. Kit de desarrollo (reglas, guardas, agentes): está en [`herramientas/kit-claude-dev`](../herramientas/kit-claude-dev/README.md). Con Node 18+ instalado: `node herramientas/kit-claude-dev/kit.mjs instalar` y abre una sesión nueva de Claude Code.
 
 ## 3. Cómo se trabaja una tarea
 1. **Elige una tarea** de [ROADMAP.md](ROADMAP.md) (la tabla tiene estación y responsable). Si no está asignada, avisa en el issue antes de empezar.
