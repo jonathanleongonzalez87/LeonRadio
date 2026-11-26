@@ -1,5 +1,7 @@
 # Roadmap LeonRadio
 
+> **Seguimiento actual:** [docs/ROADMAP.md](docs/ROADMAP.md) (tier list por estación, con responsables). Este archivo conserva la visión y las fases históricas.
+
 Decisiones: motor **Python** + UI **HTML** (pywebview) · **Windows primero** · salida **FM + streaming** ·
 modo **automático + Live Assist** · monorepo público · código GPL-3.0, docs y diseño CC BY-SA 4.0 · estación de prueba **RRC**.
 **Arquitectura de editores y addons** estilo Blender (ver [docs/editores-y-addons.md](docs/editores-y-addons.md)): Python declarativo + JS opcional, addons en proceso aparte con permisos, gestor de áreas propio.

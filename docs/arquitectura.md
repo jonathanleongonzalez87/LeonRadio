@@ -34,3 +34,13 @@ Engine.render(frames)  ◄── hilo de audio (WASAPI) ──┘
 - Los archivos se decodifican **fuera** del candado del motor (precarga de los 2 primeros de cada lista).
 - Con la salida nula (`--audio null`, pruebas y demo en el navegador) el Playout renderiza por tiempo: mismo código, sin dispositivo.
 - Ficheros de audio sin archivo real (`demo://`) suenan como tono sintético; un archivo real que falta se registra como `failed`.
+
+## Base de datos (S5)
+- Un solo archivo SQLite, **`%LOCALAPPDATA%\LeonRadio\leonradio.db`** (disco local; no en OneDrive, que corrompe SQLite). Otra ruta solo por `--db` o `LEONRADIO_DB`; nunca por la API.
+- Esquema versionado con `PRAGMA user_version` y la lista `MIGRATIONS` de `db.py`: al abrir se aplican las pendientes (cada una en su transacción). Una base de una versión más nueva se rechaza sin tocarla.
+- Una conexión compartida protegida por `host.db_lock`, en modo **WAL** (lectores externos no bloquean al escritor; un corte de luz no la corrompe). Al cerrar el servidor se hace checkpoint y queda un único `.db`.
+- **Copias**: al arrancar se copia a `copias\leonradio-AAAAMMDD-HHMMSS.db` (máx. 7; no más de una por hora, salvo si hay migración pendiente). Una copia fallida avisa en el log y no impide arrancar.
+- **Restaurar**: cerrar LeonRadio, copiar la copia elegida sobre `leonradio.db` y borrar `leonradio.db-wal` y `leonradio.db-shm`.
+- El escaneo de la biblioteca es incremental (tamaño + fecha): lo nuevo se agrega, lo modificado se re-lee, lo que desaparece pasa a `retired` (nunca se borra; el historial queda intacto) y vuelve a `active` si el archivo regresa.
+- **Arranque con biblioteca grande:** el escaneo es síncrono antes de levantar el servidor. La primera vez el SHA-256 lee todo el audio (~100 MB/s: minutos si hay muchos GB) y el progreso sale en la consola cada 500 archivos; los arranques siguientes solo hacen `stat` (~1,5 s por 20.000 archivos).
+- La base no debe vivir en una carpeta sincronizada (OneDrive, red): SQLite con WAL se corrompe ahí. Por eso el valor por defecto está en `%LOCALAPPDATA%`.

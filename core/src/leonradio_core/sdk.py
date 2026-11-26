@@ -41,6 +41,7 @@ class Editor:
     id: str = ""
     label: str = ""
     icon: str = "▣"
+    station: str = ""        # estación a la que pertenece: al_aire | programacion | direccion | produccion | "" (común)
 
     def draw(self, ui: UI, ctx: "Context") -> None:  # pragma: no cover - interfaz
         raise NotImplementedError

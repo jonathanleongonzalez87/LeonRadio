@@ -8,6 +8,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import os
+import sqlite3
 import time
 from contextlib import asynccontextmanager
 from pathlib import Path
@@ -17,7 +18,7 @@ from fastapi.responses import RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
-from . import addons, builtin, library, meta, sdk, settings
+from . import addons, backup, builtin, db, estaciones, library, meta, sdk, settings
 from .engine.monitor import MonitorHub
 from .engine.output import make_output
 
@@ -53,10 +54,20 @@ def create_app(
 ) -> FastAPI:
     host = sdk.Host(db_path=db_path)
     host.library_dir = library_dir
+    scan_result = None
     if library_dir:
-        library.scan(host.db, library_dir)
+        try:
+            scan_result = library.scan(
+                host.db, library_dir, lock=host.db_lock,
+                progress=lambda done, total: print(f"  Escaneando la biblioteca: {done}/{total}", flush=True)
+                if done % 500 == 0 else None)
+        except KeyboardInterrupt:                 # Ctrl+C durante el escaneo: lo ya guardado se conserva
+            with host.db_lock:
+                db.close(host.db)
+            raise
     saved_routes = settings.load().get("audio", {}).get("routes", {})
     playout = builtin.register(host, output=make_output(audio, device, saved_routes), autoplay=autoplay)
+    estaciones.register_all(host)
     roots = addon_dirs if addon_dirs is not None else [REPO / "addons"]
     env = os.environ.get("LEONRADIO_ADDONS")
     if env and addon_dirs is None:
@@ -94,9 +105,12 @@ def create_app(
         for t in tasks:
             t.cancel()
         playout.stop()
+        with host.db_lock:
+            db.close(host.db)
 
     app = FastAPI(title="LeonRadio", version="0.1.0", lifespan=lifespan)
     app.state.host = host
+    app.state.scan = scan_result
     app.state.playout = playout
 
     @app.get("/api/info")
@@ -133,7 +147,7 @@ def create_app(
 
     @app.get("/api/editors")
     def editors() -> list[dict]:
-        return [{"id": e.id, "label": e.label, "icon": e.icon, "owner": owner}
+        return [{"id": e.id, "label": e.label, "icon": e.icon, "owner": owner, "station": e.station}
                 for e, owner, _ in host.editors.values()]
 
     @app.get("/api/editors/{editor_id}/draw")
@@ -214,7 +228,7 @@ def _lan_addresses() -> list[str]:
 
 
 def serve(library_dir: str | None, port: int = 8765, audio: str = "device", device: str | int | None = None,
-          autoplay: bool | None = None, host: str = "127.0.0.1") -> None:
+          autoplay: bool | None = None, host: str = "127.0.0.1", db_file: str | None = None) -> None:
     import socket
 
     import uvicorn
@@ -230,7 +244,25 @@ def serve(library_dir: str | None, port: int = 8765, audio: str = "device", devi
               "       Arranco con la biblioteca vacía (verás datos de muestra).\n")
         library_dir = None
     logging.basicConfig(level=logging.INFO)
-    app = create_app(library_dir=library_dir, audio=audio, device=device, autoplay=autoplay)
+    db_file = str(settings.db_path(db_file))
+    print(f"\nBase de datos: {db_file}")
+    backup.make_backup(db_file)                  # antes de abrir/migrar: así también queda copia previa a una migración
+    try:
+        app = create_app(library_dir=library_dir, db_path=db_file, audio=audio, device=device, autoplay=autoplay)
+    except RuntimeError as exc:                   # p. ej. base creada por una versión más nueva
+        print(f"\nERROR: {exc}\n")
+        raise SystemExit(1)
+    except sqlite3.DatabaseError as exc:
+        print(f"\nERROR: no se pudo abrir la base de datos ({exc}). Restaura una copia de la carpeta «copias» "
+              "(ver docs/arquitectura.md) o usa otra base con --db.\n")
+        raise SystemExit(1)
+    except KeyboardInterrupt:
+        print("\nEscaneo cancelado: lo ya escaneado queda guardado; vuelve a arrancar para continuar.\n")
+        raise SystemExit(130)
+    if app.state.scan:
+        s = app.state.scan
+        print(f"Biblioteca: {s['added']} nuevas, {s['updated']} cambiadas, {s['retired']} retiradas, "
+              f"{s['reactivated']} recuperadas, {s['unchanged']} sin cambios.")
     out = app.state.playout.output
     print(f"\nAudio: {out.name}" + ("  (SIN dispositivo: todo es simulado)" if out.simulated else ""))
     if not out.simulated and not app.state.playout.autoplay:
