@@ -95,6 +95,6 @@ La UI tiene áreas (◫ ⬓ ✕, selector de editor), workspaces (pestañas; dob
 ## Licencia
 - Código (`core/`, `ui/`): **GPL-3.0-or-later** (`core/LICENSE`, `ui/LICENSE`).
 - Documentación y diseño: **CC BY-SA 4.0** (`LICENSE`).
-- Las maquetas históricas de `ui/prototypes/` incluyen la marca «Jonathan León» (derechos reservados) — ver [NOTICE.md](NOTICE.md). La interfaz actual no la usa.
+- El **isotipo hexagonal** (símbolo de LeonRadio, en la cabecera) y el nombre «Jonathan León» tienen derechos reservados y no están cubiertos por estas licencias — ver [NOTICE.md](NOTICE.md).
 
 El audio de las emisoras no se versiona.

@@ -251,3 +251,10 @@ def test_legacy_paths_still_served_for_stale_cached_pages(tmp_path):
     with TestClient(app) as c:
         assert c.get("/app.css").status_code == 200       # una página vieja en caché que pide /app.css
         assert c.get("/index.html").status_code == 200
+
+
+def test_header_keeps_the_hexagonal_isotype_and_no_owner_name():
+    html = (REPO / "ui" / "src" / "index.html").read_text(encoding="utf-8")
+    assert 'id="jl-iso"' in html and '<use href="#jl-iso"' in html        # el hexágono es el símbolo de LeonRadio
+    assert "image/svg+xml" in html                                         # y también el favicon
+    assert "Jonathan" not in html                                          # el nombre del titular no aparece
