@@ -122,4 +122,4 @@ La UI tiene áreas (◫ ⬓ ✕, menú de editores en columnas), workspaces (pes
 - Documentación y diseño: **CC BY-SA 4.0** (`LICENSE`).
 - El **isotipo hexagonal** (símbolo de LeonRadio, en la cabecera) y el nombre «Jonathan León» tienen derechos reservados y no están cubiertos por estas licencias — ver [NOTICE.md](NOTICE.md).
 
-El audio de las emisoras no se versiona.
+El audio de las emisoras no se versiona, salvo el material propio de RRC para pruebas en [`datos-de-prueba/`](datos-de-prueba/LEEME.md) (sin la música comercial).
