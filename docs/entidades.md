@@ -22,6 +22,6 @@ Estado: `existe` = ya está en el código; `pendiente` = por crear (tarea S8 def
 ## Al crear o cambiar una entidad
 1. Mira esta tabla: si ya existe, úsala; no crees otra parecida.
 2. Si es nueva, agrégala aquí **en el mismo PR**, con dueño y lectores.
-3. Modelo y tablas en el núcleo (S5/S8), con **migración**; nunca tablas privadas de una estación para datos compartidos.
+3. Modelo y tablas en el núcleo (S5/S8), con **migración**; nunca tablas privadas de una estación para datos compartidos. **Cambiar el esquema = agregar una función al final de `MIGRATIONS` (`core/src/leonradio_core/db.py`) + una prueba; nunca se edita una migración ya publicada** (la versión vive en `PRAGMA user_version`). Las tablas de S8 serán la migración 3 y siguientes.
 4. Nombres en español, singular, sin tildes en los identificadores (`programa`, `compromiso`).
 5. Datos de prueba inventados; nunca datos personales reales en el repositorio.

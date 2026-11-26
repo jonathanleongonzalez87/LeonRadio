@@ -61,6 +61,8 @@ Haz doble clic en **`iniciar-leonradio.bat`**. La primera vez crea su entorno de
 argumento: `iniciar-leonradio.bat "D:\Mi Emisora"`. Si ya hay un servidor, solo abre el navegador.
 Para detenerlo, cierra la ventana negra o pulsa Ctrl+C.
 
+**Aviso:** la primera vez con una biblioteca grande el arranque tarda (se lee todo el audio para identificarlo, ~100 MB/s: puede ser de varios minutos) y el progreso sale en la ventana negra. Los arranques siguientes solo comparan tamaño y fecha: ~1,5 s por cada 20.000 archivos.
+
 Necesita Python 3.12 o superior (python.org, marcando «Add python.exe to PATH») y conexión a internet la primera vez.
 
 ## Audio real

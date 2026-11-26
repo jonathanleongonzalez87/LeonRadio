@@ -4,8 +4,9 @@ from __future__ import annotations
 
 import argparse
 import os
+import sqlite3
 
-from . import db, library
+from . import db, library, settings
 
 
 def main(argv: list[str] | None = None) -> None:
@@ -13,7 +14,7 @@ def main(argv: list[str] | None = None) -> None:
     sub = ap.add_subparsers(dest="cmd", required=True)
     sc = sub.add_parser("scan", help="escanear una carpeta de emisora")
     sc.add_argument("folder")
-    sc.add_argument("--db", default="leonradio.db")
+    sc.add_argument("--db", default=None, help="archivo de la base (por defecto LEONRADIO_DB o la carpeta del usuario)")
 
     sv = sub.add_parser("serve", help="iniciar servidor + UI (http://127.0.0.1:8765)")
     sv.add_argument("--library", help="carpeta de la emisora (música, jingles…)")
@@ -23,6 +24,7 @@ def main(argv: list[str] | None = None) -> None:
     sv.add_argument("--audio", choices=["device", "null"], default="device",
                     help="device = salida real (WASAPI); null = simulado, sin sonido")
     sv.add_argument("--device", help="número o parte del nombre del dispositivo de salida (ver `leonradio devices`)")
+    sv.add_argument("--db", default=None, help="archivo de la base (por defecto LEONRADIO_DB o la carpeta del usuario)")
     sv.add_argument("--autoplay", action="store_true",
                     help="empezar a sonar al arrancar (por defecto la emisión empieza en pausa)")
 
@@ -32,13 +34,20 @@ def main(argv: list[str] | None = None) -> None:
 
     args = ap.parse_args(argv)
     if args.cmd == "scan":
-        conn = db.connect(args.db)
+        try:
+            conn = db.connect(settings.db_path(args.db))
+        except RuntimeError as exc:
+            raise SystemExit(f"\nERROR: {exc}\n")
+        except sqlite3.DatabaseError as exc:
+            raise SystemExit(f"\nERROR: no se pudo abrir la base de datos ({exc}). Restaura una copia de la carpeta «copias» "
+                             "(ver docs/arquitectura.md) o usa otra base con --db.\n")
         print(library.scan(conn, args.folder))
+        db.close(conn)
     elif args.cmd == "serve":
         from .server import serve
         autoplay = args.autoplay or os.environ.get("LEONRADIO_AUTOPLAY") == "1"
         serve(args.library, args.port, args.audio, args.device or os.environ.get("LEONRADIO_DEVICE"),
-              True if autoplay else None, args.host or os.environ.get("LEONRADIO_HOST") or "127.0.0.1")
+              True if autoplay else None, args.host or os.environ.get("LEONRADIO_HOST") or "127.0.0.1", args.db)
     elif args.cmd == "devices":
         from .engine.output import list_devices
         for d in list_devices():
