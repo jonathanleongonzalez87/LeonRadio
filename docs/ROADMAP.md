@@ -59,7 +59,7 @@ Dentro de cada tier pesan los **puntos** (1 = chica, 2 = mediana, 3 = grande).
 | A8 | A | Al Aire: escaleta, guiones e invitados («Mi programa») | 3 | pendiente | S8 | Al Aire | @jonathanleongonzalez87 |
 | B1 | B | Producción: presupuestos, inventario, mantenimiento y facturación | 3 | pendiente | A6 | Producción | @contactocergroup-art |
 | B2 | B | Reportes de música, pauta y operación (#10, #11) | 3 | pendiente | A3, A6 | Producción | @contactocergroup-art |
-| B3 | B | Dirección: identidad de programas, formatos, línea artística y talento | 3 | pendiente | S8 | Dirección | @por-asignar |
+| B3 | B | Dirección: identidad de programas, formatos, línea artística y talento | 3 | pendiente | S8 | Dirección | @contactocergroup-art |
 | B4 | B | Workspaces en el servidor y exportar/importar (#19) | 1 | pendiente | S5 | Núcleo | @jonathanleongonzalez87 |
 | B5 | B | Marca: firma LeonRadio, wordmark según el manual, retícula de fondo | 2 | pendiente | — | Marca | @jonathanleongonzalez87 |
 | B6 | B | Al Aire: comunicación interna y participación de la audiencia | 2 | pendiente | S7 | Al Aire | @jonathanleongonzalez87 |

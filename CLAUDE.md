@@ -16,14 +16,14 @@ El plan vive en [docs/ROADMAP.md](docs/ROADMAP.md) (tier list S/A/B/C) y el avan
 
 ## Dónde vive cada cosa
 - `core/src/leonradio_core/`: `engine/` (audio, streaming, monitor), `builtin/` (editores y comandos de Al Aire), `estaciones/` (un módulo por estación de trabajo), `sdk.py` (API de editores/addons), `settings.py` (ajustes locales).
-- `ui/src/`: `js/` (áreas, renderer, componentes), `css/`. `addons/`: ejemplos. `docs/`: arquitectura y guías. `Referentes/` (fuera del repo): PDF de arquitectura, manual de marca, kit.
+- `ui/src/`: `js/` (áreas, renderer, componentes), `css/`. `addons/`: ejemplos. `herramientas/kit-claude-dev/`: el kit de desarrollo (reglas, guardas, agentes). `docs/`: arquitectura y guías. `Referentes/` (fuera del repo): PDF de arquitectura, manual de marca, kit.
 - **Claves**: nunca en el repo. La contraseña de Icecast vive en `%LOCALAPPDATA%\LeonRadio\config.json`.
 
 ## Cómo se trabaja
 - Rigen las reglas del kit (modo rápido; `/ciclo-de-desarrollo` solo para tareas grandes).
 - **Una rama por tarea** (`feat/<id>-<slug>`, `fix/<slug>`, `docs/<slug>`) y **PR a `main`**. **Commits solo cuando el usuario lo pida en ese momento**, y push solo con su OK. Merge a `main`: lo decide el usuario.
 - Estado en el ROADMAP: `hecho` = implementado, revisado y con pruebas; `verificado` = probado con datos reales y aprobado por el usuario.
-- Estaciones: Al Aire y Programación las lleva el dueño del proyecto; Producción otra persona; Dirección, quien tenga tiempo. Cada tarea del ROADMAP lleva su estación y responsable. No se mezclan archivos de dos estaciones en un mismo PR salvo en el núcleo común, que revisan ambos.
+- Estaciones: Al Aire y Programación las lleva el dueño del proyecto; Producción y Dirección, otra persona (@contactocergroup-art). Cada tarea del ROADMAP lleva su estación y responsable. No se mezclan archivos de dos estaciones en un mismo PR salvo en el núcleo común, que revisan ambos.
 
 ## Calidad propia de este proyecto
 - **Una sola plataforma**: una entidad (Programa, Artista, Compromiso…) tiene un solo dueño que la escribe; las demás estaciones la leen. Nada de duplicar registros (ver [docs/entidades.md](docs/entidades.md)).
