@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "leonradio-core"
-version = "0.2.0"
+version = "0.2.1"
 description = "LeonRadio core: motor de automatización de radio (biblioteca, historial, programación, audio)."
 readme = "README.md"
 requires-python = ">=3.12"

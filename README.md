@@ -3,7 +3,9 @@
 Automatizador de radio con experiencia de estación vintage, hecho para 2026.
 Estación de prueba: **RRC – Rockland Radio Colombia** (https://rocklandradio.co/).
 
-## Versión 0.2.0
+## Versión 0.2.1
+
+Novedades de la 0.2.1: `iniciar-leonradio.bat` arranca en modo red y **Ayuda ▸ Conectar el teléfono (QR)** abre el control en el teléfono sin teclear la clave (mismo Wi-Fi); si la salida de audio guardada no existe, usa la predeterminada de Windows en vez del modo simulado.
 
 Plataforma de gestión de una emisora con **audio real** (WASAPI), listas de ficheros, botonera, streaming, monitoreo remoto y paneles intercambiables. Novedades de la 0.2.0 sobre la 0.1.0:
 
@@ -84,7 +86,7 @@ Necesita Python 3.12 o superior (python.org, marcando «Add python.exe to PATH»
 - Las listas (Emisión y 4 Auxiliares) reproducen **ficheros**: audios, eventos y otros ([docs/ficheros.md](docs/ficheros.md)).
 
 ## Usarlo en tu red local
-Para abrirlo también desde el teléfono, la tableta u otra PC: haz doble clic en **`iniciar-leonradio-red.bat`** (o
+Para abrirlo también desde el teléfono, la tableta u otra PC: haz doble clic en **`iniciar-leonradio.bat`** y usa Ayuda ▸ Conectar el teléfono (QR) (o
 `leonradio serve --host 0.0.0.0`). La ventana muestra la dirección, por ejemplo `http://192.168.1.20:8765/`; ábrela
 desde un dispositivo de la misma red. Todos ven y controlan la misma emisión; cada navegador guarda su propio diseño de
 paneles. El audio sale solo por la tarjeta de sonido del PC que ejecuta LeonRadio; los demás dispositivos pueden

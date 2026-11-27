@@ -123,7 +123,7 @@ def create_app(
         with host.db_lock:
             db.close(host.db)
 
-    app = FastAPI(title="LeonRadio", version="0.2.0", lifespan=lifespan,
+    app = FastAPI(title="LeonRadio", version="0.2.1", lifespan=lifespan,
                   docs_url=None, redoc_url=None, openapi_url=None)    # nadie los usa: menos superficie
     app.add_middleware(security.SecurityMiddleware, strict_host=strict_host)
     app.state.auth = auth.AuthState(require_auth=require_auth)
