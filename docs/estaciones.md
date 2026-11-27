@@ -46,4 +46,4 @@ Algunos paneles sirven a varias estaciones. Se mantienen una sola vez y cada est
 5. **Regreso**: resultados de audiencia, observaciones del talento, cumplimiento de objetivos y evaluación vuelven a Dirección y Producción **sobre el mismo registro del Programa**, sin copias.
 
 ## Usuarios, roles y permisos (más adelante)
-Un director podrá consultar Programación y Al Aire sin tener una segunda copia de los datos: el acceso lo definen los **permisos**, no la estación. Hasta la tarea S7 no hay inicio de sesión.
+Un director podrá consultar Programación y Al Aire sin tener una segunda copia de los datos: el acceso lo definen los **permisos**, no la estación. Hasta la tarea A9 (antes S7, pospuesta) no hay usuarios ni roles: todas las estaciones tienen acceso total para poder probarlo todo.

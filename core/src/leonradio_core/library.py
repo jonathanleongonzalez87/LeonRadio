@@ -96,7 +96,7 @@ def scan(conn: sqlite3.Connection, root: str | Path, *, lock=None, progress=None
         key = str(p)
         seen.add(key)
         with lock or contextlib.nullcontext():
-            row = conn.execute("SELECT id, status, size_bytes, mtime_ns FROM assets WHERE path = ?", (key,)).fetchone()
+            row = conn.execute("SELECT id, status, size_bytes, mtime_ns, artist, album FROM assets WHERE path = ?", (key,)).fetchone()
         if row and row["size_bytes"] is None:      # fila previa a la migración 2: solo se anotan tamaño y fecha
             with lock or contextlib.nullcontext():
                 conn.execute("UPDATE assets SET size_bytes = ?, mtime_ns = ? WHERE id = ?", (st.st_size, st.st_mtime_ns, row["id"]))
@@ -118,9 +118,12 @@ def scan(conn: sqlite3.Connection, root: str | Path, *, lock=None, progress=None
                     conn.execute(
                         """UPDATE assets SET sha256 = ?, kind = ?, title = ?, artist = ?, album = ?, decade = ?,
                                   duration_ms = ?, size_bytes = ?, mtime_ns = ?,
+                                  artista_id = CASE WHEN ? THEN NULL ELSE artista_id END,
+                                  album_id = CASE WHEN ? OR ? THEN NULL ELSE album_id END,
                                   status = CASE WHEN status = 'retired' THEN 'active' ELSE status END WHERE id = ?""",
                         (digest, kind, title, artist, tags["album"], decade, tags["duration_ms"],
-                         st.st_size, st.st_mtime_ns, row["id"]))
+                         st.st_size, st.st_mtime_ns, row["artist"] != artist,    # etiqueta nueva: el próximo sync la re-vincula
+                         row["artist"] != artist, row["album"] != tags["album"], row["id"]))
                     out["updated"] += 1
                 else:
                     original = conn.execute(

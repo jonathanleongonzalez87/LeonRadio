@@ -38,9 +38,25 @@ STATIONS: dict[str, dict] = {
 
 def register_all(host: sdk.Host) -> None:
     """Carga el módulo de cada estación. Un fallo en una no impide arrancar las demás."""
+    from .. import entidades_base, entities
+    from ..entities_panel import EntidadesEditor      # import tardío: el panel hereda de sdk.Editor
+
     sdk.bind(host)
+    try:
+        sdk.register_editor(EntidadesEditor)
+        for entity in (entidades_base.EMISION, entidades_base.COMPROMISO):
+            host.entities.declare(entity)
+    except Exception:  # noqa: BLE001
+        sdk.log.exception("no se pudo registrar el panel de entidades")
     for key in STATIONS:
         try:
             importlib.import_module(f"{__name__}.{key}").register(host)
         except Exception:  # noqa: BLE001
             sdk.log.exception("la estación %s no pudo registrarse", key)
+    try:
+        host.entities.validate()
+    except ValueError:
+        sdk.log.exception("hay entidades mal declaradas")
+    for entity in host.entities.all():
+        for problem in entities.check_declaration(host.db, entity):
+            sdk.log.warning("entidad «%s»: %s", entity.name, problem)

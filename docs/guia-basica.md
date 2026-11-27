@@ -66,7 +66,7 @@ def register(host):
 
 ## 5. Cómo compartir información sin duplicarla
 - Cada **entidad tiene un dueño** (una estación) que es la única que la crea y modifica; las demás la **leen**. La lista está en [entidades.md](entidades.md).
-- Antes de crear una tabla, mira si la entidad ya existe. Si es nueva: agrégala a `entidades.md` en el mismo PR, con su dueño y quién la lee.
+- Antes de crear una tabla, mira si la entidad ya existe. Si es nueva: decláratela con el marco (`host.entities.declare`) siguiendo «Declarar una entidad nueva» de [entidades.md](entidades.md) y agrégala a su tabla en el mismo PR, con su dueño y quién la lee. El panel **Entidades** muestra lo declarado.
 - Los datos van en la **base compartida** (tarea S5), con migraciones; no en archivos sueltos por estación.
 - Lo que una estación necesita de otra se pide por la entidad, no copiando campos. Los resultados regresan por la misma vía (p. ej. el historial de emisión alimenta los informes de Producción).
 
