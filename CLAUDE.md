@@ -9,7 +9,7 @@ El plan vive en [docs/ROADMAP.md](docs/ROADMAP.md) (tier list S/A/B/C) y el avan
 - Node 18+ solo para el kit (`scripts/avance.mjs`, guardas).
 
 ## Comandos
-- Pruebas: `cd core` y `C:\Users\leont\.venvs\leonradio\Scripts\python -m pytest -q` (hoy 164; deben pasar antes de cada PR).
+- Pruebas: `cd core` y `C:\Users\leont\.venvs\leonradio\Scripts\python -m pytest -q` (hoy 238 + 1 omitida; deben pasar antes de cada PR).
 - Base de datos: `%LOCALAPPDATA%\LeonRadio\leonradio.db` (copias en `copias\`). Otra ruta: `--db RUTA` o `LEONRADIO_DB`; sin `--db`, con `LEONRADIO_CONFIG` queda junto a ese archivo. Pruebas y verificaciones: siempre `:memory:` o una carpeta temporal, nunca la base real.
 - Servidor sin sonido: `leonradio serve --audio null --library "..\Rockland Radio"`. Con audio real: `iniciar-leonradio.bat` (arranca en pausa). En red local: `iniciar-leonradio-red.bat` (crea y muestra la clave la primera vez).
 - `node scripts/avance.mjs`: % de avance según el ROADMAP.
