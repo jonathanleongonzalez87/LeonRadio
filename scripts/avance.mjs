@@ -18,7 +18,7 @@ const proyecto = path.basename(raiz);
 
 const tareas = readFileSync(path.join(raiz, "docs", "ROADMAP.md"), "utf8")
   .split(/\r?\n/)
-  .filter((l) => /^\|\s*[SABC]\d+\s*\|/.test(l))
+  .filter((l) => /^\|\s*[SABC]\d+[a-z]?\s*\|/.test(l))
   .map((l) => {
     const [id, tier, funcion, puntos, estado, depende = "—"] = l.split("|").slice(1).map((c) => c.trim());
     return { id, tier, funcion, puntos: Number(puntos), estado: (estado || "").toLowerCase(), depende: depende === "—" || depende === "-" || !depende ? [] : depende.split(/,\s*/) };
