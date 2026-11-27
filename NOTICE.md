@@ -12,4 +12,4 @@ El audio no se versiona.
 La paleta de color y las tipografías (Space Grotesk, Inter; licencia SIL OFL) de la interfaz son de uso libre dentro de este proyecto.
 
 ## Audio de prueba
-Los archivos de `datos-de-prueba/` son material propio de la emisora RRC – Rockland Radio Colombia, incluido solo para pruebas. Sus derechos pertenecen a su titular y no están cubiertos por las licencias de este repositorio.
+Los archivos de `datos-de-prueba/` son material propio de la emisora RRC – Rockland Radio Colombia, incluido solo para pruebas. Sus derechos pertenecen a su titular, que autorizó su publicación para pruebas; no están cubiertos por las licencias de este repositorio.
