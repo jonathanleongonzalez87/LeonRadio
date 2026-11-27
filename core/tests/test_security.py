@@ -589,3 +589,37 @@ def test_session_devuelve_retry_after_si_hay_bloqueo(red):
         c.post("/api/login", json={"key": "AAAA-AAAA-AAAA-AAAA"})
     s = c.get("/api/session").json()
     assert s["retry_after"] > 0 and s["authenticated"] is False
+
+
+def test_conectar_qr_un_solo_uso(tmp_path, monkeypatch):
+    """El QR del PC lleva un enlace de un solo uso que da sesión al teléfono; el teléfono no puede pedir el QR."""
+    from fastapi.testclient import TestClient
+    from leonradio_core import auth
+    from leonradio_core.server import create_app
+    monkeypatch.setenv("LOCALAPPDATA", str(tmp_path))
+    auth.rotate()
+    app = create_app(library_dir=None, db_path=str(tmp_path / "t.db"), audio="null", require_auth=True)
+    app.state.auth.pairing.clock = lambda: 0.0
+    pc = TestClient(app, base_url="http://127.0.0.1:8765", client=("127.0.0.1", 5000))
+    phone = TestClient(app, base_url="http://192.168.1.5:8765", client=("192.168.1.5", 5000))
+    assert phone.get("/conectar").status_code == 403
+    token = app.state.auth.pairing.create()
+    assert phone.get("/api/info").status_code == 401
+    r = phone.get(f"/p/{token}", follow_redirects=False)
+    assert r.status_code == 303 and phone.get("/api/info").status_code == 200
+    other = TestClient(app, base_url="http://192.168.1.6:8765", client=("192.168.1.6", 5000))
+    assert other.get(f"/p/{token}", follow_redirects=False).status_code == 404     # ya usado
+    assert other.get("/p/inventado", follow_redirects=False).status_code == 404
+    assert pc.get("/conectar").status_code == 200
+
+
+def test_conectar_rechaza_peticion_cruzada(tmp_path, monkeypatch):
+    from fastapi.testclient import TestClient
+    from leonradio_core import auth
+    from leonradio_core.server import create_app
+    monkeypatch.setenv("LOCALAPPDATA", str(tmp_path))
+    auth.rotate()
+    app = create_app(library_dir=None, db_path=str(tmp_path / "t.db"), audio="null", require_auth=True)
+    pc = TestClient(app, base_url="http://127.0.0.1:8765", client=("127.0.0.1", 5000))
+    assert pc.get("/conectar", headers={"Sec-Fetch-Site": "cross-site"}).status_code == 403
+    assert pc.get("/conectar", headers={"Sec-Fetch-Site": "same-origin"}).status_code == 200
