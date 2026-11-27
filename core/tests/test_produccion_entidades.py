@@ -234,7 +234,7 @@ def test_compromiso_no_copia_campos(host):
     ({"cantidad": "muchas"}, "la cantidad debe ser un número entero, de 1 en adelante"),
     ({"desde": "2026-11-30"}, "la pauta debe quedar dentro de la vigencia del contrato (01/12/2026 – 31/12/2026)"),
     ({"hasta": "2027-01-01"}, "la pauta debe quedar dentro de la vigencia del contrato (01/12/2026 – 31/12/2026)"),
-    ({"franja_hasta": None}, "la franja necesita «desde» y «hasta», o déjala vacía"),
+    ({"franja_hasta": None}, "la franja necesita «franja desde» y «franja hasta», o déjala vacía"),
     ({"franja_desde": "6:00"}, "la hora debe ir como HH:MM, por ejemplo 06:00"),
     ({"franja_hasta": "24:00"}, "la hora debe ir como HH:MM, por ejemplo 06:00"),
     ({"franja_hasta": "10:60"}, "la hora debe ir como HH:MM, por ejemplo 06:00"),
@@ -427,6 +427,11 @@ def test_franja_en_pareja_desde_el_panel(host):
     assert host.entities.get("compromiso", pid)["daypart_start"] == "22:00"
     with pytest.raises(ValueError, match="la franja necesita"):
         run(host, "produccion.campo", franja_desde="")
+    assert host.state["produccion.aviso"] == comercial.FRANJA_PENDIENTE == (
+        "Falta una hora de la franja. Se guarda cuando completes «Franja desde» y «Franja hasta»; "
+        "para quitarla, vacía las dos.")
+    nodes = _tab(host.draw_editor("produccion.comercial"), "Pauta")
+    assert any(n["t"] == "label" and n["tone"] == "warn" and n["text"] == comercial.FRANJA_PENDIENTE for n in nodes)
     form = next(n for n in _tab(host.draw_editor("produccion.comercial"), "Pauta") if n["t"] == "form")
     assert {f["key"]: f["value"] for f in form["fields"]}["franja_desde"] == ""     # lo escrito no se pierde
     run(host, "produccion.campo", franja_hasta="")
@@ -463,7 +468,8 @@ def test_borrador_guardar_y_aviso(host):
     # en edición, un campo inválido no se guarda y deja el aviso
     with pytest.raises(ValueError):
         run(host, "produccion.campo", hasta="30/11/2026")
-    assert host.state["produccion.aviso"] == "No se guardó: «hasta» no puede ser anterior a «desde»."
+    assert host.state["produccion.aviso"] == ("No se guardó: «hasta» no puede ser anterior a «desde». "
+                                              "Cambia primero la otra fecha.")
     assert host.entities.get("contrato", nuevo)["hasta"] == "2026-12-15"
     run(host, "produccion.cerrar")
     assert host.state["produccion.sel"] is None and host.state["produccion.aviso"] is None
@@ -510,3 +516,124 @@ def test_panel_sin_nombre_del_dueno(host):
         if state:
             run(host, "produccion.ver", **state)
         assert "Jonathan" not in json.dumps(host.draw_editor("produccion.comercial"), ensure_ascii=False)
+
+
+# --- ronda de correcciones ----------------------------------------------------------------------------------------------
+@pytest.mark.parametrize("entidad, clave, malo", [
+    ("contrato", "cliente_id", 999), ("contrato", "codigo", ["x"]), ("contrato", "tipo", {"a": 1}),
+    ("compromiso", "asset_id", 12), ("compromiso", "contrato_id", 7.5), ("compromiso", "cantidad", True),
+])
+def test_borrador_con_valores_que_no_son_texto_no_rompe_el_panel(host, entidad, clave, malo):
+    poblar(host)
+    run(host, "produccion.ver", entidad=entidad)
+    with pytest.raises(ValueError, match="no es un valor válido"):
+        run(host, "produccion.campo", **{clave: malo})
+    assert clave not in host.state["produccion.sel"]["borrador"]
+    assert host.state["produccion.aviso"].startswith("No se guardó: ")
+    run(host, "produccion.campo", **{clave: None})                 # vacío: se anota como texto vacío
+    assert host.state["produccion.sel"]["borrador"][clave] == ""
+    tree = host.draw_editor("produccion.comercial")
+    assert "Error en el editor" not in json.dumps(tree, ensure_ascii=False)
+    assert any(n["t"] == "form" for n in _walk(tree))
+
+
+def test_cantidad_numerica_del_formulario_se_anota(host):
+    poblar(host)
+    run(host, "produccion.ver", entidad="compromiso")
+    run(host, "produccion.campo", cantidad=60)
+    run(host, "produccion.campo", cantidad=60.0)
+    assert host.state["produccion.sel"]["borrador"]["cantidad"] == "60"
+
+
+@pytest.mark.parametrize("fecha", ["9999-12-31", "1999-12-31", "2101-01-01"])
+def test_fechas_fuera_de_rango(host, fecha):
+    _cli, con, aid = base_comercial(host)
+    with pytest.raises(ValueError, match="entre 2000 y 2100"):
+        run(host, "contrato.editar", id=con, hasta=fecha)
+    with pytest.raises(ValueError, match="entre 2000 y 2100"):
+        run(host, "compromiso.crear", contrato_id=con, asset_id=aid, **{**PAUTA, "hasta": fecha})
+    run(host, "produccion.ver", entidad="contrato", id=con)
+    with pytest.raises(ValueError):
+        run(host, "produccion.campo", hasta=fecha)
+    assert "entre 2000 y 2100" in host.state["produccion.aviso"]
+
+
+@pytest.mark.parametrize("raro", [float("inf"), float("-inf"), float("nan")])
+def test_infinitos_y_nan_son_valueerror(host, raro):
+    _cli, con, aid = base_comercial(host)
+    with pytest.raises(ValueError, match="monto en pesos"):
+        run(host, "contrato.editar", id=con, valor_cop=raro)
+    with pytest.raises(ValueError, match="la cantidad debe ser"):
+        run(host, "compromiso.crear", contrato_id=con, asset_id=aid, **{**PAUTA, "cantidad": raro})
+
+
+def test_editar_archivado(host):
+    cli, con, aid = base_comercial(host)
+    pid = run(host, "compromiso.crear", contrato_id=con, asset_id=aid, **PAUTA)
+    run(host, "compromiso.archivar", id=pid)
+    with pytest.raises(ValueError) as exc:
+        run(host, "compromiso.editar", id=pid, campana="Otra")
+    assert str(exc.value) == "la pauta está archivada: restáurala primero"
+    run(host, "contrato.archivar", id=con)
+    with pytest.raises(ValueError, match="el contrato está archivado: restáuralo primero"):
+        run(host, "contrato.editar", id=con, descripcion="X")
+    run(host, "cliente.archivar", id=cli)
+    with pytest.raises(ValueError, match="el cliente está archivado: restáuralo primero"):
+        run(host, "cliente.editar", id=cli, notas="X")
+    assert host.entities.get("compromiso", pid)["campaign"] == "Navidad"
+
+
+def test_archivados_cierra_la_seleccion_y_muestra_estado(host):
+    _c1, _c2, _k1, k2, _aid = poblar(host)
+    run(host, "produccion.ver", entidad="cliente")
+    run(host, "produccion.archivados", entidad="contrato", ver=True)
+    assert host.state["produccion.sel"]["entidad"] == "cliente"          # otra pestaña: no se toca
+    run(host, "produccion.ver", entidad="contrato")
+    run(host, "produccion.archivados", entidad="contrato", ver=False)
+    assert host.state["produccion.sel"] is None
+    for pid in [r["id"] for r in host.entities.list("compromiso", where={"contrato_id": k2})["items"]]:
+        run(host, "compromiso.archivar", id=pid)
+    run(host, "contrato.archivar", id=k2)
+    run(host, "produccion.archivados", entidad="contrato", ver=True)
+    table = next(n for n in _tab(host.draw_editor("produccion.comercial"), "Contratos") if n["t"] == "table")
+    assert [r[5] for r in table["rows"]] == ["archivado"]
+
+
+def test_vacio_con_archivados(host):
+    cid = run(host, "cliente.crear", nombre="Cliente Uno S.A.S.")
+    run(host, "cliente.archivar", id=cid)
+    textos = _textos(_tab(host.draw_editor("produccion.comercial"), "Clientes"))
+    assert "Aún no hay clientes." in textos and "Hay 1 archivado; míralo en «Archivados»." in textos
+
+
+def test_cuna_retirada_en_el_formulario(host):
+    _c1, _c2, k1, _k2, aid = poblar(host)
+    pid = host.entities.list("compromiso", where={"contrato_id": k1})["items"][0]["id"]
+    host.db.execute("UPDATE assets SET status = 'retired' WHERE id = ?", (aid,))
+    host.db.commit()
+    run(host, "produccion.ver", entidad="compromiso", id=pid)
+    nodes = _tab(host.draw_editor("produccion.comercial"), "Pauta")
+    form = next(n for n in nodes if n["t"] == "form")
+    cuna_f = next(f for f in form["fields"] if f["key"] == "asset_id")
+    assert cuna_f["value"] == f"{aid} · Cuña Prueba (no disponible)" and cuna_f["options"][-1] == cuna_f["value"]
+    assert "Pauta de «Cuña Prueba»" in _textos(nodes)
+    table = next(n for n in nodes if n["t"] == "table")
+    assert {r[2] for r in table["rows"]} == {"(cuña no disponible)"}
+
+
+def test_campo_sin_registro_abierto_deja_aviso(host):
+    poblar(host)
+    with pytest.raises(ValueError):
+        run(host, "produccion.campo", nombre="X")
+    assert host.state["produccion.aviso"] == "No se guardó: abre primero un registro con «Editar» o con «Nuevo …»."
+    tree = host.draw_editor("produccion.comercial")
+    assert any(n["t"] == "label" and n["tone"] == "warn" and n["text"] == host.state["produccion.aviso"]
+               for n in _tab(tree, "Clientes"))
+    run(host, "produccion.ver", entidad="contrato", id=1)
+    with pytest.raises(ValueError):
+        run(host, "produccion.guardar")
+    assert host.state["produccion.aviso_de"] == "contrato" and "abre primero" in host.state["produccion.aviso"]
+
+
+def test_icono_comercial(host):
+    assert host.editors["produccion.comercial"][0].icon == "▥"

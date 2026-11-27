@@ -6,6 +6,7 @@ por `<entidad>.editar`. Los mensajes van con las etiquetas del formulario («có
 
 from __future__ import annotations
 
+import math
 import re
 import sqlite3
 from datetime import date, datetime, timedelta, timezone
@@ -41,6 +42,12 @@ FECHA = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 FECHA_LOCAL = re.compile(r"^(\d{1,2})/(\d{1,2})/(\d{4})$")
 HORA = re.compile(r"^([01]\d|2[0-3]):[0-5]\d$")
 FRANJA = ("franja_desde", "franja_hasta")
+ARCHIVADO = {"cliente": "el cliente está archivado: restáuralo primero",
+             "contrato": "el contrato está archivado: restáuralo primero",
+             "compromiso": "la pauta está archivada: restáurala primero"}
+SIN_REGISTRO = "No se guardó: abre primero un registro con «Editar» o con «Nuevo …»."
+FRANJA_PENDIENTE = ("Falta una hora de la franja. Se guarda cuando completes «Franja desde» y «Franja hasta»; "
+                    "para quitarla, vacía las dos.")
 
 
 # -- fechas y zona -------------------------------------------------------------------------------------------------
@@ -90,10 +97,21 @@ def _vacio(v) -> bool:
 def _fecha(v, etiqueta: str) -> date:
     if isinstance(v, str) and FECHA.match(v.strip()):
         try:
-            return date.fromisoformat(v.strip())
+            d = date.fromisoformat(v.strip())
         except ValueError:
             pass
+        else:
+            if 2000 <= d.year <= 2100:              # sin años absurdos: 9999-12-31 + 1 día desborda
+                return d
+            raise ValueError(f"«{etiqueta}» debe ser una fecha entre 2000 y 2100, por ejemplo 01/12/2026")
     raise ValueError(f"«{etiqueta}» debe ser una fecha, por ejemplo 01/12/2026")
+
+
+def _anterior(actual: dict | None, v: dict) -> ValueError:
+    texto = "«hasta» no puede ser anterior a «desde»"
+    if actual is not None and not {"desde", "hasta"} <= set(v):     # en edición llega una sola fecha
+        texto += ". Cambia primero la otra fecha"
+    return ValueError(texto)
 
 
 def _hora(v) -> str:
@@ -107,6 +125,8 @@ def _valor(v) -> int:
     if isinstance(v, bool):
         raise ValueError(malo)
     if isinstance(v, float):
+        if not math.isfinite(v):
+            raise ValueError(malo)
         if v != int(v):
             raise ValueError("el valor va en pesos, sin centavos")
         v = int(v)
@@ -128,7 +148,7 @@ def _cantidad(v) -> int:
     malo = ValueError("la cantidad debe ser un número entero, de 1 en adelante")
     if isinstance(v, bool):
         raise malo
-    if isinstance(v, float) and v == int(v):
+    if isinstance(v, float) and math.isfinite(v) and v == int(v):
         v = int(v)
     if isinstance(v, str) and re.fullmatch(r"\s*[0-9]{1,9}\s*", v):
         v = int(v)
@@ -193,7 +213,7 @@ def _contrato(reg, tz, actual, v, parcial) -> dict:
     d = date.fromisoformat(out.get("desde") or actual["desde"])
     h = date.fromisoformat(out.get("hasta") or actual["hasta"])
     if h < d:
-        raise ValueError("«hasta» no puede ser anterior a «desde»")
+        raise _anterior(actual, v)
     if actual is not None:                      # las pautas activas del contrato deben seguir dentro de la vigencia
         for c in todas(reg, "compromiso", where={"contrato_id": actual["id"]}):
             if dia_inicio(c["window_start"], tz) < d or dia_final(c["window_end"], tz) > h:
@@ -235,7 +255,7 @@ def _compromiso(reg, tz, actual, v, parcial) -> dict:
         d = fechas.get("desde") or dia_inicio(actual["window_start"], tz)
         h = fechas.get("hasta") or dia_final(actual["window_end"], tz)
         if h < d:
-            raise ValueError("«hasta» no puede ser anterior a «desde»")
+            raise _anterior(actual, v)
         if contrato is None and actual is not None and actual.get("contrato_id"):
             contrato = reg.get("contrato", actual["contrato_id"])
             if contrato["archived"]:
@@ -249,7 +269,7 @@ def _compromiso(reg, tz, actual, v, parcial) -> dict:
         fd = out["daypart_start"] if "daypart_start" in out else (actual or {}).get("daypart_start")
         fh = out["daypart_end"] if "daypart_end" in out else (actual or {}).get("daypart_end")
         if (fd is None) != (fh is None):
-            raise ValueError("la franja necesita «desde» y «hasta», o déjala vacía")
+            raise ValueError("la franja necesita «franja desde» y «franja hasta», o déjala vacía")
         if fd is not None and fd == fh:
             raise ValueError("la franja no puede empezar y terminar a la misma hora")
     return out
@@ -284,7 +304,7 @@ def _seguro(entidad: str, fn):
         return fn()
     except ValueError as exc:
         raise _mensaje(entidad, exc) from None
-    except sqlite3.Error as exc:
+    except (sqlite3.Error, OverflowError) as exc:
         sdk.log.warning("Producción: no se pudo guardar (%s)", type(exc).__name__)
         raise ValueError(INESPERADO) from None
 
@@ -301,6 +321,8 @@ def crear(host, entidad: str, valores: dict, who: str) -> int:
 def editar(host, entidad: str, id, valores: dict, who: str) -> None:
     def run() -> None:
         actual = host.entities.get(entidad, entities.check_id(id))
+        if actual["archived"]:
+            raise ValueError(ARCHIVADO[entidad])
         limpio = preparar(host.entities, zona(host.config), entidad, actual, valores)
         if limpio:
             host.entities.writer("produccion").update(entidad, id, limpio, who=who)
@@ -394,6 +416,17 @@ def del_formulario(reg, entidad: str, clave: str, raw):
     return texto
 
 
+def _texto_del_campo(entidad: str, clave: str, raw) -> str:
+    """Lo que se anota en el borrador es siempre texto (el panel lo dibuja tal cual); la cantidad llega como número."""
+    if isinstance(raw, str):
+        return raw
+    if raw is None:
+        return ""
+    if clave == "cantidad" and isinstance(raw, (int, float)) and not isinstance(raw, bool) and math.isfinite(raw):
+        return str(int(raw)) if raw == int(raw) else str(raw)
+    raise ValueError(f"«{ETIQUETA[entidad][clave]}» no es un valor válido")
+
+
 def register(host: sdk.Host) -> None:
     reg = host.entities
     tz = lambda: zona(host.config)  # noqa: E731
@@ -451,11 +484,14 @@ def register(host: sdk.Host) -> None:
     def campo(ctx, **valores) -> None:
         sel = ctx.state.get("produccion.sel")
         if not sel or sel.get("archivar"):
+            avisar(ctx, (sel or {}).get("entidad"), aviso=SIN_REGISTRO)
             raise ValueError("elige primero qué editar")
         entidad = sel["entidad"]
+        aviso = None                                    # aviso propio (si no, «No se guardó: » + el mensaje)
         try:
             if sel["id"] is None:                       # borrador: se anota lo escrito (no se pierde) y se valida el formato
                 preparar(reg, tz(), entidad, None, {k: None for k in valores}, parcial=True)   # solo claves conocidas
+                valores = {k: _texto_del_campo(entidad, k, raw) for k, raw in valores.items()}
                 sel = {**sel, "borrador": {**sel["borrador"], **valores}}
                 ctx.set_state("produccion.sel", sel)
                 api = {k: del_formulario(reg, entidad, k, raw) for k, raw in valores.items()}
@@ -473,6 +509,7 @@ def register(host: sdk.Host) -> None:
                         editar(host, entidad, sel["id"], api, ctx.principal)
                     except ValueError as exc:
                         if str(exc).startswith("la franja necesita"):
+                            aviso = FRANJA_PENDIENTE
                             pendiente.update({k: valores[k] for k in FRANJA if k in valores})
                             ctx.set_state("produccion.sel", {**sel, "pendiente": pendiente})
                         raise
@@ -482,13 +519,14 @@ def register(host: sdk.Host) -> None:
                 else:
                     editar(host, entidad, sel["id"], api, ctx.principal)
         except ValueError as exc:
-            avisar(ctx, entidad, aviso=f"No se guardó: {_mensaje(entidad, exc)}.")
+            avisar(ctx, entidad, aviso=aviso or f"No se guardó: {_mensaje(entidad, exc)}.")
             raise
         avisar(ctx, None)
 
     def guardar(ctx) -> int:
         sel = ctx.state.get("produccion.sel")
         if not sel or sel.get("id") is not None or sel.get("archivar"):
+            avisar(ctx, (sel or {}).get("entidad"), aviso=SIN_REGISTRO)
             raise ValueError("no hay nada nuevo que guardar")
         entidad = sel["entidad"]
         try:
@@ -506,6 +544,8 @@ def register(host: sdk.Host) -> None:
         estado = dict(ctx.state.get("produccion.archivados") or {})
         estado[entidad] = (not estado.get(entidad)) if ver is None else bool(ver)
         ctx.set_state("produccion.archivados", estado)
+        if (ctx.state.get("produccion.sel") or {}).get("entidad") == entidad:
+            ctx.set_state("produccion.sel", None)
         ctx.set_state("produccion.offset", {**(ctx.state.get("produccion.offset") or {}), entidad: 0})
 
     def pagina(ctx, entidad, offset) -> None:

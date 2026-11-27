@@ -42,7 +42,7 @@ def _leer(ctx: sdk.Context) -> dict:
 
 
 class ComercialPanel(sdk.Editor):
-    id, label, icon = "produccion.comercial", "Comercial", "▦"
+    id, label, icon = "produccion.comercial", "Comercial", "▥"
     station = "produccion"
 
     def draw(self, ui: UI, ctx: sdk.Context) -> None:
@@ -69,7 +69,7 @@ class ComercialPanel(sdk.Editor):
     # -- una pestaña: aviso, botones, edición, tabla y conteo ---------------------------------------------------------
     def _pestana(self, ui: UI, ctx: sdk.Context, d: dict, e: str) -> None:
         st = ctx.state
-        if st.get("produccion.aviso_de") == e:
+        if st.get("produccion.aviso_de") in (e, None):     # sin entidad: aviso de un comando sin registro abierto
             if st.get("produccion.aviso"):
                 ui.label(st["produccion.aviso"], "warn")
             if st.get("produccion.listo"):
@@ -105,6 +105,11 @@ class ComercialPanel(sdk.Editor):
                                         "Registra qué cuña debe sonar, cuántas veces y entre qué fechas.")}[e]
                 ui.label(vacio[0])
                 ui.label(vacio[1], "muted")
+            n = len(d[e])
+            if not archivados and n:
+                fem = "a" if e == "compromiso" else "o"
+                ui.label(f"Hay {n} archivad{fem}{'s' if n != 1 else ''}; míral{fem}{'s' if n != 1 else ''} en «Archivados».",
+                         "muted")
             return
         if e == "cliente":
             filas.sort(key=lambda r: (norm(r["nombre"]), r["id"]))
@@ -152,8 +157,19 @@ class ComercialPanel(sdk.Editor):
             bloqueo = "Restaura primero su cliente" if cli is None or cli["archived"] else None
             rows.append([r["codigo"], cli["nombre"] if cli else "—", r["tipo"].capitalize(),
                          f"{C.fecha_corta(r['desde'])} – {C.fecha_corta(r['hasta'])}", _pesos(r["valor_cop"]),
-                         _estado_contrato(r, d["hoy"]), self._acciones("contrato", r, archivados, bloqueo)])
+                         "archivado" if r["archived"] else _estado_contrato(r, d["hoy"]), self._acciones("contrato", r, archivados, bloqueo)])
         ui.table(["Código", "Cliente", "Tipo", "Vigencia", "Valor", "Estado", "Acciones"], rows, narrow_hide=[2, 3])
+
+    @staticmethod
+    def _titulo_real(ctx, d, asset_id) -> str | None:
+        """Título de la pieza aunque esté retirada (formulario); `None` si ya no existe."""
+        reales = d.setdefault("reales", {})
+        if asset_id not in reales:
+            try:
+                reales[asset_id] = ctx.entities.get("pieza", asset_id)["title"]
+            except ValueError:
+                reales[asset_id] = None
+        return reales[asset_id]
 
     def _titulo_cuna(self, ctx, d, asset_id) -> str:
         if asset_id is None:
@@ -203,9 +219,10 @@ class ComercialPanel(sdk.Editor):
         elif e == "contrato":
             ui.label(f"Contrato {fila['codigo']}", "title")
         else:
-            titulo = d["titulos"].get(fila["asset_id"]) if fila["asset_id"] else None
+            titulo = self._titulo_real(ctx, d, fila["asset_id"]) if fila["asset_id"] else None
             ui.label(f"Pauta de «{titulo}»" if titulo else "Pauta", "title")
-        valores = dict(borrador) if borrador is not None else self._valores(d, e, fila, sel.get("pendiente") or {})
+        valores = ({k: x if isinstance(x, str) else "" for k, x in borrador.items()} if borrador is not None
+                   else self._valores(ctx, d, e, fila, sel.get("pendiente") or {}))
         ui.form("produccion.campo", getattr(self, f"_campos_{e}")(d, valores))
         if e == "compromiso":
             ui.label(NOTA_FRANJA, "muted")
@@ -247,7 +264,7 @@ class ComercialPanel(sdk.Editor):
             ui.button("Cancelar", "produccion.cerrar")
 
     # -- formularios ------------------------------------------------------------------------------------------------------
-    def _valores(self, d: dict, e: str, fila: dict, pendiente: dict) -> dict:
+    def _valores(self, ctx: sdk.Context, d: dict, e: str, fila: dict, pendiente: dict) -> dict:
         """Fila guardada → lo que muestra el formulario (nombres en vez de ids, DD/MM/AAAA, $ con puntos)."""
         if e == "cliente":
             return {"nombre": fila["nombre"], "notas": fila["notas"] or ""}
@@ -259,7 +276,7 @@ class ComercialPanel(sdk.Editor):
                     "descripcion": fila["descripcion"] or ""}
         con = d["por_id"]["contrato"].get(fila["contrato_id"]) if fila["contrato_id"] else None
         out = {"contrato_id": self._opcion_contrato(d, con) if con else "",
-               "asset_id": self._opcion_cuna(d, fila["asset_id"]) if fila["asset_id"] else "",
+               "asset_id": self._opcion_cuna(ctx, d, fila["asset_id"]) if fila["asset_id"] else "",
                "campana": fila["campaign"] or "", "cantidad": fila["plays_required"],
                "desde": C.fecha_corta(C.dia_inicio(fila["window_start"], d["tz"])),
                "hasta": C.fecha_corta(C.dia_final(fila["window_end"], d["tz"])),
@@ -273,14 +290,17 @@ class ComercialPanel(sdk.Editor):
         cli = d["por_id"]["cliente"].get(con["cliente_id"])
         return f"{con['codigo']} · {cli['nombre'] if cli else '—'}"
 
-    @staticmethod
-    def _opcion_cuna(d: dict, asset_id: int) -> str:
-        titulo = d["titulos"].get(asset_id)
-        return f"{asset_id} · {titulo}" if titulo else f"{asset_id} · (cuña no disponible)"
+    def _opcion_cuna(self, ctx: sdk.Context, d: dict, asset_id: int) -> str:
+        if d["titulos"].get(asset_id):
+            return f"{asset_id} · {d['titulos'][asset_id]}"
+        titulo = self._titulo_real(ctx, d, asset_id)
+        return f"{asset_id} · {titulo} (no disponible)" if titulo else f"{asset_id} · (cuña no disponible)"
 
     @staticmethod
     def _con_valor(opciones: list[str], valor: str, sufijo: str) -> list[str]:
         """Si lo guardado ya no está entre las opciones (archivado), se agrega al final para no mostrar un select vacío."""
+        if not isinstance(valor, str):
+            return opciones
         if valor and valor not in opciones:
             opciones.append(valor if valor.endswith(")") else f"{valor} ({sufijo})")
         return opciones
@@ -293,7 +313,7 @@ class ComercialPanel(sdk.Editor):
 
     def _campos_contrato(self, d: dict, v: dict) -> list[dict]:
         clientes = sorted((r["nombre"] for r in d["cliente"] if not r["archived"]), key=norm)
-        cliente = v.get("cliente_id", "")
+        cliente = v.get("cliente_id") if isinstance(v.get("cliente_id"), str) else ""
         opciones = self._con_valor(["(elige un cliente)", *clientes], cliente, "archivado")
         if cliente and cliente not in opciones:
             cliente = opciones[-1]
@@ -316,7 +336,7 @@ class ComercialPanel(sdk.Editor):
                                  v.get("contrato_id", ""), "archivado")
         op_cuna = self._con_valor(["(elige una cuña)", *(f"{s['id']} · {s['title']}" for s in d["spots"])],
                                   v.get("asset_id", ""), "archivada")
-        con, cuna = v.get("contrato_id", ""), v.get("asset_id", "")
+        con, cuna = (v.get(k) if isinstance(v.get(k), str) else "" for k in ("contrato_id", "asset_id"))
         con = con if not con or con in op_con else op_con[-1]
         cuna = cuna if not cuna or cuna in op_cuna else op_cuna[-1]
         cantidad = v.get("cantidad", "")
