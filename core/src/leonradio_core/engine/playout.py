@@ -17,7 +17,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from .. import library, meta, sdk, settings
+from .. import library, meta, paths, sdk, settings
 from . import files
 from .engine import Engine
 from .stream import StreamService
@@ -80,7 +80,7 @@ class Playout:
 
     @staticmethod
     def _save_stream(cfg: dict) -> None:
-        allc = settings.load()
+        allc = settings.load(strict=True)
         allc["stream"] = cfg
         settings.save(allc)
 
@@ -241,7 +241,7 @@ class Playout:
         for p in sorted(Path(folder).iterdir(), key=lambda q: q.name.lower()):
             if p.is_file() and p.suffix.lower() in library.AUDIO_EXT:
                 try:
-                    self.add_path(target, str(p))
+                    self.add_path(target, str(paths.check(str(p), self.host.path_roots(), must="file")))   # un enlace hacia fuera no entra
                     added += 1
                 except (OSError, ValueError) as exc:
                     self._set("playout.message", f"No se pudo leer «{p.name}»: {exc}")

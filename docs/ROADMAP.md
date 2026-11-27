@@ -45,7 +45,7 @@ Dentro de cada tier pesan los **puntos** (1 = chica, 2 = mediana, 3 = grande).
 | S3 | S | Al Aire: Controles, Varios (Botonera, Eventos, Explorador, Navegador), Metadatos, Auxiliares, Preferencias de audio | 3 | hecho | S2 | Al Aire | @jonathanleongonzalez87 |
 | S4 | S | Al Aire: Streaming Icecast (MP3, metadatos, grabación) y Monitores remotos | 2 | hecho | S2 | Al Aire | @jonathanleongonzalez87 |
 | S5 | S | Núcleo: base de datos persistente y compartida (SQLite en archivo, migraciones, copia de seguridad) | 3 | hecho | — | Núcleo | @jonathanleongonzalez87 |
-| S6 | S | Núcleo: seguridad de la API (autenticación, validar rutas, origen, límites, modo red seguro) | 3 | pendiente | — | Núcleo | @jonathanleongonzalez87 |
+| S6 | S | Núcleo: seguridad de la API (autenticación, validar rutas, origen, límites, modo red seguro) | 3 | hecho | — | Núcleo | @jonathanleongonzalez87 |
 | S7 | S | Núcleo: usuarios, roles y permisos por estación | 3 | pendiente | S5, S6 | Núcleo | @jonathanleongonzalez87 |
 | S8 | S | Núcleo: entidades compartidas (Programa, Persona, Artista, Álbum, Género, Pieza, Compromiso) con su dueño | 3 | pendiente | S5 | Núcleo | @jonathanleongonzalez87 |
 | S9 | S | Núcleo: estaciones como módulos (registro, menú de editores por estación, convención de paneles) | 2 | en curso | — | Núcleo | @jonathanleongonzalez87 |

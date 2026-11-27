@@ -159,7 +159,7 @@ export function initMenus(api) {
   ], tab);
 
   const MENUS = [
-    ["Archivo", [["Preferencias…", () => prefs(0), "Ctrl+,"]]],
+    ["Archivo", [["Preferencias…", () => prefs(0), "Ctrl+,"], ...(api.logout ? [["Salir", api.logout]] : [])]],
     ["Ver", [["Cambiar tema claro/oscuro", api.toggleTheme], ["Restablecer diseño de paneles", api.resetLayout]]],
     ["Herramientas", [["Dispositivos de audio…", () => prefs(0)]]],
     ["Ayuda", [

@@ -66,6 +66,11 @@ def register():   lr.register_editor(ClimaEditor); lr.register_command(leer)
 def unregister(): lr.unregister_editor(ClimaEditor)
 ```
 
+## Comandos que reciben rutas y nivel de riesgo (S6)
+- Un comando que reciba una ruta desde la interfaz **debe** validarla con `ctx.safe_path(ruta, must="dir" | "file" | "any")`: devuelve la ruta resuelta si está en una carpeta permitida (biblioteca, Música, Descargas, Escritorio y las de `leonradio carpetas`) o lanza `ValueError` sin la ruta en el mensaje. No abras ni listes rutas crudas.
+- Marca cada comando con su nivel: `@lr.command("clima.leer", risk="normal")`. Niveles: `normal`, `emision` (lo que sale al aire), `config` (ajustes y servidores), `archivos` (toca el disco). Por defecto `normal`. Aún no cambia lo que se permite; S7 asignará permisos por nivel.
+- Nunca registres los argumentos de un comando (pueden llevar contraseñas) ni pongas rutas completas en los mensajes de error.
+
 ## Ciclo «probar y luego incorporar»
 1. El autor desarrolla en `%APPDATA%\LeonRadio\addons\` con recarga en caliente (modo desarrollo).
 2. Lo prueba en la emisora de pruebas (RRC) con un workspace propio.

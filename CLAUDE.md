@@ -9,9 +9,9 @@ El plan vive en [docs/ROADMAP.md](docs/ROADMAP.md) (tier list S/A/B/C) y el avan
 - Node 18+ solo para el kit (`scripts/avance.mjs`, guardas).
 
 ## Comandos
-- Pruebas: `cd core` y `C:\Users\leont\.venvs\leonradio\Scripts\python -m pytest -q` (hoy 71; deben pasar antes de cada PR).
+- Pruebas: `cd core` y `C:\Users\leont\.venvs\leonradio\Scripts\python -m pytest -q` (hoy 124; deben pasar antes de cada PR).
 - Base de datos: `%LOCALAPPDATA%\LeonRadio\leonradio.db` (copias en `copias\`). Otra ruta: `--db RUTA` o `LEONRADIO_DB`; sin `--db`, con `LEONRADIO_CONFIG` queda junto a ese archivo. Pruebas y verificaciones: siempre `:memory:` o una carpeta temporal, nunca la base real.
-- Servidor sin sonido: `leonradio serve --audio null --library "..\Rockland Radio"`. Con audio real: `iniciar-leonradio.bat` (arranca en pausa). En red local: `iniciar-leonradio-red.bat`.
+- Servidor sin sonido: `leonradio serve --audio null --library "..\Rockland Radio"`. Con audio real: `iniciar-leonradio.bat` (arranca en pausa). En red local: `iniciar-leonradio-red.bat` (crea y muestra la clave la primera vez).
 - `node scripts/avance.mjs`: % de avance según el ROADMAP.
 
 ## Dónde vive cada cosa
@@ -30,7 +30,7 @@ El plan vive en [docs/ROADMAP.md](docs/ROADMAP.md) (tier list S/A/B/C) y el avan
 - **Marca** (ver [docs/marca.md](docs/marca.md)): isotipo hexagonal visible; el nombre «Jonathan León» NO aparece en la interfaz; paleta y tipografías del manual; «Leon» protagonista en Space Grotesk.
 - Solo **reencuadrar** composiciones, no cambiar el contenido de los paneles. El VU es siempre de agujas vintage.
 - No dejar sonando audio sin avisar: probar con `--audio null` o en silencio. Con dispositivo real la emisión arranca en pausa.
-- **Seguridad**: sin contraseña no se expone la app a la red; rutas que llegan del navegador se validan contra carpetas permitidas (deuda abierta: S6; S5 solo resolvió la base de datos).
+- **Seguridad** (S6 hecho, ver `docs/arquitectura.md`): en modo red (`--host` no loopback) hay clave de acceso obligatoria salvo para el propio PC (socket y `Host` loopback); `leonradio clave` crea otra y `leonradio carpetas --agregar RUTA` amplía las carpetas permitidas (solo por consola). Toda ruta que llega del navegador pasa por `ctx.safe_path`; cada comando nuevo lleva su `risk`. HTTP sin cifrar: solo redes de confianza.
 - Pocos tokens: pedidos acotados, pocas capturas, salidas resumidas.
 
 ## Reglas aprendidas

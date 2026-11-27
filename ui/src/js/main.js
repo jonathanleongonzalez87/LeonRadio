@@ -1,5 +1,6 @@
-import { connectEvents, getEditors, getInfo } from "./api.js";
+import { bus, connectEvents, getEditors, getInfo, logout, pauseRealtime, resumeRealtime } from "./api.js";
 import { AreaManager, area, hasEditor, split, toggleBeside } from "./areas.js";
+import { ensureAccess, onLoggedIn, showLogin } from "./login.js";
 import { initMenus } from "./menus.js";
 
 const KEY = "leonradio.workspaces.v11";
@@ -119,10 +120,27 @@ function hideSplash() {
   document.addEventListener("keydown", key, true);
 }
 
+// Modo red: «Salir» y la pantalla de acceso. En el PC de la emisora y en modo local no aparecen.
+let gated = false;
+let signingOut = false;
+async function signOut() {
+  signingOut = true;                                // mientras tanto, un 401 no es «sesión caducada»
+  showLogin();
+  pauseRealtime();
+  try { await logout(); } catch { setTimeout(() => logout().catch(() => {}), 3000); }   // si falla por red, se reintenta una vez
+  signingOut = false;
+}
+
 async function boot() {
   splash("Conectando con el motor…", 25);
   initTheme();
   tickClock(); setInterval(tickClock, 1000);
+  const session = await ensureAccess();             // si hace falta clave, espera aquí; nada de la app se pide antes
+  gated = !!session.auth_required;
+  $("#logout").hidden = !gated;
+  $("#logout").addEventListener("click", signOut);
+  bus.addEventListener("auth.required", () => { if (gated && !signingOut) { pauseRealtime(); showLogin({ expired: true }); } });
+  onLoggedIn(() => { resumeRealtime(); mgr?.refreshAll(); });     // el audio del monitor NO se reanuda solo
   const [info, editors] = await Promise.all([getInfo(), getEditors()]);
   $("#station").textContent = info.station;
   splash("Armando los paneles…", 65);
@@ -136,7 +154,7 @@ async function boot() {
     if (confirm("¿Restablecer todos los workspaces?")) { ws = defaults(); store.set(ws); renderTabs(); mgr.setTree(ws.list[0].tree); }
   };
   $("#reset").addEventListener("click", resetLayout);
-  initMenus({ toggleTheme: () => $("#theme").click(), resetLayout });
+  initMenus({ toggleTheme: () => $("#theme").click(), resetLayout, logout: gated ? signOut : null });
   renderTabs();
   mgr.setTree(ws.list[ws.active].tree);
   splash("Listo · haz clic para entrar", 100);

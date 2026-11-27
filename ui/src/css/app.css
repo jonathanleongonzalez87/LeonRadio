@@ -414,3 +414,48 @@ tr.next td{color:var(--c-orange);font-weight:600}
 .mon-cap{font-size:12px;color:var(--ink-2);text-align:center}
 .mon-cap.bad{color:var(--c-orange)}
 .mon-note{font-size:11px;color:var(--ink-2);text-align:center;max-width:440px;opacity:.8}
+
+/* ---- pantalla de acceso (modo red) ---- */
+.btn-t{background:transparent;border:1px solid var(--line);border-radius:8px;min-height:44px;padding:0 14px;cursor:pointer;font:500 13px var(--display);color:var(--ink)}
+.btn-t:hover{border-color:var(--accent);color:var(--accent)}
+@media (max-width:820px){#logout{display:none}}   /* en pantallas estrechas «Salir» está en el menú Archivo */
+.acc-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+#acceso{position:fixed;inset:0;z-index:200;overflow:auto;background:var(--bg);color:var(--ink);transition:opacity .2s ease}
+#acceso[hidden]{display:none}
+#acceso.out{opacity:0}
+#acceso .acc-wrap{min-height:100dvh;max-width:var(--acc-card);margin:0 auto;padding:8vh 20px 24px;display:flex;flex-direction:column;align-items:stretch}
+@media (min-width:600px){
+  #acceso .acc-wrap{min-height:0;margin:8vh auto 24px;padding:32px;background:var(--surface);border:1px solid var(--line);border-radius:12px}
+}
+#acceso :focus-visible{outline:3px solid var(--acc-ring);outline-offset:2px}
+#acceso .acc-brand{display:flex;flex-direction:column;align-items:center;gap:6px;margin-bottom:18px}
+#acceso .acc-brand svg{width:56px;height:56px;color:var(--c-orange)}
+#acceso .acc-word{font:400 24px var(--body);color:var(--acc-ink2)}
+#acceso .acc-word b{font:700 24px var(--display);letter-spacing:-.03em;color:var(--c-orange)}
+#acceso h1{margin:0;font:700 24px var(--display);letter-spacing:-.02em}
+#acceso .acc-sub{margin:2px 0 14px;color:var(--acc-ink2);font-size:14px}
+#acceso label{font:500 14px var(--display);margin:10px 0 6px}
+#acceso .acc-user{position:absolute;left:-9999px;width:1px;height:1px;opacity:0}
+#acceso .acc-field{display:flex;align-items:stretch;border:1px solid var(--acc-border);border-radius:8px;background:var(--bg);min-height:var(--acc-ctl)}
+#acceso .acc-field input{flex:1;min-width:0;min-height:var(--acc-ctl);padding:0 12px;border:0;background:transparent;color:var(--ink);font:400 16px var(--body)}
+#acceso .acc-field input.shown{font-family:var(--mono)}
+#acceso .acc-field button{min-width:var(--acc-show-w);min-height:var(--acc-ctl);border:0;border-left:1px solid var(--acc-border);background:transparent;color:var(--ink);cursor:pointer;font:500 14px var(--display);border-radius:0 8px 8px 0}
+#acceso .acc-field:has(input[aria-invalid="true"]){border-color:var(--c-orange)}
+#acceso .acc-help{margin:6px 0 0;font-size:14px;color:var(--acc-ink2)}
+#acceso .acc-msg{display:flex;gap:10px;align-items:flex-start;margin:10px 0 0;padding:8px 10px;border-left:var(--acc-bar) solid var(--c-orange);background:var(--bg);color:var(--ink);font-size:14px}
+#acceso .acc-ico{flex:none;width:20px;height:20px;border-radius:50%;border:2px solid var(--ink);font:700 13px/16px var(--display);text-align:center}
+#acceso .acc-msg small{display:block;margin-top:2px;color:var(--acc-ink2);font-size:14px}
+#acceso #acc-count{font-family:var(--mono)}
+#acceso .acc-btn{margin-top:18px;min-height:var(--acc-ctl);border:0;border-radius:8px;background:var(--accent);color:var(--c-ink);cursor:pointer;font:700 16px var(--display);display:inline-flex;align-items:center;justify-content:center;gap:8px}
+#acceso .acc-btn[hidden]{display:none}
+#acceso [disabled]{opacity:.55;cursor:not-allowed}
+#acceso .acc-btn.busy::before{content:"";width:16px;height:16px;border-radius:50%;border:2px solid var(--c-ink);border-top-color:transparent;animation:accspin .8s linear infinite}
+@keyframes accspin{to{transform:rotate(360deg)}}
+#acceso details{margin-top:20px;border-top:1px solid var(--line);padding-top:4px}
+#acceso summary{min-height:var(--acc-ctl);display:flex;align-items:center;cursor:pointer;font:500 14px var(--display)}
+#acceso .acc-lost-body{font-size:14px;color:var(--ink)}
+#acceso .acc-lost-body p{margin:8px 0}
+#acceso .acc-lost-body ol{margin:8px 0;padding-left:22px}
+#acceso .acc-lost-body code{font-family:var(--mono)}
+#acceso a{color:var(--ink);text-decoration:underline}
+@media (prefers-reduced-motion: reduce){#acceso .acc-btn.busy::before{display:none}}
