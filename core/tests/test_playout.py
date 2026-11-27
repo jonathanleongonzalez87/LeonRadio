@@ -482,3 +482,26 @@ def test_historial_muestra_la_hora_de_la_emisora_no_utc(monkeypatch):
     shown = cells[0][0]
     expected = datetime.now(bogota).hour
     assert len(shown) == 8 and (int(shown[:2]) - expected) % 24 in (0, 1, 23)       # hora de Bogotá, no UTC
+
+
+def test_salida_guardada_ausente_cae_a_la_predeterminada(monkeypatch):
+    from leonradio_core.engine import output as o
+
+    class Fake:
+        name, latency_ms = "fake", 1.0
+
+        def __init__(self, dev, blocksize=1024, buses=None):
+            self.dev, self.buses = dev, buses
+
+        def start(self, engine):
+            if self.dev == "auriculares|MME":
+                raise OSError("no existe")
+
+        def stop(self):
+            pass
+
+    monkeypatch.setattr(o, "SoundDeviceOutput", Fake)
+    out = o.RoutedOutput({"main": "auriculares|MME"})
+    out.start(object())
+    assert len(out.streams) == 1 and out.streams[0].dev is None
+    assert "auriculares" in out.warnings[0]
