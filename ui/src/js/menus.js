@@ -163,6 +163,7 @@ export function initMenus(api) {
     ["Ver", [["Cambiar tema claro/oscuro", api.toggleTheme], ["Restablecer diseño de paneles", api.resetLayout]]],
     ["Herramientas", [["Dispositivos de audio…", () => prefs(0)]]],
     ["Ayuda", [
+      ["Conectar el teléfono (QR)", () => window.open("/conectar", "_blank", "noopener")],
       ["Documentación", () => window.open("https://github.com/jonathanleongonzalez87/LeonRadio", "_blank", "noopener")],
       ["Acerca de LeonRadio", () => openDialog("Acerca de LeonRadio", [{
         label: "LeonRadio",

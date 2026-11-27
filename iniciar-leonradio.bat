@@ -4,7 +4,9 @@ title LeonRadio
 cd /d "%~dp0"
 
 rem ===== Configuracion (puedes cambiarla) =====
-set "HOST=127.0.0.1"
+rem Por defecto visible en la red local (con clave): el telefono se conecta con el QR de Ayuda > Conectar el telefono.
+rem En Windows, al preguntar por el Firewall, marca SOLO "Redes privadas". Solo este PC: set LEONRADIO_HOST=127.0.0.1 antes de ejecutar.
+set "HOST=0.0.0.0"
 if defined LEONRADIO_HOST set "HOST=%LEONRADIO_HOST%"
 set "PORT=8765"
 if defined LEONRADIO_PORT set "PORT=%LEONRADIO_PORT%"

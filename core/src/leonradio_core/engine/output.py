@@ -145,7 +145,17 @@ class RoutedOutput:
 
     def start(self, engine: Any) -> None:
         self.engine = engine
-        self._open()
+        try:
+            self._open()
+        except Exception as exc:  # noqa: BLE001
+            if not self.routes.get("main"):
+                raise
+            # La salida guardada ya no está (p. ej. unos auriculares desconectados): se usa la predeterminada de Windows
+            # en vez de quedar en modo simulado, y se avisa. Lo guardado no se borra: vuelve a valer al reconectarla.
+            lost = str(self.routes["main"]).split("|")[0]
+            self.routes = {k: v for k, v in self.routes.items() if k != "main"}
+            self._open()
+            self.warnings.insert(0, f"No se pudo abrir «{lost}» ({exc}). Uso la salida predeterminada de Windows.")
 
     def _open(self) -> None:
         self.warnings = []

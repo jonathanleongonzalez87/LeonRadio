@@ -16,7 +16,7 @@ from dataclasses import dataclass, field
 from typing import Callable
 
 from fastapi import APIRouter, HTTPException, Request, WebSocketException
-from fastapi.responses import JSONResponse
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from pydantic import BaseModel, Field
 from starlette.requests import HTTPConnection
 
@@ -122,6 +122,30 @@ class SessionStore:
         self._items.pop(token or "", None)
 
 
+class PairingStore:
+    """Enlaces de un solo uso (QR) para que un teléfono entre sin teclear la clave. En memoria, 10 min de vida."""
+
+    TTL, MAX = 600, 16
+
+    def __init__(self, clock: Callable[[], float] = time.time) -> None:
+        self.clock = clock
+        self._items: dict[str, float] = {}
+
+    def create(self) -> str:
+        now = self.clock()
+        self._items = {t: e for t, e in self._items.items() if e > now}
+        token = secrets.token_urlsafe(24)
+        self._items[token] = now + self.TTL
+        while len(self._items) > self.MAX:
+            del self._items[next(iter(self._items))]
+        return token
+
+    def redeem(self, token: str) -> bool:
+        """Consume el enlace: solo vale una vez."""
+        exp = self._items.pop(token, 0.0)
+        return exp > self.clock()
+
+
 class LoginGuard:
     """5 fallos en 10 min desde la misma IP del socket bloquean 15 min (también la clave correcta)."""
 
@@ -173,6 +197,7 @@ class AuthState:
     require_auth: bool = False
     sessions: SessionStore = field(default_factory=SessionStore)
     guard: LoginGuard = field(default_factory=LoginGuard)
+    pairing: PairingStore = field(default_factory=PairingStore)
 
 
 def is_local_client(conn: HTTPConnection) -> bool:
@@ -209,7 +234,7 @@ class LoginBody(BaseModel):
 NO_STORE = {"Cache-Control": "no-store"}
 
 
-def build_router(station: Callable[[], str]) -> APIRouter:
+def build_router(station: Callable[[], str], lan: Callable[[], list[str]] = lambda: []) -> APIRouter:
     router = APIRouter()
 
     @router.get("/api/session")
@@ -243,6 +268,48 @@ def build_router(station: Callable[[], str]) -> APIRouter:
                         httponly=True, samesite="strict", secure=request.url.scheme == "https")
         return resp
 
+    @router.get("/conectar")
+    def connect_page(request: Request) -> HTMLResponse:
+        """Solo desde el PC de la emisora: muestra el QR (enlace de un solo uso) para abrir el control en el teléfono."""
+        state: AuthState = request.app.state.auth
+        if not is_local_client(request) or request.headers.get("sec-fetch-site", "none") in ("cross-site", "same-site"):
+            raise HTTPException(403, "Solo desde el PC de la emisora")
+        if not state.require_auth:
+            return HTMLResponse(_page("<p>El modo red está desactivado: este programa solo se abre en este PC. "
+                                      "Inicia con <b>iniciar-leonradio.bat</b> para conectar el teléfono.</p>"),
+                                headers=NO_STORE)
+        port = request.url.port or 8765
+        ips = lan()
+        if not ips:
+            return HTMLResponse(_page("<p>No encuentro una red local. Conecta este PC al mismo Wi-Fi que el teléfono "
+                                      "y recarga.</p>"), headers=NO_STORE)
+        token = state.pairing.create()
+        cards = "".join(
+            f'<div class="c">{_qr(f"http://{ip}:{port}/p/{token}")}<p>{ip}</p></div>' for ip in ips[:3])
+        body = (f"<h1>Abrir en el teléfono</h1><p>Conecta el teléfono al <b>mismo Wi-Fi</b> que este PC y escanea el "
+                f"código con la cámara.</p><div class='r'>{cards}</div>"
+                "<p class='s'>El código vale una vez y 10 minutos; recarga la página para uno nuevo. "
+                "Si no abre, prueba con el otro código (cada uno es una red del PC) y revisa que el Firewall de Windows "
+                "permita LeonRadio en redes privadas. Los datos móviles no sirven: tiene que ser la misma red.</p>")
+        return HTMLResponse(_page(body), headers=NO_STORE)
+
+    @router.get("/p/{token}")
+    def pair(token: str, request: Request) -> RedirectResponse:
+        state: AuthState = request.app.state.auth
+        ip = request.client.host if request.client else "?"
+        if state.guard.wait(ip):
+            raise HTTPException(429, "Demasiados intentos")
+        h = current_hash()
+        if not (state.require_auth and h and len(token) <= 64 and state.pairing.redeem(token)):
+            if len(token) != 32:                    # un QR vencido (forma válida) no bloquea al teléfono
+                state.guard.fail(ip)
+            raise HTTPException(404, "Enlace vencido o ya usado: genera otro código en el PC (/conectar)")
+        state.guard.ok(ip)
+        resp = RedirectResponse("/", status_code=303, headers=NO_STORE)
+        resp.set_cookie(COOKIE, state.sessions.create(_fingerprint(h)), max_age=SESSION_SECONDS, path="/",
+                        httponly=True, samesite="lax", secure=request.url.scheme == "https")
+        return resp
+
     @router.post("/api/logout")
     def logout(request: Request) -> JSONResponse:
         state: AuthState = request.app.state.auth
@@ -253,3 +320,16 @@ def build_router(station: Callable[[], str]) -> APIRouter:
 
     return router
 
+
+
+def _qr(url: str) -> str:
+    import segno
+    return segno.make(url, error="m").svg_inline(scale=6, border=2, dark="#111", light="#fff")
+
+
+def _page(body: str) -> str:
+    return ('<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
+            "<title>Conectar el teléfono</title><style>body{font:16px system-ui;background:#1b1a17;color:#eee;"
+            "max-width:640px;margin:2rem auto;padding:0 1rem}.r{display:flex;gap:1rem;flex-wrap:wrap}"
+            ".c{background:#fff;color:#111;padding:.5rem;border-radius:8px;text-align:center}.c svg{display:block}"
+            ".s{opacity:.7;font-size:14px}</style>" + body)

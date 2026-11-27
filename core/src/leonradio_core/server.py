@@ -123,11 +123,11 @@ def create_app(
         with host.db_lock:
             db.close(host.db)
 
-    app = FastAPI(title="LeonRadio", version="0.2.0", lifespan=lifespan,
+    app = FastAPI(title="LeonRadio", version="0.2.1", lifespan=lifespan,
                   docs_url=None, redoc_url=None, openapi_url=None)    # nadie los usa: menos superficie
     app.add_middleware(security.SecurityMiddleware, strict_host=strict_host)
     app.state.auth = auth.AuthState(require_auth=require_auth)
-    app.include_router(auth.build_router(lambda: host.station))
+    app.include_router(auth.build_router(lambda: host.station, _lan_addresses))
 
     @app.exception_handler(Exception)
     async def unexpected(request: Request, exc: Exception) -> JSONResponse:
@@ -339,8 +339,9 @@ def serve(library_dir: str | None, port: int = 8765, audio: str = "device", devi
     if net:
         for ip in _lan_addresses():
             print(f"  · Desde otro equipo de tu red:  http://{ip}:{port}/   (pide la clave de acceso)")
+        print("  Si Windows pregunta por el Firewall, permite SOLO «Redes privadas» (nunca «Públicas»).")
         print("  Acceso protegido con clave; el tráfico va sin cifrar: úsalo solo en una red de confianza.")
-        print("  Este PC entra sin clave por http://127.0.0.1.")
+        print("  Este PC entra sin clave por http://127.0.0.1. Para el teléfono: menú Ayuda ▸ Conectar el teléfono (QR).")
     print()
     # proxy_headers=False: la IP del cliente es siempre la del socket (no se confía en X-Forwarded-For)
     uvicorn.run(app, host=host, port=port, log_level="info", ws_max_size=security.MAX_WS_MESSAGE, proxy_headers=False)
