@@ -45,6 +45,17 @@ Engine.render(frames)  ◄── hilo de audio (WASAPI) ──┘
 - **Arranque con biblioteca grande:** el escaneo es síncrono antes de levantar el servidor. La primera vez el SHA-256 lee todo el audio (~100 MB/s: minutos si hay muchos GB) y el progreso sale en la consola cada 500 archivos; los arranques siguientes solo hacen `stat` (~1,5 s por 20.000 archivos).
 - La base no debe vivir en una carpeta sincronizada (OneDrive, red): SQLite con WAL se corrompe ahí. Por eso el valor por defecto está en `%LOCALAPPDATA%`.
 
+## Entidades compartidas (S8)
+- `core/src/leonradio_core/entities.py`: cada entidad se **declara** (`Entity`, `Field`) y tiene una estación **dueña**; solo `host.entities.writer(<estación>)` escribe (otra estación recibe `PermissionDenied`), todas leen por `list`/`get` o `GET /api/entities*` (solo columnas declaradas, nunca `path` ni `sha256`). Sin borrado: se archiva (`archived=1`).
+- Toda fila gestionada lleva `id, archived, created_at, updated_at, created_by, updated_by`; quien firma es `ctx.principal` (`"local"` o `"clave"`; S7 lo cambia a usuario). Los comandos de escritura llevan `risk="datos"`.
+- Cada estación pone su SQL en `estaciones/<estacion>/migraciones.py` (solo `sqlite3`, funciones `m<N>_...`) y `db.py` las agrega al final de `MIGRATIONS`. La migración 3 crea Artista, Álbum y Género y vincula `assets` (los textos `artist`/`album` no cambian); `catalogo.sync` vincula lo que escanee después.
+- **Límites conocidos:**
+  - **Única excepción a «solo por el `writer`»:** `catalogo.sync` escribe `assets.artista_id/album_id` directamente con `host.db`; `assets` no es entidad gestionada y su dueña, Programación, es quien lo hace (la creación de artistas y álbumes sí pasa por el `writer`).
+  - **Addons no aislados:** `entities.read` no impide que un addon malicioso llegue a `host` y tome un `writer`; se resuelve con la tarea C1 (aislamiento de addons), igual que la nota de S6.
+  - **`risk="datos"` es hoy solo una etiqueta:** S7 debe hacerlo cumplir con permisos por usuario y rol.
+  - **Migración m3:** su relleno carga todas las piezas en memoria (~10 s y ~170 MB con 200.000 piezas) y debe seguir corriendo al abrir la base, antes de `playout.start()`.
+- Panel común **Entidades**: solo lectura. Contrato para una estación nueva: [entidades.md](entidades.md).
+
 ## Seguridad (S6)
 Servidor local de una sola emisora, sin hosting ni dominio. El tráfico en la red local va por **HTTP sin cifrar**.
 - **Dos modos**, decididos por `--host` al arrancar (`serve()`): *local* (`127.0.0.1`, por defecto: sin clave, `Host` solo `localhost`/`127.0.0.1`/`[::1]`, anti DNS-rebinding) y *red* (`0.0.0.0` u otra IP: clave obligatoria; sin clave guardada no arranca).

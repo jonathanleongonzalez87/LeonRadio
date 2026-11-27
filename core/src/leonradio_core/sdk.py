@@ -13,6 +13,7 @@ from types import MappingProxyType
 from typing import Any, Callable, Mapping
 
 from . import db as _db
+from . import entities as _entities
 from . import paths as _paths
 from . import playlog as _playlog
 from .events import EventBus
@@ -29,7 +30,7 @@ def load_json(name: str):
     return json.loads((_DATA / name).read_text(encoding="utf-8"))
 
 
-RISKS = ("normal", "emision", "config", "archivos")
+RISKS = ("normal", "emision", "config", "archivos", "datos")
 
 
 def safe_message(exc: BaseException) -> str:
@@ -39,7 +40,7 @@ def safe_message(exc: BaseException) -> str:
     return str(exc) or type(exc).__name__
 
 
-PERMISSIONS = {"library.read", "playlog.read", "playlog.write", "state.write", "network"}
+PERMISSIONS = {"library.read", "playlog.read", "playlog.write", "state.write", "network", "entities.read"}
 
 
 class PermissionDenied(PermissionError):
@@ -61,8 +62,9 @@ class Editor:
 class Context:
     """Lo que ve un editor/comando: estado de solo lectura + servicios con permisos."""
 
-    def __init__(self, host: "Host", owner: str, permissions: frozenset[str]) -> None:
+    def __init__(self, host: "Host", owner: str, permissions: frozenset[str], principal: str = "local") -> None:
         self._host, self.owner, self.permissions = host, owner, permissions
+        self.principal = principal      # quién pidió la acción ("local" | "clave"); S7 lo pasa a usuario
 
     def _need(self, perm: str) -> None:
         if perm not in self.permissions:
@@ -80,6 +82,12 @@ class Context:
         """Ruta resuelta si está en una carpeta permitida (`dir`/`file`/`any`); si no, `ValueError` sin la ruta.
         Los comandos que reciben rutas desde la red deben pasar por aquí."""
         return _paths.check(path, self._host.path_roots(), must=must, create_ok=create_ok)  # type: ignore[arg-type]
+
+    @property
+    def entities(self) -> "_entities.ReadOnly":
+        """Entidades compartidas, solo lectura: `list`, `get`, `catalog`."""
+        self._need("entities.read")
+        return _entities.ReadOnly(self._host.entities)
 
     def draw_editor(self, editor_id: str) -> dict:
         """Árbol de UI de otro editor (lo usa «Varios» para acoplar paneles por pestañas)."""
@@ -141,11 +149,12 @@ class Host:
         self.extra_roots: list[Path] = []     # carpetas permitidas adicionales (pruebas)
         self.db = _db.connect(db_path, shared=True)
         self.db_lock = threading.RLock()
+        self.entities = _entities.Registry(self)
         self.events = EventBus()
         self.state: dict[str, Any] = {}
         self.editors: dict[str, tuple[Editor, str, frozenset[str]]] = {}
         self.commands: dict[str, tuple[Callable[..., Any], str, frozenset[str]]] = {}
-        self.command_risk: dict[str, str] = {}   # nivel de cada comando: normal | emision | config | archivos (S7 lo usa)
+        self.command_risk: dict[str, str] = {}   # nivel de cada comando: normal | emision | config | archivos | datos (S7 lo usa)
 
     # -- estado ---------------------------------------------------------
     def set_state(self, key: str, value: Any) -> None:
@@ -200,9 +209,9 @@ class Host:
             ui.label(f"{type(exc).__name__}: {safe_message(exc)}", "muted")
         return ui.build()
 
-    def run_command(self, name: str, args: dict | None = None) -> Any:
+    def run_command(self, name: str, args: dict | None = None, principal: str = "local") -> Any:
         fn, owner, perms = self.commands[name]
-        return fn(Context(self, owner, perms), **(args or {}))
+        return fn(Context(self, owner, perms, principal), **(args or {}))
 
     def record_play(self, **kw: Any) -> int:
         with self.db_lock:
@@ -240,7 +249,7 @@ def unregister_editor(editor: type[Editor] | Editor) -> None:
 
 def command(name: str, risk: str = "normal") -> Callable[[Callable[..., Any]], Callable[..., Any]]:
     """Decorador: registra un comando. Se activa al llamar `register_command` o al cargar el módulo.
-    `risk`: normal | emision | config | archivos (S7 asigna permisos por nivel)."""
+    `risk`: normal | emision | config | archivos | datos (S7 asigna permisos por nivel)."""
     def deco(fn: Callable[..., Any]) -> Callable[..., Any]:
         fn._lr_command = name  # type: ignore[attr-defined]
         fn._lr_risk = risk  # type: ignore[attr-defined]

@@ -68,7 +68,7 @@ def unregister(): lr.unregister_editor(ClimaEditor)
 
 ## Comandos que reciben rutas y nivel de riesgo (S6)
 - Un comando que reciba una ruta desde la interfaz **debe** validarla con `ctx.safe_path(ruta, must="dir" | "file" | "any")`: devuelve la ruta resuelta si está en una carpeta permitida (biblioteca, Música, Descargas, Escritorio y las de `leonradio carpetas`) o lanza `ValueError` sin la ruta en el mensaje. No abras ni listes rutas crudas.
-- Marca cada comando con su nivel: `@lr.command("clima.leer", risk="normal")`. Niveles: `normal`, `emision` (lo que sale al aire), `config` (ajustes y servidores), `archivos` (toca el disco). Por defecto `normal`. Aún no cambia lo que se permite; S7 asignará permisos por nivel.
+- Marca cada comando con su nivel: `@lr.command("clima.leer", risk="normal")`. Niveles: `normal`, `emision` (lo que sale al aire), `config` (ajustes y servidores), `archivos` (toca el disco), `datos` (escribe entidades compartidas). Por defecto `normal`. Aún no cambia lo que se permite; S7 asignará permisos por nivel.
 - Nunca registres los argumentos de un comando (pueden llevar contraseñas) ni pongas rutas completas en los mensajes de error.
 
 ## Ciclo «probar y luego incorporar»
@@ -86,3 +86,7 @@ def unregister(): lr.unregister_editor(ClimaEditor)
 F0.5 construye: gestor de áreas y workspaces, registro de editores y comandos, bus de eventos,
 API de addons v0, 3 editores incluidos (Aire, Emisión, Historial) y un addon de ejemplo.
 F5 añade gestor de addons (instalar/activar/actualizar), plantilla y guía para terceros.
+
+## Entidades y quién pide (S8)
+- `ctx.entities` (permiso `entities.read`): `list(nombre, limit=50, offset=0, include_archived=False, where=None)`, `get(nombre, id)` y `catalog()`. Solo lectura; escribir una entidad es cosa de la estación dueña (ver [entidades.md](entidades.md)).
+- `ctx.principal`: quién pidió la acción (`"local"` o `"clave"`); firma `created_by`/`updated_by` de las filas.
