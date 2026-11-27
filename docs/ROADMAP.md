@@ -45,8 +45,8 @@ Dentro de cada tier pesan los **puntos** (1 = chica, 2 = mediana, 3 = grande).
 | S2 | S | Al Aire: motor de audio real, listas de ficheros, crossfade, ducking, VU, historial (F1) | 3 | verificado | — | Al Aire | @jonathanleongonzalez87 |
 | S3 | S | Al Aire: Controles, Varios (Botonera, Eventos, Explorador, Navegador), Metadatos, Auxiliares, Preferencias de audio | 3 | hecho | S2 | Al Aire | @jonathanleongonzalez87 |
 | S4 | S | Al Aire: Streaming Icecast (MP3, metadatos, grabación) y Monitores remotos | 2 | hecho | S2 | Al Aire | @jonathanleongonzalez87 |
-| S5 | S | Núcleo: base de datos persistente y compartida (SQLite en archivo, migraciones, copia de seguridad) | 3 | hecho | — | Núcleo | @jonathanleongonzalez87 |
-| S6 | S | Núcleo: seguridad de la API (autenticación, validar rutas, origen, límites, modo red seguro) | 3 | hecho | — | Núcleo | @jonathanleongonzalez87 |
+| S5 | S | Núcleo: base de datos persistente y compartida (SQLite en archivo, migraciones, copia de seguridad) | 3 | verificado | — | Núcleo | @jonathanleongonzalez87 |
+| S6 | S | Núcleo: seguridad de la API (autenticación, validar rutas, origen, límites, modo red seguro) | 3 | verificado | — | Núcleo | @jonathanleongonzalez87 |
 | S8 | S | Núcleo: marco de entidades compartidas + Artista, Álbum, Género y Pieza (con su dueño) y panel «Entidades» | 2 | verificado | S5 | Núcleo | @jonathanleongonzalez87 |
 | S10 | S | Núcleo: entidades de Dirección y Al Aire (Programa, Persona, Invitado) | 1 | pendiente | S8 | Núcleo | @jonathanleongonzalez87 |
 | S9 | S | Núcleo: estaciones como módulos (registro, menú de editores por estación, convención de paneles) | 2 | en curso | — | Núcleo | @jonathanleongonzalez87 |
