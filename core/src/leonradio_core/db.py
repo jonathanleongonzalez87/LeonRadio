@@ -146,3 +146,9 @@ def close(conn: sqlite3.Connection) -> None:
         conn.execute("PRAGMA wal_checkpoint(TRUNCATE)")
     finally:
         conn.close()
+
+
+# Migraciones de las estaciones (SQL literal, sin dependencias). Import al final: `estaciones` importa `sdk`, que importa `db`.
+from .estaciones.programacion import migraciones as _programacion  # noqa: E402
+
+MIGRATIONS.append(_programacion.m3_catalogo_musical)

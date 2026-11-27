@@ -181,18 +181,38 @@ def create_app(
             raise HTTPException(404, f"editor desconocido: {editor_id}")
         return host.draw_editor(editor_id)
 
-    @app.post("/api/commands/{name}", dependencies=[Depends(auth.current_principal)])
-    def run(name: str, body: CommandBody | None = None) -> dict:
+    @app.post("/api/commands/{name}")
+    def run(name: str, body: CommandBody | None = None, who: auth.Principal = Depends(auth.current_principal)) -> dict:
         if name not in host.commands:
             raise HTTPException(404, f"comando desconocido: {name}")
         try:
-            result = host.run_command(name, (body.args if body else {}))
+            result = host.run_command(name, (body.args if body else {}), principal=who.id)
         except sdk.PermissionDenied as exc:
             raise HTTPException(403, str(exc)) from exc
-        except (ValueError, RuntimeError, OSError, TypeError, KeyError) as exc:   # fallo explicable: se le dice al usuario
-            logging.getLogger("leonradio").warning("comando %s falló: %s", name, _friendly(exc))
-            raise HTTPException(400, _friendly(exc)) from exc
+        except (ValueError, RuntimeError, OSError, TypeError, KeyError, OverflowError, UnicodeError, sqlite3.Error) as exc:
+            # fallo explicable: se le dice al usuario (de la base nunca sale el texto SQL)
+            msg = "No se pudo guardar el dato" if isinstance(exc, sqlite3.Error) else _friendly(exc)
+            logging.getLogger("leonradio").warning("comando %s falló: %s", name, type(exc).__name__ if isinstance(exc, sqlite3.Error) else msg)
+            raise HTTPException(400, msg) from exc
         return {"ok": True, "result": result if isinstance(result, (str, int, float, bool, dict, list, type(None))) else None}
+
+    @app.get("/api/entities", dependencies=[Depends(auth.current_principal)])
+    def entities_catalog() -> list[dict]:
+        return host.entities.catalog()
+
+    @app.get("/api/entities/{name}", dependencies=[Depends(auth.current_principal)])
+    def entities_list(name: str, limit: int = 50, offset: int = 0, archived: bool = False) -> dict:
+        try:
+            return host.entities.list(name, limit=limit, offset=offset, include_archived=archived)
+        except ValueError as exc:
+            raise HTTPException(404, "entidad desconocida") from exc
+
+    @app.get("/api/entities/{name}/{item_id}", dependencies=[Depends(auth.current_principal)])
+    def entities_get(name: str, item_id: int) -> dict:
+        try:
+            return host.entities.get(name, item_id)
+        except ValueError as exc:
+            raise HTTPException(404, "no existe") from exc
 
     @app.websocket("/ws/monitor", dependencies=[Depends(auth.current_principal)])
     async def ws_monitor(sock: WebSocket) -> None:

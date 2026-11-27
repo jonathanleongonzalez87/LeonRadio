@@ -90,7 +90,7 @@ def test_migracion_falla_revierte(tmp_path, monkeypatch):
     with pytest.raises(ValueError):
         db.connect(f)
     c = sqlite3.connect(str(f))
-    assert c.execute("PRAGMA user_version").fetchone()[0] == 2
+    assert c.execute("PRAGMA user_version").fetchone()[0] == len(db.MIGRATIONS) - 1   # la rota es la última
     assert c.execute("SELECT name FROM sqlite_master WHERE name = 'a_medias'").fetchone() is None
     c.close()
 
