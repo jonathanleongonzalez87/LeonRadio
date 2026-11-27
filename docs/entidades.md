@@ -14,16 +14,16 @@ Estado: `existe` = ya está en el código; `pendiente` = por crear. El marco com
 | **Persona / Talento** | Locutores, productores, equipo | Dirección | todas | pendiente |
 | **Invitado** | Persona que participa en un programa | Al Aire | Producción, Dirección | pendiente |
 | **Escaleta / Guion** | Plan de un programa en emisión | Al Aire | Programación, Dirección | pendiente |
-| **Cliente / Anunciante** | Quien contrata pauta o patrocinio | Producción | Programación, Al Aire | pendiente |
-| **Compromiso** | Cuñas contratadas (cantidad o franja) | Producción | Programación (tandas), Al Aire | existe (`commitments`, solo lectura; a rediseñar en A6) |
-| **Contrato / Pauta** | Contratos y patrocinios | Producción | Programación (tandas), Al Aire | pendiente |
+| **Cliente / Anunciante** | Quien contrata pauta o patrocinio (solo nombre y notas: sin teléfonos, correos ni documentos) | Producción | Programación, Al Aire | existe (`cliente`) |
+| **Compromiso** | Cuñas contratadas: cuántas, de qué pieza, en qué vigencia y franja, de qué contrato | Producción | Programación (tandas), Al Aire | existe (`commitments`, gestionada por Producción desde A6) |
+| **Contrato / Pauta** | Contratos y patrocinios, con vigencia y valor en pesos | Producción | Programación (tandas), Al Aire | existe (`contrato`; tipo pauta o patrocinio) |
 | **Presupuesto / Inventario / Factura** | Administración y logística | Producción | Dirección | pendiente |
 | **Usuario / Rol / Permiso** | Quién entra y qué puede hacer | Núcleo | todas | pendiente |
 
 ## Al crear o cambiar una entidad
 1. Mira esta tabla: si ya existe, úsala; no crees otra parecida.
 2. Si es nueva, agrégala aquí **en el mismo PR**, con dueño y lectores.
-3. Modelo y tablas en el núcleo (S5/S8), con **migración**; nunca tablas privadas de una estación para datos compartidos. **Cambiar el esquema = agregar una función al final de `MIGRATIONS` (`core/src/leonradio_core/db.py`) + una prueba; nunca se edita una migración ya publicada** (la versión vive en `PRAGMA user_version`). El catálogo musical es la migración 3; Programa, Persona e Invitado llegan en la tarea S10.
+3. Modelo y tablas en el núcleo (S5/S8), con **migración**; nunca tablas privadas de una estación para datos compartidos. **Cambiar el esquema = agregar una función al final de `MIGRATIONS` (`core/src/leonradio_core/db.py`) + una prueba; nunca se edita una migración ya publicada** (la versión vive en `PRAGMA user_version`). El catálogo musical es la migración 3 y Cliente, Contrato y Compromiso la 4 (A6); Programa, Persona e Invitado llegan en la tarea S10.
 4. Nombres en español, singular, sin tildes en los identificadores (`programa`, `compromiso`).
 5. Datos de prueba inventados; nunca datos personales reales en el repositorio.
 

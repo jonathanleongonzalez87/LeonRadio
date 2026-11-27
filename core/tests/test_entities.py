@@ -193,7 +193,7 @@ def test_transaccion_hace_rollback_y_emite_una_vez(host):
 def test_catalogo_de_entidades(host):
     cat = {c["nombre"]: c for c in host.entities.catalog()}
     assert {"pieza", "emision", "compromiso", "artista", "album", "genero", "sala"} <= set(cat)
-    assert cat["compromiso"]["nota"] == "a rediseñar en A6" and cat["pieza"]["estado"] == "solo lectura"
+    assert cat["compromiso"]["estado"] == "gestionada" and cat["pieza"]["estado"] == "solo lectura"
 
 
 # --- REST -------------------------------------------------------------------
@@ -287,7 +287,7 @@ def test_panel_entidades_solo_lectura(host):
     assert table["columns"] == ["Entidad", "Qué es", "Dueño", "Activos", "Archivados", "Estado"]
     rows = {r[0]: r for r in table["rows"]}
     assert {"Pieza", "Registro de emisión", "Compromiso", "Artista", "Álbum", "Género"} <= set(rows)
-    assert "a rediseñar en A6" in rows["Compromiso"][5] and rows["Artista"][2] == "Programación"
+    assert rows["Compromiso"][5] == "gestionada" and rows["Artista"][2] == "Programación"
     assert "Jonathan" not in str(tree)
 
 

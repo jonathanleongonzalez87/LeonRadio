@@ -150,5 +150,7 @@ def close(conn: sqlite3.Connection) -> None:
 
 # Migraciones de las estaciones (SQL literal, sin dependencias). Import al final: `estaciones` importa `sdk`, que importa `db`.
 from .estaciones.programacion import migraciones as _programacion  # noqa: E402
+from .estaciones.produccion import migraciones as _produccion  # noqa: E402
 
 MIGRATIONS.append(_programacion.m3_catalogo_musical)
+MIGRATIONS.append(_produccion.m4_comercial)

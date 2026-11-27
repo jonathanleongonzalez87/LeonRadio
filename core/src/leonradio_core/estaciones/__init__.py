@@ -29,7 +29,7 @@ STATIONS: dict[str, dict] = {
         "tareas": ["B3"],
     },
     "produccion": {
-        "nombre": "Producción", "estado": "por iniciar",
+        "nombre": "Producción", "estado": "en construcción",
         "alcance": ["Presupuestos e inventario", "Contratos, patrocinios y pauta", "Facturación y cronogramas", "Informes y administración"],
         "tareas": ["A6", "B1", "B2"],
     },
@@ -44,8 +44,7 @@ def register_all(host: sdk.Host) -> None:
     sdk.bind(host)
     try:
         sdk.register_editor(EntidadesEditor)
-        for entity in (entidades_base.EMISION, entidades_base.COMPROMISO):
-            host.entities.declare(entity)
+        host.entities.declare(entidades_base.EMISION)
     except Exception:  # noqa: BLE001
         sdk.log.exception("no se pudo registrar el panel de entidades")
     for key in STATIONS:
