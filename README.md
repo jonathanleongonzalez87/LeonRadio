@@ -3,7 +3,9 @@
 Automatizador de radio con experiencia de estación vintage, hecho para 2026.
 Estación de prueba: **RRC – Rockland Radio Colombia** (https://rocklandradio.co/).
 
-## Versión 0.2.1
+## Versión 0.2.2
+
+Novedades de la 0.2.2: sin carpeta de la emisora junto al programa, `iniciar-leonradio.bat` usa el audio de prueba incluido (`datos-de-prueba\Rockland Radio`) y la Botonera trae jingles, pisadores y separadores.
 
 Novedades de la 0.2.1: `iniciar-leonradio.bat` arranca en modo red y **Ayuda ▸ Conectar el teléfono (QR)** abre el control en el teléfono sin teclear la clave (mismo Wi-Fi); si la salida de audio guardada no existe, usa la predeterminada de Windows en vez del modo simulado.
 

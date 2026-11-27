@@ -1,6 +1,6 @@
 # Estado de LeonRadio (para retomar en una sesión nueva)
 
-Última actualización: 2026-11-27 (v0.2.1). Lee esto primero; después `README.md`, `ROADMAP.md` y `docs/`.
+Última actualización: 2026-11-27 (v0.2.2). Lee esto primero; después `README.md`, `ROADMAP.md` y `docs/`.
 
 ## Qué es
 Automatizador de radio con estética de cabina vintage: motor **Python** (`core/`) + interfaz **HTML** (`ui/`),
@@ -29,6 +29,9 @@ Repo: https://github.com/jonathanleongonzalez87/LeonRadio · Proyecto «LeonRadi
 - **Streaming** (panel de Varios): Icecast 2 en MP3 con `lameenc`, reconexión, metadatos y grabación; probado contra un Icecast falso en las pruebas, **falta probar contra un servidor real**. Contraseña solo en `config.json`.
 - **Preferencias** (menú Archivo, Ctrl+,): tarjeta de sonido por salida (principal, Aux 1–4, Botonera; la escucha previa y las entradas solo se guardan). Ajustes en `%LOCALAPPDATA%\LeonRadio\config.json`.
 - Barra de menú, pantalla de carga (se cierra con un clic) y diseños guardados v10 (cambiar `KEY` en `main.js` los restablece).
+
+## Novedades de la 0.2.2
+- **Botonera con datos de prueba:** si no hay carpeta de la emisora junto al programa, `iniciar-leonradio.bat` usa `datos-de-prueba\Rockland Radio` (jingles, pisadores y separadores) y la Botonera ya no sale vacía.
 
 ## Novedades de la 0.2.1
 - **Teléfono sin pasos:** `iniciar-leonradio.bat` arranca en modo red (con clave) y Ayuda ▸ Conectar el teléfono (QR) abre en el PC un QR de un solo uso para entrar desde el teléfono en la misma red.
