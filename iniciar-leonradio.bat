@@ -13,6 +13,8 @@ if defined LEONRADIO_PORT set "PORT=%LEONRADIO_PORT%"
 set "VENV=%LOCALAPPDATA%\LeonRadio\venv"
 set "LIB=%~1"
 if "%LIB%"=="" set "LIB=%~dp0..\Rockland Radio"
+rem Sin carpeta de la emisora junto al programa, usa el audio de prueba incluido (jingles, pisadores y separadores).
+if not exist "%LIB%\" set "LIB=%~dp0datos-de-prueba\Rockland Radio"
 
 echo.
 echo  ===== LeonRadio =====
