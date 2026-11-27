@@ -457,3 +457,28 @@ def test_monitor_websocket_streams_the_main_mix_as_pcm(tmp_path, monkeypatch):
     assert all(len(b) % 4 == 0 and len(b) > 0 for b in blocks)                # int16 estéreo: 4 bytes por fotograma
     assert any(max(abs(int.from_bytes(b[i:i + 2], "little", signed=True)) for i in range(0, len(b), 2)) > 100
                for b in blocks)                                              # hay señal, no solo silencio
+
+
+def test_historial_muestra_la_hora_de_la_emisora_no_utc(monkeypatch):
+    from datetime import timedelta, timezone
+
+    from leonradio_core import builtin
+
+    bogota = timezone(timedelta(hours=-5))
+    # el caso reportado: a las 22:45 en Colombia el historial mostraba 03:45 (UTC)
+    assert builtin._local_hms("2026-11-27T03:45:19.123456Z", bogota) == "22:45:19"
+    assert builtin._local_hms("2026-11-27T03:45:19+00:00", bogota) == "22:45:19"
+    assert builtin._local_hms("2026-11-27T03:45:19", bogota) == "22:45:19"      # sin zona: se toma como UTC
+    assert builtin._local_hms("basura", bogota) == "basura"[11:19]              # nunca rompe el panel
+    host, playout = plain_host()
+    monkeypatch.setattr(builtin, "_station_tz", lambda ctx: bogota)
+    playout.add_to("emision", insert(host, "music", "A Forest", 30))
+    playout.transport("emision", "play")
+    run(playout, 1)
+    playout.transport("emision", "stop")
+    cells = [n for n in _all(host.draw_editor("historial")) if n.get("t") == "table"][0]["rows"]
+    from datetime import datetime
+
+    shown = cells[0][0]
+    expected = datetime.now(bogota).hour
+    assert len(shown) == 8 and (int(shown[:2]) - expected) % 24 in (0, 1, 23)       # hora de Bogotá, no UTC

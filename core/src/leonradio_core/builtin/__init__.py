@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import os
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
@@ -17,12 +17,29 @@ N_AUX = 4
 FILE_LABEL = F.FILE_TYPES
 
 
-def _station_now(ctx: sdk.Context) -> datetime:
-    """Hora de la emisora; si el sistema no trae la base de zonas horarias (Windows sin `tzdata`), la del equipo."""
+def _station_tz(ctx: sdk.Context):
+    """Zona horaria de la emisora; `None` si el sistema no trae la base de zonas (Windows sin `tzdata`): se usa la del equipo."""
     try:
-        return datetime.now(ZoneInfo(ctx.config["timezone"]))
+        return ZoneInfo(ctx.config["timezone"])
     except Exception:  # noqa: BLE001
-        return datetime.now().astimezone()
+        return None
+
+
+def _station_now(ctx: sdk.Context) -> datetime:
+    """Hora de la emisora; si el sistema no trae la base de zonas horarias, la del equipo."""
+    tz = _station_tz(ctx)
+    return datetime.now(tz) if tz else datetime.now().astimezone()
+
+
+def _local_hms(stamp: str, tz) -> str:
+    """Hora (HH:MM:SS) de una marca ISO guardada en UTC, convertida a la hora de la emisora (`tz`; `None` = la del equipo)."""
+    try:
+        dt = datetime.fromisoformat(stamp.replace("Z", "+00:00"))
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        return dt.astimezone(tz).strftime("%H:%M:%S")
+    except (ValueError, TypeError):
+        return stamp[11:19]
 
 
 def _mmss(ms: int | float | None) -> str:
@@ -151,9 +168,10 @@ class HistorialEditor(sdk.Editor):
 
     def draw(self, ui: UI, ctx: sdk.Context) -> None:
         plays = ctx.recent_plays(40)
-        ui.label("Lo que sonó (UTC) · base de los reportes de derechos y compromisos", "muted")
+        tz = _station_tz(ctx)
+        ui.label("Lo que sonó (hora de la emisora) · base de los reportes de derechos y compromisos", "muted")
         ui.table(["Inicio", "Fichero", "Tipo", "Título", "Artista", "Fuente", "Estado"],
-                 [[p["started_at"][11:19], FILE_LABEL.get(p["file_type"], p["file_type"]), p["kind"], p["title"],
+                 [[_local_hms(p["started_at"], tz), FILE_LABEL.get(p["file_type"], p["file_type"]), p["kind"], p["title"],
                    p["artist"], p["source"], _STATUS.get(p["status"], p["status"])] for p in plays],
                  narrow_hide=[2, 4, 5])
 
