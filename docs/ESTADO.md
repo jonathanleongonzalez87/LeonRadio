@@ -1,13 +1,13 @@
 # Estado de LeonRadio
 
-_Actualizado: 26 nov 2026, 22:58 · lo genera `node scripts/avance.mjs` desde [ROADMAP.md](ROADMAP.md)_
+_Actualizado: 27 nov 2026, 11:30 · lo genera `node scripts/avance.mjs` desde [ROADMAP.md](ROADMAP.md)_
 
 ## Avance global: 36% · Tier C · Alfa
 
 | Tier | Qué es | Peso | Avance | | Verificadas |
 |---|---|---|---|---|---|
 | S | Núcleo | 45% | 80% | `████████████████░░░░` | 4/9 |
-| A | Muy importante | 30% | 0% | `░░░░░░░░░░░░░░░░░░░░` | 0/9 |
+| A | Muy importante | 30% | 0% | `░░░░░░░░░░░░░░░░░░░░` | 0/8 |
 | B | Pulido | 15% | 0% | `░░░░░░░░░░░░░░░░░░░░` | 0/7 |
 | C | Extras | 10% | 0% | `░░░░░░░░░░░░░░░░░░░░` | 0/4 |
 
