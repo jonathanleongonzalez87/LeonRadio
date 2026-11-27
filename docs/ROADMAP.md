@@ -55,7 +55,7 @@ Dentro de cada tier pesan los **puntos** (1 = chica, 2 = mediana, 3 = grande).
 | A3 | A | Programación: metadatos ISRC, compositor, editorial (#8) | 2 | pendiente | S8 | Programación | @jonathanleongonzalez87 |
 | A4 | A | Programación: parrilla, relojes y dayparts | 3 | pendiente | S8 | Programación | @jonathanleongonzalez87 |
 | A5 | A | Programación: reglas de rotación (separación de artista/título, por década) | 3 | pendiente | A4 | Programación | @jonathanleongonzalez87 |
-| A6 | A | Producción: clientes, contratos, patrocinios y pauta (compromisos comerciales) | 3 | pendiente | S8 | Producción | @contactocergroup-art |
+| A6 | A | Producción: clientes, contratos, patrocinios y pauta (compromisos comerciales) | 3 | en curso | S8 | Producción | @contactocergroup-art |
 | A7 | A | Programación + Producción: tandas comerciales ligadas a compromisos (#9) | 3 | pendiente | A4, A6 | Programación | @jonathanleongonzalez87 |
 | A8 | A | Al Aire: escaleta, guiones e invitados («Mi programa») | 3 | pendiente | S10 | Al Aire | @jonathanleongonzalez87 |
 | A9 | A | Núcleo: usuarios, roles y permisos por estación (antes S7; pospuesta por el dueño: por ahora todas las estaciones tienen acceso total para probar) | 3 | pendiente | S5, S6 | Núcleo | @jonathanleongonzalez87 |
