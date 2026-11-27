@@ -3,9 +3,16 @@
 Automatizador de radio con experiencia de estación vintage, hecho para 2026.
 Estación de prueba: **RRC – Rockland Radio Colombia** (https://rocklandradio.co/).
 
-## Versión 0.1.0 — primer lanzamiento
+## Versión 0.2.0
 
-Automatizador de radio con **audio real** (WASAPI), listas de ficheros, botonera y paneles intercambiables.
+Plataforma de gestión de una emisora con **audio real** (WASAPI), listas de ficheros, botonera, streaming, monitoreo remoto y paneles intercambiables. Novedades de la 0.2.0 sobre la 0.1.0:
+
+- **Cuatro estaciones de trabajo** como pestañas: Al Aire, Programación, Dirección y Producción, sobre un núcleo común (ver [docs/estaciones.md](docs/estaciones.md)).
+- **Base de datos persistente** (el historial y la biblioteca sobreviven a los reinicios) con migraciones y copias de seguridad automáticas.
+- **Seguridad para la red local**: clave de acceso, sesión, comprobación de origen, carpetas permitidas y límites; el PC que emite entra sin clave.
+- **Entidades compartidas** (Pieza, Artista, Álbum, Género) con su dueño por estación, y un contrato para que cada estación declare las suyas.
+- **Streaming** a Icecast, **Monitores** para escuchar desde el teléfono o la tableta, **Preferencias** de audio por salida y **Navegador** integrado.
+- Historial en la **hora de la emisora**, guía para colaborar, kit de desarrollo en `herramientas/` y audio propio de RRC para pruebas en `datos-de-prueba/`.
 
 ![Pantalla de carga](docs/img/splash.png)
 
@@ -85,8 +92,10 @@ escucharlo con el panel **Monitores**.
 
 - Windows pedirá permiso en el Firewall: permite las **redes privadas** (si tu red está marcada como pública, cámbiala a
   privada o crea una regla para el puerto 8765).
-- **No hay contraseña**: cualquiera en esa red puede controlar la emisión y ver las carpetas del PC. Úsalo solo en una
-  red de confianza y no abras el puerto 8765 hacia internet.
+- **Clave de acceso**: los dispositivos de la red la piden. Se genera la primera vez y se muestra **una sola vez** en la
+  ventana negra; si la pierdes, `leonradio clave` crea otra. El PC que emite entra sin clave. Tras 5 intentos fallidos
+  se bloquea esa dirección 15 minutos. La conexión **no va cifrada** (HTTP): úsalo solo en una red de confianza y no
+  abras el puerto 8765 hacia internet. Usuarios y roles llegarán más adelante (tarea A9).
 
 ## Probar la interfaz sin servidor
 Para iterar rápido en la interfaz no hace falta servidor: haz doble clic en **`probar-ui.bat`**. Genera

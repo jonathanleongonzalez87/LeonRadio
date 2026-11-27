@@ -1,6 +1,6 @@
 # Estado de LeonRadio (para retomar en una sesión nueva)
 
-Última actualización: 2026-11-25 (v0.1.0). Lee esto primero; después `README.md`, `ROADMAP.md` y `docs/`.
+Última actualización: 2026-11-27 (v0.2.0). Lee esto primero; después `README.md`, `ROADMAP.md` y `docs/`.
 
 ## Qué es
 Automatizador de radio con estética de cabina vintage: motor **Python** (`core/`) + interfaz **HTML** (`ui/`),
@@ -10,7 +10,7 @@ Repo: https://github.com/jonathanleongonzalez87/LeonRadio · Proyecto «LeonRadi
 ## Dónde está todo
 - Código: `C:\Users\leont\OneDrive\Documents\LeonRadio\LeonRadio` · audio de la emisora: `..\Rockland Radio` (no se versiona).
 - Entorno de desarrollo: `C:\Users\leont\.venvs\leonradio` (fuera de OneDrive). Entorno del lanzador: `%LOCALAPPDATA%\LeonRadio\venv`.
-- Pruebas: `cd core` y `C:\Users\leont\.venvs\leonradio\Scripts\python -m pytest -q` → **46 pasan**.
+- Pruebas: `cd core` y `C:\Users\leont\.venvs\leonradio\Scripts\python -m pytest -q` → **165 pasan** (1 omitida). El seguimiento por tareas y el % de avance están en `docs/ROADMAP.md` y `docs/ESTADO.md`; las guías para colaborar, en `docs/guia-basica.md`.
 
 ## Cómo ejecutarlo
 - **Con audio real:** doble clic en `iniciar-leonradio.bat` (arranca en **pausa**; pulsa ▶ Reproducir). → http://127.0.0.1:8765/
@@ -29,6 +29,11 @@ Repo: https://github.com/jonathanleongonzalez87/LeonRadio · Proyecto «LeonRadi
 - **Streaming** (panel de Varios): Icecast 2 en MP3 con `lameenc`, reconexión, metadatos y grabación; probado contra un Icecast falso en las pruebas, **falta probar contra un servidor real**. Contraseña solo en `config.json`.
 - **Preferencias** (menú Archivo, Ctrl+,): tarjeta de sonido por salida (principal, Aux 1–4, Botonera; la escucha previa y las entradas solo se guardan). Ajustes en `%LOCALAPPDATA%\LeonRadio\config.json`.
 - Barra de menú, pantalla de carga (se cierra con un clic) y diseños guardados v10 (cambiar `KEY` en `main.js` los restablece).
+
+## Novedades de la 0.2.0
+- **Núcleo:** base SQLite persistente con migraciones y copias (S5), seguridad de la API con clave de acceso, sesión, origen y carpetas permitidas (S6), entidades compartidas Pieza/Artista/Álbum/Género con su dueño y panel «Entidades» (S8). Usuarios, roles y permisos se pospusieron a A9: por ahora acceso total a las estaciones.
+- **Estaciones:** pestañas Al Aire, Programación, Dirección y Producción; reparto de trabajo en `docs/estaciones.md`; kit de desarrollo en `herramientas/`; audio propio de RRC en `datos-de-prueba/` (la música va en un repositorio privado).
+- **Hora local** del Historial. Avance: 36 % (Tier C · Alfa).
 
 ## Pendiente (issues abiertos)
 - Mejoras del motor/UI: #23 pisadores automáticos sobre la intro, #24 detectar marcas intro/outro y loudness.
